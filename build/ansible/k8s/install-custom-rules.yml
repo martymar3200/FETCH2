@@ -1,0 +1,41 @@
+---
+- hosts: "k8s_cp, k8s_workers"
+  remote_user: pleddy
+  become: yes
+  become_method: dzdo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+  vars:
+    allowed_ips:
+      dev:
+        - "0.0.0.0"
+        - "0.0.0.0"
+      test:
+        - "0.0.0.0"
+        - "0.0.0.0"
+      stage:
+        - "0.0.0.0"
+        - "0.0.0.0"
+      prod:
+        - "0.0.0.0"
+        - "0.0.0.0"
+    zone_name: "drop"
+
+  tasks:
+
+    - name: Allow full access for specific IPs in drop based on environment
+      firewalld:
+        zone: "{{ zone_name }}"
+        rich_rule: 'rule family="ipv4" source address="{{ item }}" accept'
+        state: enabled
+        permanent: true
+        immediate: true
+      loop: "{{ allowed_ips[env] }}"
+      notify: reload_firewalld
+
+  handlers:
+    - name: reload_firewalld
+      service:
+        name: firewalld
+        state: reloaded

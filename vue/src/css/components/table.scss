@@ -1,0 +1,40 @@
+.table {
+  // styling for any custom tables not using quasars component
+  &-borderless {
+    border: none;
+    border-collapse: collapse;
+    border-spacing: 0;
+
+    th {
+      font-weight: normal;
+      overflow: hidden;
+      padding: 10px 15px;
+      word-break: normal;
+      text-align: left;
+
+      &:first-child {
+        padding-left: 0;
+      }
+
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+
+    td {
+      font-weight: normal;
+      overflow: hidden;
+      padding: 10px 15px;
+      word-break: normal;
+      text-align: left;
+
+      &:first-child {
+        padding-left: 0;
+      }
+
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+  }
+}

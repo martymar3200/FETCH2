@@ -1,0 +1,45 @@
+---
+- hosts: "k8s_cp, k8s_workers"
+  remote_user: user
+  become: yes
+  become_method: dzdo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+  tasks:
+
+    - name: Create pod-network zone
+      firewalld:
+        zone: pod-network
+        state: present
+        permanent: true
+
+    - name: Add source to pod-network zone
+      firewalld:
+        zone: pod-network
+        source: 0.0.0.0/16
+        state: enabled
+        permanent: true
+
+    - name: Set target to ACCEPT for pod-network zone
+      command: firewall-cmd --permanent --zone=pod-network --set-target=ACCEPT
+      notify: reload_firewalld
+
+    - name: Enable forwarding in pod-network zone
+      command: firewall-cmd --permanent --zone=pod-network --add-forward
+      notify: reload_firewalld
+
+  handlers:
+    - name: reload_firewalld
+      service:
+        name: firewalld
+        state: reloaded
+
+# dzdo firewall-cmd --permanent --delete-zone=pod-network
+# dzdo firewall-cmd --permanent --new-zone=pod-network
+# dzdo firewall-cmd --permanent --zone=pod-network --add-source=0.0.0.0/16
+# # firewall-cmd --permanent --zone=pod-network --add-source=0.0.0.0/16
+# dzdo firewall-cmd --permanent --zone=pod-network --set-target=ACCEPT
+# dzdo firewall-cmd --permanent --zone=pod-network --add-forward
+# dzdo firewall-cmd --reload
+

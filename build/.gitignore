@@ -1,0 +1,15 @@
+.terraform*
+terraform.*
+*.txt
+kubeconfig
+backup.tfstate
+notes
+*.rpm
+*.gpg
+*.tfvars
+*.crt
+*.key
+*.csr
+*.zip
+bin/
+backend.hcl

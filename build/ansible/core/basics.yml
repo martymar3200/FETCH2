@@ -1,0 +1,33 @@
+---
+- hosts: core
+  become: yes
+  tasks:
+
+  - name: Install dependencies
+    dnf:
+      name: epel-release
+      state: present
+
+  - name: Install tools
+    package:
+      name:
+        - htop
+        - procps-ng
+        - mutt
+        - pcp-system-tools
+        - iftop
+        - tree
+        - git
+        - netcat
+        - screen
+        - dstat
+        - ripgrep
+        - swaks
+        - prometheus-node-exporter
+      state: present
+
+  - name: Ensure Postfix service is enabled and started
+    systemd:
+      name: postfix
+      enabled: yes
+      state: started

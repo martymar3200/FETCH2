@@ -1,0 +1,25 @@
+// custom default styling for q-table component
+.q-table {
+  th {
+    vertical-align: baseline;
+    font-size: $font-default;
+    padding: 7px 10px;
+    border-bottom-color: $secondary;
+
+    @media (max-width: $breakpoint-sm-min) {
+      font-size: .98rem;
+      vertical-align: baseline;
+    }
+  }
+
+  tbody {
+    td {
+      padding: 7px 10px;
+      font-size: 1rem;
+  
+      @media (max-width: $breakpoint-sm-min) {
+        font-size: 13px;
+      }
+    }
+  }
+}

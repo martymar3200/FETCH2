@@ -1,0 +1,234 @@
+stages:
+  - build
+  - build_mr
+  - build_staging
+  - build_deploy_prod
+  - trigger
+  - deploy
+  - deploy_staging
+
+build_image_dev:
+  stage: build
+  image:
+    name: git.example.com:4567/fetch/build/kaniko-project/executor:1.0.0
+    entrypoint: [""]
+  variables:
+    IMAGE_FULL_TAG: $CI_REGISTRY_IMAGE:latest
+  script:
+    - echo IMAGE_FULL_TAG $IMAGE_FULL_TAG
+    - cp -v images/web.dev.Containerfile Dockerfile
+    - echo $DEVELOP_VITE_ENV > env/.env
+    - echo $DEVELOP_VITE_INV_SERVCE_API >> env/.env
+    - echo $DEVELOP_VITE_API_BASE_URI >> env/.env
+    - cat -A env/.env
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --build-arg DEVELOP_VITE_ENV=$DEVELOP_VITE_ENV
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_FULL_TAG
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+build_image_demo:
+  stage: build
+  image:
+    name: git.example.com:4567/fetch/build/kaniko-project/executor:1.0.0
+    entrypoint: [""]
+  variables:
+    IMAGE_FULL_TAG: $CI_REGISTRY_IMAGE:demo
+  script:
+    - echo IMAGE_FULL_TAG $IMAGE_FULL_TAG
+    - cp -v images/web.dev.Containerfile Dockerfile
+    - echo $DEVELOP_VITE_ENV > env/.env
+    - echo $DEVELOP_VITE_INV_SERVCE_API >> env/.env
+    - echo $DEVELOP_VITE_API_BASE_URI >> env/.env
+    - cat -A env/.env
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --build-arg DEVELOP_VITE_ENV=$DEVELOP_VITE_ENV
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_FULL_TAG
+  rules:
+    - if: "$DEMO_BUILD =~ /^TRUE$/"
+      when: manual
+    - when: never
+
+build_mr:
+  stage: build_mr
+  image:
+    name: git.example.com:4567/fetch/build/kaniko-project/executor:1.0.0
+    entrypoint: [""]
+  variables:
+    IMAGE_FULL_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  script:
+    - echo IMAGE_FULL_TAG $IMAGE_FULL_TAG
+    - cp -v images/web.dev.Containerfile Dockerfile
+    - echo $DEVELOP_VITE_ENV > env/.env
+    - echo $DEVELOP_VITE_INV_SERVCE_API >> env/.env
+    - echo $DEVELOP_VITE_API_BASE_URI >> env/.env
+    - cat -A env/.env
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --build-arg VITE_ENV=$DEVELOP_VITE_ENV
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_FULL_TAG
+  rules:
+    - if: "$CI_MERGE_REQUEST_ID"
+      when: manual
+
+build_image_test:
+  stage: build
+  image:
+    name: git.example.com:4567/fetch/build/kaniko-project/executor:1.0.0
+    entrypoint: [""]
+  variables:
+    IMAGE_FULL_TAG: $CI_REGISTRY_IMAGE/test:latest
+  script:
+    - echo IMAGE_FULL_TAG $IMAGE_FULL_TAG
+    - cp -v images/web.test.Containerfile Dockerfile
+    - echo $TEST_VITE_ENV > env/.env
+    - echo $TEST_VITE_INV_SERVCE_API >> env/.env
+    - echo $TEST_VITE_API_BASE_URI >> env/.env
+    - cat -A env/.env
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --build-arg VITE_ENV=$TEST_VITE_ENV
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_FULL_TAG
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+build_image_staging:
+  stage: build_staging
+  image:
+    name: git.example.com:4567/fetch/build/kaniko-project/executor:1.0.0
+    entrypoint: [""]
+  variables:
+    IMAGE_FULL_TAG: $CI_REGISTRY_IMAGE/stage:latest
+  script:
+    - echo IMAGE_FULL_TAG $IMAGE_FULL_TAG
+    - cp -v images/web.stage.Containerfile Dockerfile
+    - echo $STAGING_VITE_ENV > env/.env
+    - echo $STAGING_VITE_INV_SERVCE_API >> env/.env
+    - echo $STAGING_VITE_API_BASE_URI >> env/.env
+    - cat -A env/.env
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --build-arg VITE_ENV=$STAGING_VITE_ENV
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_FULL_TAG
+  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'staging'
+
+build_image_prod:
+  stage: build_deploy_prod
+  image:
+    name: git.example.com:4567/fetch/build/kaniko-project/executor:1.0.0
+    entrypoint: [""]
+  variables:
+    IMAGE_FULL_TAG: $CI_REGISTRY_IMAGE/prod:latest
+  script:
+    - echo IMAGE_FULL_TAG $IMAGE_FULL_TAG
+    - cp -v images/web.prod.Containerfile Dockerfile
+    - echo $PROD_VITE_ENV > env/.env
+    - echo $PROD_VITE_INV_SERVCE_API >> env/.env
+    - echo $PROD_VITE_API_BASE_URI >> env/.env
+    - cat -A env/.env
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --build-arg VITE_ENV=$PROD_VITE_ENV
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_FULL_TAG
+  rules:
+    - if: "$PROD_BUILD =~ /^TRUE$/"
+      when: manual
+    - when: never
+
+deploy_dev:
+  stage: deploy
+  environment:
+    name: develop
+    url: https://dev.fetch.example.com/
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - kubectl config use-context fetch/build:fetch -v=6
+    - kubectl -n fetch apply -f k8s/deployment-dev.yml
+    - kubectl -n fetch apply -f k8s/service.yml
+    - sleep 10
+    - kubectl -n fetch rollout restart deployment/vue
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+deploy_demo:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - kubectl config use-context fetch/build:fetch -v=6
+    - kubectl -n fetch apply --wait=true --timeout=120s -f k8s/deployment-demo.yml
+    - kubectl -n fetch apply -f k8s/service.yml
+    - kubectl -n fetch rollout restart deployment/vue
+  rules:
+    - if: "$DEMO_BUILD =~ /^TRUE$/"
+      when: manual
+    - when: never
+
+deploy_test:
+  stage: deploy
+  environment:
+    name: test
+    url: https://test.fetch.example.com/
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - kubectl config use-context fetch/build:fetch-test -v=6
+    - kubectl -n fetch apply -f k8s/deployment-test.yml
+    - kubectl -n fetch apply -f k8s/service.yml
+    - sleep 10
+    - kubectl -n fetch rollout restart deployment/vue
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+deploy_stage:
+  stage: deploy_staging
+  environment:
+    name: staging
+    url: https://staging.fetch.example.com/
+  tags:
+    - stage
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - kubectl config use-context fetch/build:fetch-stage -v=6
+    - kubectl -n fetch apply -f k8s/deployment-stage.yml
+    - kubectl -n fetch apply -f k8s/service.yml
+    - sleep 10
+    - kubectl -n fetch rollout restart deployment/vue
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+      when: manual
+
+deploy_prod:
+  stage: build_deploy_prod
+  environment:
+    name: prod
+    url: https://fetch.example.com/
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - kubectl config use-context fetch/build:fetch-prod -v=6
+    - kubectl -n fetch apply -f k8s/deployment-prod.yml
+    - kubectl -n fetch apply -f k8s/service.yml
+    - sleep 10
+    - kubectl -n fetch rollout restart deployment/vue
+  rules:
+    - if: "$PROD_BUILD =~ /^TRUE$/"
+      when: manual
+    - when: never

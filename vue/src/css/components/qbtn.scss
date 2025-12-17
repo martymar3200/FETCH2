@@ -1,0 +1,39 @@
+// custom default styling for q-btn component
+.q-btn {
+  &.disabled, &:disabled {
+    opacity: 0.3 !important;
+  }
+
+  & .on-left {
+    margin-right: 4px;
+    margin-left: -7px;
+  }
+
+  & .on-right {
+    margin-left: 4px;
+    margin-right: -7px;
+  }
+
+  &.btn-no-wrap {
+    text-wrap: nowrap;
+    flex-wrap: nowrap;
+
+    & .q-btn__content {
+      text-wrap: nowrap;
+      flex-wrap: nowrap;
+    }
+  }
+
+  &.btn-hide-icon {
+    .q-icon {
+      display: none;
+    }
+  }
+
+  &.btn-dashed {
+    &::before {
+      border-style: dashed;
+      border-width: 2px;
+    }
+  }
+}

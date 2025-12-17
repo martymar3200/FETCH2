@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [
+        "exampleci01:9100",
+        "examplecp01:9100",
+        "examplelb01:9100",
+        "examplewk01:9100",
+        "examplewk02:9100",
+        "examplewk03:9100",
+      ]

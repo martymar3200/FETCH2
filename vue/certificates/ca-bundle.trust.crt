@@ -1,0 +1,4 @@
+# Example CERTIFICATE
+-----BEGIN TRUSTED CERTIFICATE-----
+example
+-----END TRUSTED CERTIFICATE-----

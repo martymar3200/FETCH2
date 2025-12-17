@@ -1,0 +1,33 @@
+---
+- name: Remove Podman
+  hosts: podman_remove
+  become: yes
+  tasks:
+  - name: Check if runc is installed
+    shell: rpm -qa | grep -qw runc
+    register: runc_installed
+    failed_when: false
+    ignore_errors: yes
+    no_log: true
+
+  - name: Check if buildah is installed
+    shell: rpm -qa | grep -qw buildah
+    register: buildah_installed
+    failed_when: false
+    ignore_errors: yes
+    no_log: true
+
+  - name: Remove runc if installed
+    dnf:
+      name: runc
+      state: absent
+    when: runc_installed.rc == 0
+
+  - name: Remove buildah if installed
+    dnf:
+      name: buildah
+      state: absent
+    when: buildah_installed.rc == 0
+
+  - name: Clean DNF cache
+    command: dnf clean all

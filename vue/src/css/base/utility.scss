@@ -1,0 +1,176 @@
+// Text & Background Color Utilities
+$color-map: (
+  primary: $primary,
+  secondary: $secondary,
+  accent: $accent, 
+  dark: $dark,     
+  dark-page: $dark-page,
+  positive: $positive, 
+  negative: $negative, 
+  info: $info,     
+  warning: $warning,
+  color-white: $color-white,
+  color-black: $color-black,
+  color-gray: $color-gray,
+  color-gray-light: $color-gray-light,
+  color-gray-dark: $color-gray-dark,
+  color-pink: $color-pink,
+  color-green-light: $color-green-light,
+  color-brown: $color-brown
+);
+
+@each $colorName, $colorValue in $color-map {
+  .bg-#{$colorName} {
+      background-color: $colorValue !important;
+  }
+  .text-#{$colorName} {
+      color: $colorValue !important;
+  }
+  .text-highlight-#{$colorName} {
+    padding: 1px 5px;
+    color: $colorValue;
+    background-color: rgba($colorValue, .08);
+    border-color: $colorValue !important;
+    border-radius: 2px;
+  }
+  .border-#{$colorName} {
+    border-color: $colorValue !important;
+  }
+}
+
+.text-highlight {
+  padding: 1px 5px;
+  color: $positive;
+  background-color: rgba($positive, .08);
+  border-color: $positive !important;
+  border-radius: 2px;
+}
+.text-highlight-warning {
+  padding: 1px 5px;
+  color: $positive;
+  background-color: rgba($warning, .08);
+  border-color: $warning !important;
+  border-radius: 2px;
+}
+
+.text-nowrap {
+  text-wrap: nowrap;
+  white-space: nowrap;
+}
+
+// General Utilities
+.divider {
+  display: block;
+  background-color: $secondary;
+  width: 100%;
+  height: 1px;
+}
+
+.outline {
+  border: 1px solid $color-gray;
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.underline {
+  border-bottom: 1px solid $color-gray;
+}
+
+.disabled, [disabled] {
+  opacity: 0.61 !important;
+}
+
+.overlay {
+  &::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba($color-gray, 0.4);
+    z-index: 2000;
+  }
+
+  &-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+  }
+}
+
+.link {
+  &:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
+
+.flex-grow {
+  flex-grow: 1 !important;
+}
+.flex-xs-grow {
+  @media (min-width: 0) {
+    flex-grow: 1 !important;
+  }
+}
+.flex-sm-grow {
+  @media (min-width: $breakpoint-sm-min) {
+    flex-grow: 1 !important;
+  }
+}
+.flex-md-grow {
+  @media (min-width: $breakpoint-md-min) {
+    flex-grow: 1 !important;
+  }
+}
+.flex-lg-grow {
+  @media (min-width: $breakpoint-lg-min) {
+    flex-grow: 1 !important;
+  }
+}
+.flex-xl-grow {
+  @media (min-width: $breakpoint-xl-min) {
+    flex-grow: 1 !important;
+  }
+}
+
+.flex-shrink {
+  flex-shrink: 1 !important;
+}
+.flex-xs-shrink {
+  @media (min-width: 0) {
+    flex-shrink: 1 !important;
+  }
+}
+.flex-sm-shrink {
+  @media (min-width: $breakpoint-sm-min) {
+    flex-shrink: 1 !important;
+  }
+}
+.flex-md-shrink {
+  @media (min-width: $breakpoint-md-min) {
+    flex-shrink: 1 !important;
+  }
+}
+.flex-lg-shrink {
+  @media (min-width: $breakpoint-lg-min) {
+    flex-shrink: 1 !important;
+  }
+}
+.flex-xl-shrink {
+  @media (min-width: $breakpoint-xl-min) {
+    flex-grow: 1 !important;
+  }
+}
+
+// generates .order-1 through .order-10
+@for $i from 1 through 10 {
+  $order: $i;
+  .order-#{$i} { 
+    order: $order;
+  }
+}

@@ -1,0 +1,171 @@
+---
+- hosts: "k8s_cp, k8s_workers"
+  remote_user: pleddy
+  become: yes
+  become_method: dzdo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+
+
+  tasks:
+
+    - name: Install iproute-tc package
+      dnf:
+        name: iproute-tc
+        state: present
+
+    - name: Install tools
+      package:
+        name:
+          - htop
+          - procps-ng
+        state: present
+
+    - name: Disable swap immediately
+      command:
+        cmd: swapoff -a
+
+    - name: Remove swap entry from /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '.*swap.*'
+        state: absent
+
+    - name: Set SELINUX to permissive
+      lineinfile:
+        path: /etc/selinux/config
+        regexp: '^SELINUX=enforcing$'
+        line: 'SELINUX=permissive'
+
+    - name: Create containerd config file
+      file:
+        path: "/etc/modules-load.d/containerd.conf"
+        state: "touch"
+
+    - name: Add conf for containerd
+      blockinfile:
+        path: "/etc/modules-load.d/containerd.conf"
+        block: |
+          overlay
+          br_netfilter
+
+    - name: modprobe
+      shell: |
+        sudo modprobe overlay
+        sudo modprobe br_netfilter
+
+
+    - name: Set system configurations for Kubernetes networking
+      file:
+        path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        state: "touch"
+
+    - name: Add conf for containerd
+      blockinfile:
+        path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        block: |
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+
+    - name: Apply new settings
+      command: sudo sysctl --system
+
+    - name: Install required packages
+      dnf:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+
+    - name: Add Docker repository
+      command:
+        cmd: dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+
+    - name: Check if runc is installed
+      shell: rpm -qa | grep -qw runc
+      register: runc_installed
+      failed_when: false
+      ignore_errors: yes
+      no_log: true
+
+    - name: Check if buildah is installed
+      shell: rpm -qa | grep -qw buildah
+      register: buildah_installed
+      failed_when: false
+      ignore_errors: yes
+      no_log: true
+
+    - name: Remove runc if installed
+      dnf:
+        name: runc
+        state: absent
+      when: runc_installed.rc == 0
+
+    - name: Remove buildah if installed
+      dnf:
+        name: buildah
+        state: absent
+      when: buildah_installed.rc == 0
+
+    - name: Clean DNF cache
+      command: dnf clean all
+
+    - name: Ensure containerd.io are installed
+      dnf:
+        name:
+          - containerd.io
+
+    - name: Comment out the line in /etc/containerd/config.toml
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: '^disabled_plugins = \["cri"\]'
+        replace: '#disabled_plugins = ["cri"]'
+      tags: comment_out_disabled_plugins
+
+    - name: Restart Containerd service
+      systemd:
+        name: containerd
+        state: restarted
+      tags: restart_containerd
+
+    - name: Add yum repo file for Kubernetes
+      copy:
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+          exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+        dest: /etc/yum.repos.d/kubernetes.repo
+
+    - name: Install Kubernetes (kubeadm, kubelet, and kubectl)
+      dnf:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+        disable_excludes: all
+        state: present
+
+    - name: Enable kubelet service
+      systemd:
+        name: kubelet
+        enabled: yes
+
+    - name: Set IP forwarding in sysctl
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        sysctl_set: yes
+        state: present
+
+    - name: Start kubelet service
+      systemd:
+        name: kubelet
+        state: started
+

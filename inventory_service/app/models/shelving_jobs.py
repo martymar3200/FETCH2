@@ -1,0 +1,109 @@
+# /app/models/shelving_jobs.py - REFACRORED TO SQLALCHEMY V2
+
+import sqlalchemy as sa
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Integer, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey
+
+from enum import Enum
+from typing import Optional, List, TYPE_CHECKING
+from datetime import datetime, timezone, timedelta
+# REMOVED: from sqlmodel import SQLModel, Field, Relationship
+
+# NEW IMPORT: Import the Base class you created
+from app.database.base import Base
+from app.models.users import User
+
+
+if TYPE_CHECKING:
+    from app.models.verification_jobs import VerificationJob
+    from app.models.trays import Tray
+    from app.models.non_tray_items import NonTrayItem
+    from app.models.buildings import Building
+    from app.models.users import User
+    from app.models.shelving_job_discrepancies import ShelvingJobDiscrepancy
+
+class ShelvingJobStatus(str, Enum):
+    Created = "Created"
+    Paused = "Paused"
+    Running = "Running"
+    Cancelled = "Cancelled"
+    Completed = "Completed"
+
+
+class OriginStatus(str, Enum):
+    Verification = "Verification"
+    Direct = "Direct"
+
+
+class ShelvingJob(Base): # <--- Inherit from Base
+    """
+    Model to represent the Shelving Jobs table
+    """
+
+    # NOTE: __tablename__ is handled by Base.
+    __tablename__ = "shelving_jobs"
+
+    # Primary Key
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True)
+
+    # Status (Enum)
+    status: Mapped[str] = mapped_column(
+        SQLEnum(
+            ShelvingJobStatus,
+            name="shelving_status",
+            nullable=False,
+        ),
+        default=ShelvingJobStatus.Created,
+    )
+
+    # Origin (Enum)
+    origin: Mapped[str] = mapped_column(
+        SQLEnum(
+            OriginStatus,
+            name="shelving_origin",
+            nullable=False,
+        ),
+        default=OriginStatus.Verification,
+    )
+
+    # Foreign Keys
+    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=False)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+    # Run Time (timedelta -> Interval)
+    run_time: Mapped[Optional[timedelta]] = mapped_column(Interval, nullable=True)
+    
+    # Last Transition (datetime)
+    last_transition: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), 
+        nullable=False, 
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    # REMOVED: create_dt and update_dt are handled by the Base class.
+
+    # --- RELATIONSHIPS ---
+
+    # User Relationships (Custom primaryjoin)
+    user: Mapped[Optional[User]] = relationship(
+        back_populates="shelving_jobs",
+        primaryjoin="ShelvingJob.user_id==User.id",
+        lazy="selectin"
+    )
+    created_by: Mapped[Optional[User]] = relationship(
+        back_populates="created_shelving_jobs",
+        primaryjoin="ShelvingJob.created_by_id==User.id",
+        lazy="selectin"
+    )
+
+    # Standard One-to-Many Relationships
+    verification_jobs: Mapped[List["VerificationJob"]] = relationship(back_populates="shelving_job")
+    trays: Mapped[List["Tray"]] = relationship(back_populates="shelving_job")
+    non_tray_items: Mapped[List["NonTrayItem"]] = relationship(back_populates="shelving_job")
+    building: Mapped["Building"] = relationship(back_populates="shelving_jobs")
+    shelving_job_discrepancies: Mapped[List["ShelvingJobDiscrepancy"]] = relationship(
+        back_populates="shelving_job",
+        primaryjoin="ShelvingJobDiscrepancy.shelving_job_id==ShelvingJob.id",
+        lazy="selectin"
+    )

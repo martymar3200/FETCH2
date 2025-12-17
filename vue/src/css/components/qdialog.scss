@@ -1,0 +1,15 @@
+// custom default styling for q-dialog component
+.q-dialog.q-dialog--modal {
+  // forces modal to be 100 than nav header element inorder to allow barcode enabling when using full screen modals
+  z-index: 5900;
+}
+
+.q-dialog .q-dialog__inner.fixed-top {
+  //forces the select filter dialog on mobile to be centered isntead of stuck at the top of the screen
+  transform: translateY(-50%);
+  top: 50%;
+
+  .q-select__dialog {
+    border-radius: 4px;
+  }
+}

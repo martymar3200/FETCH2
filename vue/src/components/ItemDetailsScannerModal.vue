@@ -1,0 +1,197 @@
+<template>
+  <PopupModal
+    @reset="emit('hide')"
+    aria-label="ItemDetailsScannerModal"
+  >
+    <template #header-content="{ hideModal }">
+      <q-card-section class="row items-center q-pb-none">
+        <h2 class="text-h6 text-bold">
+          Item Lookup
+        </h2>
+        <q-btn
+          icon="close"
+          flat
+          round
+          dense
+          class="q-ml-auto"
+          @click="hideModal"
+          aria-label="closeModal"
+        />
+      </q-card-section>
+    </template>
+
+    <template #main-content>
+      <q-card-section class="row q-pb-sm">
+        <div class="col-12">
+          <BarcodeBox
+            :barcode="scannedItemDetails.barcode?.value ?? 'Please Scan Item Barcode'"
+            :min-height="'5rem'"
+          />
+        </div>
+      </q-card-section>
+
+      <q-card-section class="row q-pb-none">
+        <div class="col-12">
+          <div class="container-details">
+            <label class="text-body1 text-bold full-width">
+              Full Location:
+            </label>
+            <p class="text-h4 text-accent text-bold">
+              {{ itemLocation }}
+            </p>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="container-details">
+            <label class="text-body1 text-bold full-width">
+              Owner:
+            </label>
+            <p class="text-body1">
+              {{ scannedItemDetails.owner?.name }}
+            </p>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="container-details">
+            <label class="text-body1 text-bold full-width">
+              Media Type:
+            </label>
+            <p class="text-body1">
+              {{ scannedItemDetails.media_type?.name }}
+            </p>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="container-details">
+            <label class="text-body1 text-bold full-width">
+              Status:
+            </label>
+            <p
+              v-if="scannedItemDetails.status"
+              class="text-body1"
+            >
+              <span
+                class="outline text-nowrap q-pa-xs"
+                :class="scannedItemDetails.status == 'In' ? 'text-highlight' : scannedItemDetails.status == 'Out' ? 'text-highlight-negative' : 'text-highlight-warning'"
+              >
+                {{ scannedItemDetails.status }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </q-card-section>
+    </template>
+
+    <template #footer-content="{ hideModal }">
+      <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Done"
+          class="text-body1 full-width"
+          @click="hideModal"
+        />
+      </q-card-section>
+    </template>
+  </PopupModal>
+</template>
+
+<script setup>
+import { watch, computed, inject } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useGlobalStore } from '@/stores/global-store'
+import { useRecordManagementStore } from '@/stores/record-management-store'
+import { useBarcodeStore } from '@/stores/barcode-store' // Import the barcode store
+import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
+import PopupModal from '@/components/PopupModal.vue'
+import BarcodeBox from '@/components/BarcodeBox.vue'
+
+// Emits
+const emit = defineEmits(['hide'])
+
+// Composables
+const { compiledBarCode } = useBarcodeScanHandler()
+
+// Store Data
+const { appActionIsLoadingData } = storeToRefs(useGlobalStore())
+const recordManagementStore = useRecordManagementStore()
+const { getItemDetails } = recordManagementStore
+const { itemDetails: scannedItemDetails } = storeToRefs(recordManagementStore)
+// ======================================================
+// ========= START: BARCODE STORE SETUP =================
+// ======================================================
+const barcodeStore = useBarcodeStore()
+const { getBarcodeDetails } = barcodeStore
+const { barcodeDetails } = storeToRefs(barcodeStore)
+// ======================================================
+// ========== END: BARCODE STORE SETUP ==================
+// ======================================================
+
+// Logic
+const handleAlert = inject('handle-alert')
+const getItemLocation = inject('get-item-location')
+
+const itemLocation = computed(() => {
+  if (scannedItemDetails.value?.id) {
+    return getItemLocation(scannedItemDetails.value) || 'Not Shelved'
+  }
+  return 'Scan an item...'
+})
+
+watch(compiledBarCode, (barcode) => {
+  if (barcode !== '') {
+    fetchItemLocation(barcode)
+  }
+})
+
+const fetchItemLocation = async (barcodeValue) => {
+  try {
+    appActionIsLoadingData.value = true
+    // Clear previous details first
+    recordManagementStore.itemDetails = { id: null }
+
+    // Step 1: Check if the barcode exists at all. This will throw an error if not found.
+    await getBarcodeDetails(barcodeValue)
+
+    // Step 2: Check if the barcode is actually for an "Item".
+    if (barcodeDetails.value.id && barcodeDetails.value.type.name !== 'Item') {
+      handleAlert({
+        type: 'error',
+        text: 'The scanned barcode is not an "Item Barcode"! Please try again.'
+      })
+      // We must throw an error here to stop execution and prevent getItemDetails from running.
+      throw new Error('Not an item barcode')
+    }
+
+    // If the above checks pass, then we can safely get the full item details.
+    await getItemDetails(barcodeValue)
+
+  } catch (error) {
+    // This block will now catch errors from getBarcodeDetails OR if we throw our own.
+    // We check error.message to avoid showing our internal 'Not an item barcode' message.
+    if (error.message !== 'Not an item barcode') {
+      handleAlert({
+        type: 'error',
+        text: `Barcode ${barcodeValue} not in FETCH`,
+        persistent: true
+      })
+    }
+  } finally {
+    appActionIsLoadingData.value = false
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+/* Your styles are unchanged */
+.container-details {
+  display: flex;
+  flex-flow: row wrap;
+  width: 100%;
+  padding-bottom: 8px;
+  label {
+    margin-right: .5rem;
+  }
+}
+</style>

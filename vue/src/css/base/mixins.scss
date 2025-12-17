@@ -1,0 +1,37 @@
+//media querie mixins
+/*
+< 450px:     Portrait Phone
+< 767px:     Landscape Phone
+< 960px:   Tablet Portrait
+< 1260px:  Tablet Landscape/Small Laptops
+> 1260px: Common Desktop
+> 1500px: Large Desktop
+> 1800px:     Wide desktop
+
+1em = 16px browser default
+*/
+
+//breakpoints - phone, tablet-reg, tablet-wide, desktop-big
+@mixin respond($breakpoint) {
+  @if $breakpoint == phone-small {
+      @media (max-width: 28.125em) { @content };  //450px or less (used for fine adjustments)
+  }
+  @if $breakpoint == phone {
+      @media (max-width: 47.9375em) { @content };  //767px or less
+  }
+  @if $breakpoint == tablet {
+      @media (max-width: 60em) { @content };  //960px or less
+  }
+  @if $breakpoint == laptop {
+      @media (max-width: 78.6875em) { @content };  //1259px or less
+  }
+  @if $breakpoint == desktop {
+      @media (min-width:78.75em) { @content }; //1260px+
+  }
+  @if $breakpoint == desktop-lg{
+      @media (min-width: 93.75em) { @content };  //1500px+
+  }
+  @if $breakpoint == desktop-xl {
+      @media (min-width: 112.5em) { @content };  //1800px+
+  }
+}

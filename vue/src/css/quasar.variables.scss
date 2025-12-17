@@ -1,0 +1,55 @@
+// Quasar SCSS (& Sass) Variables
+// --------------------------------------------------
+// To customize the look and feel of this app, you can override
+// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+
+// Check documentation for full list of Quasar variables
+
+// Your own variables (that are declared here) and Quasar's own
+// ones will be available out of the box in your .vue/.scss/.sass files
+
+// It's highly recommended to change the default colors
+// to match your app's branding.
+// Tip: Use the "Theme Builder" on Quasar's documentation website.
+
+// quasar breakpoints
+// Window Size    Name    Min-Width Thresholld in pixels    Max-Width Thresholld in pixels
+// Extra Small    xs      0px	                              599.99px
+// Small	        sm	    600px	                            1023.99px
+// Medium	        md	    1024px	                          1439.99px
+// Large	        lg	    1440px	                          1920px
+// Extra Large	  xl	    1921px	                          Infinity
+
+// Max width at which point
+// current size ends
+$breakpoint-xs: 599.99px !default;
+$breakpoint-sm: 1023.99px !default;
+$breakpoint-md: 1439.99px !default;
+$breakpoint-lg: 1920px !default;
+
+// quasar default variable overides
+$input-font-size: .95rem;
+
+// quasar color variables
+$primary   : #000068;
+$secondary : #6F6FB8;
+$accent    : #0066ff;
+$dark      : #1D1D1D;
+$dark-page : #121212;
+$positive  : #1a8000;
+$negative  : #a00000;
+$info      : #31CCEC;
+$warning   : #F2C037;
+
+// custom color variables
+$color-white: #ffffff;
+$color-black: #000000;
+$color-gray: #bbbbbb;
+$color-gray-light: #f7f6f6;
+$color-gray-dark: #757575;
+$color-pink: #ecb2b8;
+$color-green-light: #edf5eb;
+$color-brown: #774f2c;
+
+// custom typography variables
+$font-default: 1rem;

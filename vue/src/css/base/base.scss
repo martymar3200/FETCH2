@@ -1,0 +1,44 @@
+// custom css reset styling for consistency across browsers
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%; /* browser default 1rem = 16px */
+
+  @media (max-width: $breakpoint-sm-min) {
+    font-size: 87.5%; /* scales down text on mobile screens to be 1rem = 14px */
+  }
+}
+
+body {
+  font-family: Arial, sans-serif;
+	font-weight: 400;
+	font-size: $font-default;
+  line-height: 1.5rem;
+  box-sizing: border-box;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+h1, h2, h3, h4, h5, h6, p, span {
+  overflow-wrap: break-word;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+}

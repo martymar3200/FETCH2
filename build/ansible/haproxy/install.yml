@@ -1,0 +1,81 @@
+---
+- name: Install and configure HAProxy
+  hosts: haproxy
+  become: yes
+
+  tasks:
+
+    - name: Allow port 8080/tcp in the drop zone
+      firewalld:
+        zone: drop
+        port: 8080/tcp
+        state: enabled
+        permanent: yes
+        immediate: yes
+      when: apply_fw_changes|default('true')|bool
+
+    - name: Allow port 80/tcp in the drop zone
+      firewalld:
+        zone: drop
+        port: 80/tcp
+        state: enabled
+        permanent: yes
+        immediate: yes
+      when: apply_fw_changes|default('true')|bool
+
+    - name: Allow port 443/tcp in the drop zone
+      firewalld:
+        zone: drop
+        port: 443/tcp
+        state: enabled
+        permanent: yes
+        immediate: yes
+      when: apply_fw_changes|default('true')|bool
+
+    - name: Install HAProxy package
+      package:
+        name: haproxy
+        state: present
+
+    - name: Set SELinux boolean for HAProxy
+      ansible.builtin.seboolean:
+        name: haproxy_connect_any
+        state: yes
+        persistent: yes
+
+    - name: Ensure /run/haproxy/ directory exists with correct permissions
+      file:
+        path: /run/haproxy/
+        state: directory
+        owner: root
+        group: haproxy # Assuming 'haproxy' is the group HAProxy runs under
+        mode: '0750'   # Only root and haproxy group members can read/write
+
+    - name: Ensure /etc/haproxy/errorfiles directory exists with correct permissions
+      file:
+        path: /etc/haproxy/errorfiles
+        state: directory
+        owner: root
+        group: root
+        mode: '0750'
+
+    - name: Copy HAProxy configuration file
+      copy:
+        src: files/{{ env }}-haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+      notify:
+        - Restart HAProxy
+
+    - name: Copy default response file
+      copy:
+        src: files/hello.http
+        dest: /etc/haproxy/errorfiles/hello.http
+      notify:
+        - Restart HAProxy
+
+  handlers:
+    - name: Restart HAProxy
+      service:
+        name: haproxy
+        state: restarted
+

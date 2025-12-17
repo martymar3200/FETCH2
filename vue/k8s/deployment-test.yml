@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vue
+  namespace: fetch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vue
+  template:
+    metadata:
+      labels:
+        app: vue
+    spec:
+      containers:
+        - name: vue
+          image: git.example.com:4567/fetch/vue/test:latest
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 80
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              ephemeral-storage: "50Mi"
+            limits:
+              ephemeral-storage: "200Mi"
+      imagePullSecrets:
+      - name: gitlab-vue-2023
