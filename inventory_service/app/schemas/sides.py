@@ -1,7 +1,7 @@
 import uuid
 
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime, timezone
 
 from app.schemas.aisles import AisleBaseReadOutput
@@ -12,21 +12,23 @@ class SideInput(BaseModel):
     aisle_id: int
     side_orientation_id: int
 
-    class Config:
-        json_schema_extra = {"example": {"aisle_id": 1, "side_orientation_id": 1}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"aisle_id": 1, "side_orientation_id": 1}}
+    )
 
 
 class SideUpdateInput(BaseModel):
     aisle_id: Optional[int] = None
     side_orientation_id: Optional[int] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "aisle_id": 1,
                 "side_orientation_id": 1
             }
         }
+    )
 
 
 class SideBaseOutput(BaseModel):
@@ -38,10 +40,11 @@ class SideListOutput(SideBaseOutput):
     side_orientation_id: int
     aisle_id: int
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"id": 1, "aisle_id": 1, "side_orientation_id": 1}
         }
+    )
 
 
 class SideDetailWriteOutput(SideBaseOutput):
@@ -51,8 +54,8 @@ class SideDetailWriteOutput(SideBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "aisle_id": 1,
@@ -61,6 +64,7 @@ class SideDetailWriteOutput(SideBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398",
             }
         }
+    )
 
 
 class LadderNumberNestedForSide(BaseModel):
@@ -82,8 +86,8 @@ class SideDetailReadOutput(SideBaseOutput):
     aisle: AisleBaseReadOutput
     ladders: List[LadderNestedForSide]
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 3,
                 "side_orientation": {
@@ -109,3 +113,4 @@ class SideDetailReadOutput(SideBaseOutput):
                 ]
             }
         }
+    )

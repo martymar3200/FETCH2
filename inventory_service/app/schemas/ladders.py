@@ -1,7 +1,7 @@
 import uuid
 
 from typing import Optional, List
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, conint, ConfigDict
 from datetime import datetime, timezone
 
 from app.schemas.shelf_types import ShelfTypeDetailOutput
@@ -16,8 +16,8 @@ class LadderInput(BaseModel):
     ladder_number: Optional[int] = None
     sort_priority: Optional[conint(ge=0, le=32767)] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "side_id": 1,
                 "ladder_number_id": 1,
@@ -25,6 +25,7 @@ class LadderInput(BaseModel):
                 "sort_priority": 1
             }
         }
+    )
 
 
 class LadderUpdateInput(BaseModel):
@@ -32,14 +33,15 @@ class LadderUpdateInput(BaseModel):
     ladder_number_id: Optional[conint(ge=0, le=32767)] = None
     sort_priority: Optional[conint(ge=0, le=32767)] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "side_id": 1,
                 "ladder_number_id": 1,
                 "sort_priority": 1
             }
         }
+    )
 
 
 class LadderBaseOutput(BaseModel):
@@ -52,8 +54,8 @@ class LadderListOutput(LadderBaseOutput):
     ladder_number: Optional[LadderNumberDetailOutput] = None
     sort_priority: Optional[int] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "side_id": 1,
@@ -61,6 +63,7 @@ class LadderListOutput(LadderBaseOutput):
                 "sort_priority": 1
             }
         }
+    )
 
 
 class LadderDetailWriteOutput(LadderBaseOutput):
@@ -71,8 +74,8 @@ class LadderDetailWriteOutput(LadderBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "side_id": 1,
@@ -82,6 +85,7 @@ class LadderDetailWriteOutput(LadderBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )
 
 
 class OwnerNestedForLadderOutput(BaseModel):
@@ -126,8 +130,8 @@ class LadderDetailReadOutput(LadderBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "sort_priority": 1,
@@ -182,3 +186,4 @@ class LadderDetailReadOutput(LadderBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )

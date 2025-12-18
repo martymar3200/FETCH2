@@ -1,6 +1,6 @@
 # /code/app/schemas/shelving_jobs.py - REFACRORED TO PYDANTIC V2
 
-from pydantic import BaseModel, field_validator, computed_field, Field # <-- ADDED Field
+from pydantic import BaseModel, field_validator, computed_field, Field, ConfigDict
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
@@ -36,8 +36,8 @@ class ShelvingJobInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "Created",
                 "origin": "Verification",
@@ -51,6 +51,7 @@ class ShelvingJobInput(BaseModel):
                 ]
             }
         }
+    )
 
 
 class ShelvingJobUpdateInput(BaseModel):
@@ -68,8 +69,8 @@ class ShelvingJobUpdateInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "Created",
                 "user_id": 1,
@@ -77,6 +78,7 @@ class ShelvingJobUpdateInput(BaseModel):
                 "run_timestamp": "2023-10-08T20:46:56.764426"
             }
         }
+    )
 
 
 class ShelvingJobBaseOutput(BaseModel):
@@ -112,8 +114,8 @@ class ShelvingJobListOutput(ShelvingJobBaseOutput):
     def container_count(self) -> int:
         return self.tray_count + self.non_tray_item_count
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "status": "Created",
@@ -142,6 +144,7 @@ class ShelvingJobListOutput(ShelvingJobBaseOutput):
                 "container_count": 15
             }
         }
+    )
 
 
 class VerificationJobNestedForShelvingJob(BaseModel):
@@ -227,8 +230,8 @@ class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
             return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "status": "Created",
@@ -374,6 +377,7 @@ class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )
 
 
 class ReAssignmentInput(BaseModel):
@@ -389,8 +393,8 @@ class ReAssignmentInput(BaseModel):
     shelved_dt: Optional[datetime] = None
     scanned_for_shelving: Optional[bool] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "container_id": 1,
             "container_barcode_value": "yx233lnb",
             "trayed": True,
@@ -400,6 +404,7 @@ class ReAssignmentInput(BaseModel):
             "shelved_dt": "2023-10-08T20:46:56.764426",
             "scanned_for_shelving": True
         }
+    )
 
 
 class ReAssignmentOutput(BaseModel):
@@ -418,8 +423,8 @@ class ReAssignmentOutput(BaseModel):
     shelf_position: Optional[ShelfPositionNestedForShelvingJob] = None
     container_type: Optional[ContainerTypeDetailReadOutput] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "id": 1,
             "shelving_job_id": 1,
             "shelf_position_id": 242,
@@ -497,6 +502,7 @@ class ReAssignmentOutput(BaseModel):
                             }
             }
         }
+    )
 
 
 class ProposedReAssignmentInput(BaseModel):

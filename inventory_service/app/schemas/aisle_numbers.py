@@ -1,6 +1,6 @@
 # /code/app/schemas/aisle_numbers.py - REFACRORED TO PYDANTIC V2
 
-from pydantic import BaseModel, conint, Field # <-- ADDED Field
+from pydantic import BaseModel, conint, Field, ConfigDict # <-- ADDED Field
 from datetime import datetime, timezone
 from typing import List, Annotated # <-- ADDED Annotated
 
@@ -10,12 +10,13 @@ class AisleNumberInput(BaseModel):
     # SmallInteger in SQL is 32767 max
     number: Annotated[int, Field(ge=0, le=32767)]
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "number": 1
             }
         }
+    )
 
 
 class AisleNumberBaseOutput(BaseModel):
@@ -27,13 +28,14 @@ class AisleNumberListOutput(AisleNumberBaseOutput):
     id: int
     number: int
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "number": 1
             }
         }
+    )
 
 
 class AisleNumberDetailOutput(AisleNumberBaseOutput):
@@ -41,8 +43,8 @@ class AisleNumberDetailOutput(AisleNumberBaseOutput):
     update_dt: datetime
     aisles: list
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "number": 1,
@@ -66,3 +68,4 @@ class AisleNumberDetailOutput(AisleNumberBaseOutput):
                 ]
             }
         }
+    )

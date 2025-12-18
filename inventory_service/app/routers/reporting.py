@@ -10,7 +10,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 # CRITICAL FIX: Replaced from sqlmodel import Session, select
 from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
-from sqlalchemy import select, func, union_all, literal, and_, asc, desc
+from sqlalchemy import select, func, union_all, literal, and_, asc, desc, distinct
 from sqlalchemy.types import String
 from starlette.responses import StreamingResponse
 
@@ -751,7 +751,7 @@ def get_aisle_items_count(
 
     # Paginate and transform results into the schema
     # CRITICAL FIX: Paginate now takes only the query object
-    paginated_result = paginate(aisles_query)
+    paginated_result = paginate(session, aisles_query)
 
     # Map results into the output schema
     paginated_result.items = [
@@ -929,7 +929,7 @@ def get_non_tray_item_count(
             raise NotFound(detail="Size class not found")
 
     # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(get_non_tray_item_counts_query(params, sort_params))
+    return paginate(session, get_non_tray_item_counts_query(params, sort_params))
 
 
 @router.get("/non_tray_items/count/download", response_class=StreamingResponse)
@@ -1091,7 +1091,7 @@ def get_tray_item_count(
             raise NotFound(detail="Owners not found")
 
     # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(get_tray_item_counts_query(params, sort_params))
+    return paginate(session, get_tray_item_counts_query(params, sort_params))
 
 
 @router.get("/tray_items/count/download", response_class=StreamingResponse)

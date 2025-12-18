@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, field_validator, computed_field
+from pydantic import BaseModel, field_validator, computed_field, ConfigDict
 from datetime import timedelta, datetime
 
 from app.models.refile_jobs import RefileJobStatus
@@ -12,8 +12,8 @@ class RefileJobInput(BaseModel):
     created_by_id: Optional[int] = None
     barcode_values: list[str]
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "barcode_values": [
                     "1234567890",
@@ -23,6 +23,7 @@ class RefileJobInput(BaseModel):
                 ]
             }
         }
+    )
 
 
 class RefileJobUpdateInput(BaseModel):
@@ -40,8 +41,8 @@ class RefileJobUpdateInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "assigned_user_id": 1,
                 "created_by_id": 2,
@@ -49,6 +50,7 @@ class RefileJobUpdateInput(BaseModel):
                 "status": "Created"
             }
         }
+    )
 
 
 class RefileJobBaseOutput(BaseModel):
@@ -118,8 +120,8 @@ class RefileJobBaseOutput(BaseModel):
     def container_shelved_refiled_count(self) -> int:
         return self.item_shelved_refiled_count + self.non_tray_item_shelved_refiled_count
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "assigned_user_id": 1,
@@ -137,6 +139,7 @@ class RefileJobBaseOutput(BaseModel):
                 "update_dt": "2023-10-08T20:46:56.764426"
             }
         }
+    )
 
 
 class RefileJobListOutput(RefileJobBaseOutput):
@@ -145,8 +148,8 @@ class RefileJobListOutput(RefileJobBaseOutput):
     items: Optional[list] = None
     non_tray_items: Optional[list] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "assigned_user_id": 1,
@@ -224,6 +227,7 @@ class RefileJobListOutput(RefileJobBaseOutput):
                 "non_tray_item_shelved_refiled_count": 1
             }
         }
+    )
 
 
 class NestedShelfNumberForRefileJob(BaseModel):
@@ -317,8 +321,8 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
     non_tray_items: Optional[list[NonTrayNestedForRefileJob]] = None
     refile_job_items: Optional[list[NestedForRefileJob]] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "assigned_user_id": 1,
@@ -562,3 +566,4 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
                 "non_tray_item_shelved_refiled_count": 1
             }
         }
+    )

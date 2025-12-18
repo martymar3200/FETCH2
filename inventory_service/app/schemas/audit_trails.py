@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime, timezone
 
 
@@ -11,14 +11,15 @@ class AuditTrailBase(BaseModel):
     table_name: str
     record_id: str
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "table_name": "accession_jobs",
                 "record_id": "1"
             }
         }
+    )
 
 
 class AuditTrailListOutput(AuditTrailBase):
@@ -26,8 +27,8 @@ class AuditTrailListOutput(AuditTrailBase):
     updated_by: Optional[str] = "System Generated"
     updated_at: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "table_name": "accession_jobs",
@@ -37,6 +38,7 @@ class AuditTrailListOutput(AuditTrailBase):
                 "updated_at": "2023-10-08T20:46:56.764426"
             }
         }
+    )
 
 
 class AuditTrailDetailOutput(AuditTrailBase):
@@ -47,8 +49,8 @@ class AuditTrailDetailOutput(AuditTrailBase):
     original_values: Optional[dict] = None
     new_values: Optional[dict] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "table_name": "accession_jobs",
@@ -67,3 +69,4 @@ class AuditTrailDetailOutput(AuditTrailBase):
                 }
             }
         }
+    )

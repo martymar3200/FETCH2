@@ -3,7 +3,7 @@
 import uuid
 
 # All Pydantic V2 imports are correct
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
@@ -39,8 +39,8 @@ class AccessionJobInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "trayed": True,
                 "workflow_id": None,
@@ -54,6 +54,7 @@ class AccessionJobInput(BaseModel):
                 "container_type_id": 1
             }
         }
+    )
 
 
 class AccessionJobUpdateInput(BaseModel):
@@ -75,8 +76,8 @@ class AccessionJobUpdateInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "trayed": True,
                 "status": "Paused",
@@ -88,6 +89,7 @@ class AccessionJobUpdateInput(BaseModel):
                 "media_type_id": 1
             }
         }
+    )
 
 
 class AccessionJobBaseOutput(BaseModel):
@@ -110,8 +112,8 @@ class AccessionJobListOutput(AccessionJobBaseOutput):
     created_by: Optional[UserDetailReadOutput] = None
     create_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "workflow_id": 1,
@@ -140,6 +142,7 @@ class AccessionJobListOutput(AccessionJobBaseOutput):
                 }
             }
         }
+    )
 
 
 class ItemDetailNestedForAccessionJob(BaseModel):
@@ -248,8 +251,8 @@ class AccessionJobDetailOutput(AccessionJobBaseOutput):
             return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "workflow_id": 1,
@@ -332,3 +335,4 @@ class AccessionJobDetailOutput(AccessionJobBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )

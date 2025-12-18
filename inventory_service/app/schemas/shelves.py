@@ -1,7 +1,7 @@
 import uuid
 
 from typing import Optional, List
-from pydantic import BaseModel, conint, condecimal
+from pydantic import BaseModel, conint, condecimal, ConfigDict
 from datetime import datetime, timezone
 
 from app.schemas.owners import OwnerDetailReadOutput
@@ -24,8 +24,8 @@ class ShelfInput(BaseModel):
     depth: condecimal(decimal_places=2)
     barcode_id: uuid.UUID | None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "sort_priority": 1,
                 "ladder_id": 1,
@@ -40,6 +40,7 @@ class ShelfInput(BaseModel):
                 "barcode_id": "550e8400-e29b-41d4-a716-446655440001",
             }
         }
+    )
 
 
 class ShelfUpdateInput(BaseModel):
@@ -54,8 +55,8 @@ class ShelfUpdateInput(BaseModel):
     depth: Optional[condecimal(decimal_places=2)] = None
     barcode_id: Optional[uuid.UUID] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "sort_priority": 1,
                 "ladder_id": 1,
@@ -69,6 +70,7 @@ class ShelfUpdateInput(BaseModel):
                 "barcode_id": "550e8400-e29b-41d4-a716-446655440001"
             }
         }
+    )
 
 
 class NestedSizeClassDetailOutput(BaseModel):
@@ -119,8 +121,8 @@ class ShelfListOutput(ShelfBaseOutput):
     depth: Optional[float] = None
     barcode: Optional[BarcodeDetailReadOutput] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 10234,
                 "location": "Cabin Branch-1-52-L-23-3",
@@ -187,6 +189,7 @@ class ShelfListOutput(ShelfBaseOutput):
                 }
             }
         }
+    )
 
 
 class ShelfDetailWriteOutput(ShelfBaseOutput):
@@ -209,8 +212,8 @@ class ShelfDetailWriteOutput(ShelfBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 10234,
                 "location": "Cabin Branch-1-52-L-23-3",
@@ -298,6 +301,7 @@ class ShelfDetailWriteOutput(ShelfBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398",
             }
         }
+    )
 
 
 class ShelfPositionNumberNestedForShelf(BaseModel):
@@ -329,8 +333,8 @@ class ShelfDetailReadOutput(ShelfBaseOutput):
     update_dt: datetime
     shelf_positions: List[ShelfPositionNestedForShelf]
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 10234,
                 "location": "Cabin Branch-1-52-L-23-3",
@@ -413,3 +417,4 @@ class ShelfDetailReadOutput(ShelfBaseOutput):
                 ]
             }
         }
+    )

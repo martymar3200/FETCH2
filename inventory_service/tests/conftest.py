@@ -11,11 +11,115 @@ from sqlalchemy.orm import Session
 from sqlalchemy_utils import database_exists, create_database, drop_database
 
 from app.database.session import get_session
-from app.database.base import Base # Imported Base
+from app.database.base import Base
 from app.main import app
 
-# ... (omitted lines)
+# ... imports ...
+from tests.fixtures.configtest import (
+    ROOT_FILE_PATH,
+    CREATE_DATA_SAMPLER_FIXTURE,
+    DATA_RESPONSE,
+    UPDATE_DATA_SAMPLER_FIXTURE,
+    EMPTY_RESPONSE,
+    PAGE_EMPTY_RESPONSE,
+    SIZE_EMPTY_RESPONSE,
+    DATA_PAGE_RESPONSE,
+    DATA_SIZE_RESPONSE,
+    get_data_from_file,
+    generate_barcode_id,
+    populate_record,
+)
 
+# Define the Docker command to run the Postgres container
+DOCKER_RUN_COMMAND = (
+    f"docker compose -f {ROOT_FILE_PATH}/tests/test-docker-compose.yml up -d"
+)
+DOCKER_DOWN_COMMAND = (
+    f"docker compose -f {ROOT_FILE_PATH}/tests/test-docker-compose.yml down test_db"
+)
+DOCKER_CLEANUP_COMMAND = "docker system prune -fa"
+DOCKER_CLEANUP_VOLUME_COMMAND = "docker volume prune -fa"
+
+ALEMBIC_UPGRADE_COMMAND = "alembic upgrade head"
+TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/test_database"
+
+# Create a new database for testing
+engine = create_engine(TEST_DATABASE_URL)
+
+logger = logging.getLogger("tests.configtest")
+
+
+@pytest.fixture(scope="session")
+def init_db():
+    # ... (same content) ...
+    result = subprocess.run(
+        DOCKER_RUN_COMMAND.split(), check=True, capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        logging.error("Failed to start Docker container: %s", result.stderr)
+    else:
+        logging.info("Docker container started successfully.")
+
+    time.sleep(10)  # Wait for the database to be ready
+
+    yield
+
+    drop_database(engine.url)
+    subprocess.run(DOCKER_DOWN_COMMAND.split())
+    subprocess.run(DOCKER_CLEANUP_COMMAND.split())
+    subprocess.run(DOCKER_CLEANUP_VOLUME_COMMAND.split())
+
+
+@pytest.fixture(scope="module")
+def session():
+    """
+    Fixture that provides a session object for testing.
+    Yields:
+    - Session: The session object.
+    """
+    session = Session(engine)
+    yield session
+
+    # Close the session after the test is done
+    session.close()
+
+
+@pytest.fixture(name="client", scope="module")
+def client(session):
+    """
+    Fixture that returns a TestClient instance for testing FastAPI application.
+    Parameters:
+    - session: Session object for dependency injection.
+    Returns:
+    - TestClient: TestClient instance for testing.
+    """
+
+    # Dependency override for the session
+    def get_session_override():
+        return session
+
+    # Override the dependency with the test session
+    app.dependency_overrides[get_session] = get_session_override
+    client = TestClient(app)
+    yield client
+
+    # Clear overrides after the test is done
+    app.dependency_overrides.clear()
+
+
+
+@pytest.fixture(scope="module")
+def test_database(client, init_db):
+    """
+    Initialize and test the database.
+
+    Args :
+    - init_db: A boolean indicating whether to initialize the database.
+
+    Return:
+    - None
+    """
     if not database_exists(engine.url):
         create_database(engine.url)
 

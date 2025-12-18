@@ -1,7 +1,7 @@
 import uuid
 
 from typing import Optional, List
-from pydantic import BaseModel, conint, field_validator
+from pydantic import BaseModel, conint, field_validator, ConfigDict
 from datetime import datetime, timezone
 
 from app.models.requests import RequestStatus
@@ -33,8 +33,8 @@ class RequestInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "New",
                 "building_id": 1,
@@ -49,6 +49,7 @@ class RequestInput(BaseModel):
                 "requested_by_id": 1
             }
         }
+    )
 
 
 class RequestUpdateInput(BaseModel):
@@ -77,8 +78,8 @@ class RequestUpdateInput(BaseModel):
             )
         return value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "building_id": 1,
                 "barcode_value": "RS4321",
@@ -95,6 +96,7 @@ class RequestUpdateInput(BaseModel):
                 "fulfilled": False
             }
         }
+    )
 
 
 class RequestBaseOutput(BaseModel):
@@ -257,8 +259,8 @@ class RequestDetailWriteOutput(RequestBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "status": "New",
@@ -355,6 +357,7 @@ class RequestDetailWriteOutput(RequestBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398",
             }
         }
+    )
 
 
 # Some redundant nested classes solve circular resolution
@@ -503,8 +506,8 @@ class RequestListOutput(RequestBaseOutput):
 
 
 class RequestDetailReadOutput(RequestDetailWriteOutput):
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "status": "New",
@@ -583,9 +586,9 @@ class RequestDetailReadOutput(RequestDetailWriteOutput):
                             },
                             "shelf_position_number": {
                                 "number": 2
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 "pick_list": {
                     "id": 1,
@@ -599,6 +602,7 @@ class RequestDetailReadOutput(RequestDetailWriteOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )
 
 
 class RequestDetailReadOutputNoPickList(RequestBaseOutput):
@@ -611,8 +615,8 @@ class RequestDetailReadOutputNoPickList(RequestBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "status": "New",
@@ -706,3 +710,4 @@ class RequestDetailReadOutputNoPickList(RequestBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )

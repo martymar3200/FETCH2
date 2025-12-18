@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, conint, constr
+from pydantic import BaseModel, conint, constr, ConfigDict
 from datetime import datetime, timezone
 
 from app.schemas.barcodes import BarcodeDetailReadOutput
@@ -11,24 +11,26 @@ class ShelfPositionInput(BaseModel):
     shelf_position_number_id: conint(ge=0, le=9223372036854775807)
     shelf_id: conint(ge=0, le=2147483647)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "shelf_id": 1,
                 "shelf_position_number_id": 1,
             }
         }
+    )
 
 
 class ShelfPositionUpdateInput(BaseModel):
     shelf_position_number_id: Optional[conint(ge=0, le=9223372036854775807)] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "shelf_position_number_id": 1
             }
         }
+    )
 
 
 class ShelfPositionBaseReadOutput(BaseModel):
@@ -38,8 +40,8 @@ class ShelfPositionBaseReadOutput(BaseModel):
     location: Optional[str] = None
     internal_location: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "shelf_id": 1,
@@ -48,6 +50,7 @@ class ShelfPositionBaseReadOutput(BaseModel):
                 "internal_location": "01-04-57-L-23-10-08"
             }
         }
+    )
 
 
 class NestedShelfPositionNumberForShelvingPositionList(BaseModel):
@@ -57,8 +60,8 @@ class NestedShelfPositionNumberForShelvingPositionList(BaseModel):
 class ShelfPositionListOutput(ShelfPositionBaseReadOutput):
     shelf_position_number: NestedShelfPositionNumberForShelvingPositionList
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "shelf_id": 1,
@@ -68,6 +71,7 @@ class ShelfPositionListOutput(ShelfPositionBaseReadOutput):
                 }
             }
         }
+    )
 
 
 class ShelfPositionDetailWriteOutput(BaseModel):
@@ -79,8 +83,8 @@ class ShelfPositionDetailWriteOutput(BaseModel):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "shelf_id": 1,
@@ -91,6 +95,7 @@ class ShelfPositionDetailWriteOutput(BaseModel):
                 "update_dt": "2023-10-08T20:46:56.764398",
             }
         }
+    )
 
 
 class TrayNestedForShelfPositionOutput(BaseModel):
@@ -111,8 +116,8 @@ class ShelfPositionDetailReadOutput(ShelfPositionBaseReadOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "shelf_id": 1,
@@ -172,3 +177,4 @@ class ShelfPositionDetailReadOutput(ShelfPositionBaseReadOutput):
                 "update_dt": "2023-10-08T20:46:56.764398",
             }
         }
+    )

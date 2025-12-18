@@ -1,7 +1,7 @@
 import uuid
 
 from typing import Optional, List
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, conint, ConfigDict
 from datetime import datetime, timezone
 
 from app.schemas.owner_tiers import OwnerTierDetailOutput
@@ -12,14 +12,15 @@ class OwnerInput(BaseModel):
     owner_tier_id: int
     parent_owner_id: Optional[int] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Special Collection Directorate",
                 "owner_tier_id": 2,
                 "parent_owner_id": None,
             }
         }
+    )
 
 
 class OwnerUpdateInput(BaseModel):
@@ -27,14 +28,15 @@ class OwnerUpdateInput(BaseModel):
     owner_tier_id: Optional[int] = None
     parent_owner_id: Optional[int] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Special Collection Directorate",
                 "owner_tier_id": 2,
                 "parent_owner_id": 2,
             }
         }
+    )
 
 
 class OwnerBaseOutput(BaseModel):
@@ -59,8 +61,8 @@ class OwnerListOutput(OwnerBaseOutput):
     parent_owner: Optional[NestedParentOwnerDetailReadOutput] = None
     owner_tier: Optional[NestedOwnerTierDetailOutput] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "name": "Special Collection Directorate",
@@ -77,6 +79,7 @@ class OwnerListOutput(OwnerBaseOutput):
                 }
             }
         }
+    )
 
 
 class OwnerDetailWriteOutput(OwnerBaseOutput):
@@ -85,8 +88,8 @@ class OwnerDetailWriteOutput(OwnerBaseOutput):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "name": "Special Collection Directorate",
@@ -105,6 +108,7 @@ class OwnerDetailWriteOutput(OwnerBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )
 
 
 class OwnerDetailReadOutput(OwnerBaseOutput):
@@ -115,8 +119,8 @@ class OwnerDetailReadOutput(OwnerBaseOutput):
     update_dt: datetime
     # TODO serialize shelf list without recursion (don't reuse this class)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "name": "Special Collection Directorate",
@@ -149,3 +153,4 @@ class OwnerDetailReadOutput(OwnerBaseOutput):
                 "update_dt": "2023-10-08T20:46:56.764398"
             }
         }
+    )

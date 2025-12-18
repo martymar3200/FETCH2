@@ -2,7 +2,7 @@
 
 import uuid
 
-from pydantic import BaseModel, Field # <-- ADDED Field
+from pydantic import BaseModel, Field, ConfigDict # <-- ADDED Field
 from datetime import datetime, timezone
 from typing import Optional, List, Annotated # <-- ADDED Annotated
 
@@ -19,8 +19,8 @@ class AisleInput(BaseModel):
     module_id: Optional[Annotated[int, Field(ge=0, le=32767)]] = None
     sort_priority: Optional[Annotated[int, Field(ge=0, le=32767)]] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "aisle_number_id": 1,
                 "aisle_number": None,
@@ -28,6 +28,7 @@ class AisleInput(BaseModel):
                 "sort_priority": 1
             }
         }
+    )
 
 
 class AisleUpdateInput(BaseModel):
@@ -38,14 +39,15 @@ class AisleUpdateInput(BaseModel):
     # CRITICAL V2 FIX
     sort_priority: Optional[Annotated[int, Field(ge=0, le=32767)]] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "aisle_number_id": 1,
                 "module_id": 1,
                 "sort_priority": 1
             }
         }
+    )
 
 
 class AisleBaseReadOutput(BaseModel):
@@ -67,8 +69,8 @@ class AisleListOutput(AisleBaseReadOutput):
     module: ModuleCustomDetailReadOutput | None
     aisle_number: AisleNumberBaseOutput
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "aisle_number_id": 1,
@@ -90,6 +92,7 @@ class AisleListOutput(AisleBaseReadOutput):
                 ]
             }
         }
+    )
 
 
 class AisleDetailWriteOutput(BaseModel):
@@ -100,8 +103,8 @@ class AisleDetailWriteOutput(BaseModel):
     create_dt: datetime
     update_dt: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "aisle_number_id": 1,
@@ -111,6 +114,7 @@ class AisleDetailWriteOutput(BaseModel):
                 "update_dt": "2023-10-08T20:46:56.764398",
             }
         }
+    )
 
 
 class AisleDetailReadOutput(BaseModel):
@@ -122,8 +126,8 @@ class AisleDetailReadOutput(BaseModel):
     aisle_number: AisleNumberBaseOutput
     sides: List[SideNestedForAisle]
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "number": 1,
@@ -148,3 +152,4 @@ class AisleDetailReadOutput(BaseModel):
                 ]
             }
         }
+    )
