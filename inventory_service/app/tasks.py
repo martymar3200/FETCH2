@@ -1,185 +1,4 @@
-# /code/app/tasks.py - FINAL FIX (Replaced session.exec with session.execute)
-
-from sqlalchemy.orm import Session
-from sqlalchemy import select, update, delete
-from datetime import datetime, timezone
-from typing import List, Optional, Any
-
-from app.config.exceptions import NotFound
-from app.logger import inventory_logger
-from app.events import update_shelf_space_after_tray, update_shelf_space_after_non_tray
-from app.models.accession_jobs import AccessionJob
-from app.models.shelf_positions import ShelfPosition
-from app.models.shelf_types import ShelfType
-from app.models.shelves import Shelf
-from app.models.size_class import SizeClass
-from app.models.verification_changes import VerificationChange
-from app.models.verification_jobs import VerificationJob
-from app.models.trays import Tray
-from app.models.non_tray_items import NonTrayItem
-from app.models.items import Item
-from app.models.barcodes import Barcode
-from app.models.workflows import Workflow
-from app.database.session import commit_record, session_manager
-from app.schemas.verification_jobs import VerificationJobInput
-from app.utilities import start_session_with_audit_info
-
-
-def complete_accession_job(accession_job_id: int, original_status: str, audit_info: dict):
-    """
-    Upon accession job completion:
-        - Generate a related verification job
-        - Associate accessioned entities to the new verification job
-        - Set accessioned entity ownership to accession job owner
-        - Updates accession job run time
-    """
-    with session_manager() as session:
-        start_session_with_audit_info(audit_info, session)
-        
-        # CRITICAL FIX: Re-fetch the object in the current session
-        accession_job = session.get(AccessionJob, accession_job_id)
-        if not accession_job:
-            inventory_logger.error(f"Background Task Error: AccessionJob {accession_job_id} not found.")
-            return
-
-        if original_status == "Running":
-            # Handle potential NoneType for last_transition
-            if accession_job.last_transition:
-                time_difference = datetime.now(timezone.utc) - accession_job.last_transition
-                accession_job.run_time += time_difference
-
-        accession_job.last_transition = datetime.now(timezone.utc)
-        commit_record(session, accession_job)
-
-        verification_job_input = VerificationJobInput(
-            accession_job_id=accession_job.id,
-            workflow_id=accession_job.workflow_id,
-            trayed=accession_job.trayed,
-            owner_id=accession_job.owner_id,
-            size_class_id=accession_job.size_class_id,
-            media_type_id=accession_job.media_type_id,
-            container_type_id=accession_job.container_type_id,
-            user_id=accession_job.user_id,
-            created_by_id=accession_job.created_by_id,
-            status="Created",
-        )
-
-        new_verification_job = VerificationJob(**verification_job_input.model_dump())
-        new_verification_job = commit_record(session, new_verification_job)
-
-        # Update Tray Records
-        tray_query = select(Tray).where(Tray.accession_job_id == accession_job.id)
-        # FIX: session.exec() -> session.execute().scalars().all()
-        trays = session.execute(tray_query).scalars().all()
-        
-        if trays:
-            updated_trays = []
-            for tray in trays:
-                tray.verification_job_id = new_verification_job.id
-                tray.owner_id = accession_job.owner_id
-                tray.scanned_for_accession = True
-                updated_trays.append(tray)
-            session.add_all(updated_trays)
-
-        # Update Non Tray Item Records
-        non_tray_query = select(NonTrayItem).where(
-            NonTrayItem.accession_job_id == accession_job.id
-        )
-        # FIX: session.exec() -> session.execute().scalars().all()
-        non_trays_items = session.execute(non_tray_query).scalars().all()
-        
-        if non_trays_items:
-            updated_non_trays_items = []
-            for non_tray_item in non_trays_items:
-                non_tray_item.verification_job_id = new_verification_job.id
-                non_tray_item.owner_id = accession_job.owner_id
-                non_tray_item.scanned_for_accession = True
-                updated_non_trays_items.append(non_tray_item)
-            session.add_all(updated_non_trays_items)
-
-        # Update Item Records
-        item_query = select(Item).where(Item.accession_job_id == accession_job.id)
-        # FIX: session.exec() -> session.execute().scalars().all()
-        items = session.execute(item_query).scalars().all()
-        
-        if items:
-            updated_items = []
-            for item in items:
-                item.verification_job_id = new_verification_job.id
-                item.owner_id = accession_job.owner_id
-                item.scanned_for_accession = True
-                updated_items.append(item)
-            session.add_all(updated_items)
-
-        session.commit()
-
-
-def complete_verification_job(verification_job: VerificationJob, audit_info: dict):
-    with session_manager() as session:
-        start_session_with_audit_info(audit_info, session)
-        
-        # FIX: Use session.execute(update(...))
-        session.execute(
-            update(VerificationJob)
-            .where(VerificationJob.id == verification_job.id)
-            .values(last_transition=datetime.now(timezone.utc))
-        )
-        
-        tray_query = select(Tray).where(Tray.verification_job_id == verification_job.id)
-        # FIX: session.exec() -> session.execute().scalars().all()
-        trays = session.execute(tray_query).scalars().all()
-        if trays:
-            for tray in trays:
-                tray.owner_id = verification_job.owner_id
-                session.add(tray)
-
-        non_tray_query = select(NonTrayItem).where(
-            NonTrayItem.verification_job_id == verification_job.id
-        )
-        # FIX: session.exec() -> session.execute().scalars().all()
-        non_trays_items = session.execute(non_tray_query).scalars().all()
-        if non_trays_items:
-            for non_tray_item in non_trays_items:
-                non_tray_item.owner_id = verification_job.owner_id
-                session.add(non_tray_item)
-
-        item_query = select(Item).where(Item.verification_job_id == verification_job.id)
-        # FIX: session.exec() -> session.execute().scalars().all()
-        items = session.execute(item_query).scalars().all()
-        if items:
-            for item in items:
-                item.owner_id = verification_job.owner_id
-                session.add(item)
-
-        session.commit()
-
-
-def manage_accession_job_transition(
-    accession_job_id: int, original_status: str, audit_info: dict
-):
-    with session_manager() as session:
-        start_session_with_audit_info(audit_info, session)
-        
-        # CRITICAL FIX: Re-fetch
-        accession_job = session.get(AccessionJob, accession_job_id)
-        if not accession_job:
-             return
-
-        if original_status == "Running":
-            if accession_job.status != "Running":
-                if accession_job.last_transition:
-                    time_difference = datetime.now(timezone.utc) - accession_job.last_transition
-                    accession_job.run_time += time_difference
-        
-        if original_status != accession_job.status:
-            accession_job.last_transition = datetime.now(timezone.utc)
-
-        commit_record(session, accession_job)
-
-        if accession_job.status == "Cancelled":
-            defunct_barcodes = []
-
-            # Delete Accessioned Items# /code/app/tasks.py - FINAL DEBUG VERSION
+# /code/app/tasks.py - FINAL DEBUG VERSION
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update, delete
@@ -193,13 +12,15 @@ from app.events import update_shelf_space_after_tray, update_shelf_space_after_n
 from app.models.accession_jobs import AccessionJob
 from app.models.shelf_positions import ShelfPosition
 from app.models.shelf_types import ShelfType
+from app.models.shelving_jobs import ShelvingJob
 from app.models.shelves import Shelf
 from app.models.size_class import SizeClass
 from app.models.verification_changes import VerificationChange
 from app.models.verification_jobs import VerificationJob
 from app.models.trays import Tray
-from app.models.non_tray_items import NonTrayItem
-from app.models.items import Item
+from app.models.trays import Tray
+from app.models.non_tray_items import NonTrayItem, NonTrayItemStatus
+from app.models.items import Item, ItemStatus
 from app.models.barcodes import Barcode
 from app.models.workflows import Workflow
 from app.database.session import commit_record, session_manager
@@ -334,6 +155,8 @@ def complete_verification_job(verification_job_id: int, audit_info: dict):
             if non_trays_items:
                 for non_tray_item in non_trays_items:
                     non_tray_item.owner_id = verification_job.owner_id
+                    if non_tray_item.status == NonTrayItemStatus.Accessioned:
+                         non_tray_item.status = NonTrayItemStatus.Verified
                     session.add(non_tray_item)
 
             item_query = select(Item).where(Item.verification_job_id == verification_job.id)
@@ -341,11 +164,13 @@ def complete_verification_job(verification_job_id: int, audit_info: dict):
             if items:
                 for item in items:
                     item.owner_id = verification_job.owner_id
+                    if item.status == ItemStatus.Accessioned:
+                         item.status = ItemStatus.Verified
                     session.add(item)
 
             session.commit()
     except Exception as e:
-        print(f"Error in complete_verification_job: {e}")
+        inventory_logger.error(f"Error in complete_verification_job: {e}")
 
 
 def manage_accession_job_transition(
@@ -816,3 +641,34 @@ def manage_verification_job_change_action(verification_job: VerificationJob, upd
             session.add_all(new_verification_changes)
         
         session.commit()
+
+
+def complete_shelving_job(shelving_job_id: int, audit_info: dict):
+    try:
+        with session_manager() as session:
+            start_session_with_audit_info(audit_info, session)
+            
+            shelving_job = session.get(ShelvingJob, shelving_job_id)
+            if not shelving_job:
+                 return
+
+            session.execute(
+                update(ShelvingJob)
+                .where(ShelvingJob.id == shelving_job.id)
+                .values(last_transition=datetime.now(timezone.utc))
+            )
+            
+            if shelving_job.trays:
+                for tray in shelving_job.trays:
+                    for item in tray.items:
+                        item.status = ItemStatus.In
+                        session.add(item)
+            
+            if shelving_job.non_tray_items:
+                for non_tray_item in shelving_job.non_tray_items:
+                    non_tray_item.status = NonTrayItemStatus.In
+                    session.add(non_tray_item)
+
+            session.commit()
+    except Exception as e:
+        inventory_logger.error(f"Error in complete_shelving_job: {e}")

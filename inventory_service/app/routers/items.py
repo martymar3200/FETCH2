@@ -21,7 +21,7 @@ from app.events import update_shelf_space_after_tray
 from app.filter_params import SortParams, ItemFilterParams
 from app.logger import inventory_logger
 from app.models.barcodes import Barcode
-from app.models.items import Item
+from app.models.items import Item, ItemStatus
 from app.models.media_types import MediaType
 from app.models.move_discrepancies import MoveDiscrepancy
 from app.models.non_tray_items import NonTrayItem
@@ -247,6 +247,9 @@ def create_item(item_input: ItemInput, session: Session = Depends(get_session)):
     # accession is how items are created. Set accession_dt
     if not new_item.accession_dt:
         new_item.accession_dt = datetime.now(timezone.utc)
+    
+    # Set default status to Accessioned for new items
+    new_item.status = ItemStatus.Accessioned
 
     # check if existing withdrawn item with this barcode
     # V2 FIX: session.exec().first() -> session.execute(select(...)).scalars().first()

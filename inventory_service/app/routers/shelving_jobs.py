@@ -25,6 +25,7 @@ from app.utilities import (
     manage_transition,
     start_session_with_audit_info,
 )
+from app.tasks import complete_shelving_job
 from app.models.verification_jobs import VerificationJob, VerificationJobStatus
 from app.models.trays import Tray
 from app.models.non_tray_items import NonTrayItem
@@ -271,6 +272,7 @@ def update_shelving_job(
     id: int,
     shelving_job: ShelvingJobUpdateInput,
     session: Session = Depends(get_session),
+    background_tasks: BackgroundTasks = None,
 ):
     """
     Update an existing shelving job with the provided data.
@@ -294,6 +296,14 @@ def update_shelving_job(
             setattr(existing_shelving_job, key, value)
 
         setattr(existing_shelving_job, "update_dt", datetime.now(timezone.utc))
+
+        if mutated_data.get("status") == "Completed":
+            audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"}).copy()
+            background_tasks.add_task(
+                complete_shelving_job,
+                existing_shelving_job.id,
+                audit_info=audit_info
+            )
 
         session.add(existing_shelving_job)
         session.commit()

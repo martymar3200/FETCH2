@@ -21,7 +21,7 @@ from app.filter_params import SortParams
 from app.logger import inventory_logger
 from app.models.media_types import MediaType
 from app.models.move_discrepancies import MoveDiscrepancy
-from app.models.non_tray_items import NonTrayItem
+from app.models.non_tray_items import NonTrayItem, NonTrayItemStatus
 from app.models.barcodes import Barcode
 from app.models.container_types import ContainerType
 from app.models.owners import Owner
@@ -239,10 +239,14 @@ def create_non_tray_item(
         .scalars()
         .first()
     )
+    new_non_tray_item.withdrawal_dt = None
     new_non_tray_item.container_type_id = container_type.id
     # non-trays are created in accession, set accession date
     if not new_non_tray_item.accession_dt:
         new_non_tray_item.accession_dt = datetime.now(timezone.utc)
+
+    # Set default status to Accessioned for new non-tray items
+    new_non_tray_item.status = NonTrayItemStatus.Accessioned
     # check if existing withdrawn non-tray with this barcode
     # V2 FIX: session.exec().first() -> session.execute(select(...)).scalars().first()
     previous_non_tray_item = session.execute(

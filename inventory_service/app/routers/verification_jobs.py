@@ -301,7 +301,7 @@ def update_verification_job(
             audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"}).copy()
             background_tasks.add_task(
                 complete_verification_job,
-                existing_verification_job,
+                existing_verification_job.id,
                 audit_info=audit_info
             )
             session.refresh(existing_verification_job)
@@ -426,10 +426,16 @@ def add_item_to_verification_job(
         raise NotFound(detail=f"Item with barcode value {input.barcode_value} Not "
                               f"Found")
     if tray:
+        tray.scanned_for_verification = True
+        session.add(tray)
+        
         new_verification_changes = []
         items = tray.items
         if items:
             for item in items:
+                item.scanned_for_verification = True
+                session.add(item)
+                
                 item_barcode = session.get(Barcode, item.barcode_id)
                 new_verification_changes.append(VerificationChange(
                     workflow_id=verification_job.workflow_id,
@@ -441,6 +447,9 @@ def add_item_to_verification_job(
         session.bulk_save_objects(new_verification_changes)
         session.commit()
     elif item:
+        item.scanned_for_verification = True
+        session.add(item)
+        
         # V2 FIX
         tray_barcode = session.execute(select(Barcode).join(Tray, Barcode.id == Tray.barcode_id).filter(Tray.id == item.tray_id)).scalars().first()
         new_verification_change = VerificationChange(
@@ -452,6 +461,9 @@ def add_item_to_verification_job(
         )
         commit_record(session, new_verification_change)
     else:
+        non_tray_item.scanned_for_verification = True
+        session.add(non_tray_item)
+        
         new_verification_change = VerificationChange(
             workflow_id=verification_job.workflow_id,
             item_barcode_value=barcode.value,
@@ -505,10 +517,16 @@ def remove_item_from_verification_job(
         raise NotFound(detail=f"Item with barcode value {input.barcode_value} Not "
                               f"Found")
     if tray:
+        tray.scanned_for_verification = False
+        session.add(tray)
+        
         new_verification_changes = []
         items = tray.items
         if items:
             for item in items:
+                item.scanned_for_verification = False
+                session.add(item)
+                
                 item_barcode = session.get(Barcode, item.barcode_id)
                 new_verification_changes.append(VerificationChange(
                     workflow_id=verification_job.workflow_id,
@@ -520,6 +538,9 @@ def remove_item_from_verification_job(
         session.bulk_save_objects(new_verification_changes)
         session.commit()
     elif item:
+        item.scanned_for_verification = False
+        session.add(item)
+        
         # V2 FIX
         tray_barcode = session.execute(select(Barcode).join(Tray, Barcode.id == Tray.barcode_id).filter(Tray.id == item.tray_id)).scalars().first()
         new_verification_change = VerificationChange(
@@ -531,6 +552,9 @@ def remove_item_from_verification_job(
         )
         commit_record(session, new_verification_change)
     else:
+        non_tray_item.scanned_for_verification = False
+        session.add(non_tray_item)
+        
         new_verification_change = VerificationChange(
             workflow_id=verification_job.workflow_id,
             item_barcode_value=barcode.value,

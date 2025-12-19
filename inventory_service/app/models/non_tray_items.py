@@ -46,6 +46,8 @@ class NonTrayItemStatus(str, Enum):
     Requested = "Requested"
     PickList = "PickList"
     Withdrawn = "Withdrawn"
+    Accessioned = "Accessioned"
+    Verified = "Verified"
 
 
 class NonTrayItem(Base): 
