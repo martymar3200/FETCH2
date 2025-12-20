@@ -218,6 +218,7 @@ const reportOptions =  ref([
   'Tray/Item Count By Aisle',
   'User Job Summary',
   'Verification Change',
+  'Verification Status',
   // ======================================================
   // ========= START: ADD NEW OPTION TO DROPDOWN ==========
   // ======================================================
@@ -800,6 +801,44 @@ const generateReportTableFields = (qParams) => {
         'item_barcode',
         'tray_barcode',
         'action'
+      ]
+      break
+    case 'Verification Status':
+      generatedTableColumns.value = [
+        {
+          name: 'barcode',
+          field: 'barcode',
+          label: 'Barcode',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'owner',
+          field: 'owner',
+          label: 'Owner',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'verification_job_id',
+          field: 'verification_job_id',
+          label: 'Verification Job #',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'verification_dt',
+          field: 'verification_dt',
+          label: 'Verification Date',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'barcode',
+        'owner',
+        'verification_job_id',
+        'verification_dt'
       ]
       break
     default:

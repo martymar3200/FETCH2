@@ -553,9 +553,28 @@ class MoveDiscrepancyParams:
             default=None, description="End created date to " "filter by."
         ),
     ):
-        self.assigned_user_id = assigned_user_id
-        self.owner_id = owner_id
         self.size_class_id = size_class_id
         self.container_type_id = container_type_id
         self.from_dt = from_dt
         self.to_dt = to_dt
+
+
+class VerificationReportParams:
+    """
+    Query params for Verification Status Report.
+    """
+    def __init__(
+        self,
+        from_dt: datetime = Query(
+            default=None, description="Start date to filter by."
+        ),
+        to_dt: datetime = Query(
+            default=None, description="End date to filter by."
+        ),
+        container_type: str = Query(
+            default="Tray", description="Container Type (Tray or Non-Tray)."
+        )
+    ):
+        self.from_dt = from_dt
+        self.to_dt = to_dt
+        self.container_type = container_type

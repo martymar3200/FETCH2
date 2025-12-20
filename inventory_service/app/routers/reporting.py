@@ -76,16 +76,39 @@ from app.schemas.reporting import (
 )
 from app.config.exceptions import NotFound, BadRequest, InternalServerError
 from app.sorting import (
-    BaseSorter,
-    OpenLocationsSorter,
-    AisleItemsCountSorter,
-    NonTrayItemCountSorter,
-    TrayItemCountSorter,
-    VerificationChangeSorter,
     RetrievalItemCountSorter,
     ShelvingJobDiscrepancySorter,
     MoveDiscrepancySorter,
 )
+from app.filter_params import (
+    SortParams,
+    ShelvingJobDiscrepancyParams,
+    OpenLocationParams,
+    AccessionedItemsParams,
+    AisleItemsCountParams,
+    NonTrayItemsCountParams,
+    TrayItemCountParams,
+    UserJobItemsCountParams,
+    VerificationChangesParams,
+    RetrievalCountParams,
+    MoveDiscrepancyParams,
+    VerificationReportParams,
+)
+from app.schemas.reporting import (
+    AccessionItemsDetailOutput,
+    ShelvingJobDiscrepancyOutput,
+    OpenLocationsOutput,
+    AisleDetailReportItemCountOutput,
+    NonTrayItemCountReadOutput,
+    TrayItemCountReadOutput,
+    UserJobItemCountReadOutput,
+    VerificationChangesOutput,
+    RetrievalItemCountReadOutput,
+    MoveDiscrepancyOutput,
+    VerificationStatusReportOutput,
+)
+from app.models.items import ItemStatus
+from app.models.non_tray_items import NonTrayItemStatus
 
 router = APIRouter(
     prefix="/reporting",
@@ -1983,6 +2006,112 @@ def get_move_report_csv(
         output,
         media_type="text/csv",
         headers={
-            "Content-Disposition": "attachment; filename=shelving_discrepancies.csv"
+            "Content-Disposition": "attachment; filename=move_discrepancies.csv"
+        },
+    )
+
+
+def get_verification_status_query(params: VerificationReportParams):
+    if params.container_type == "Tray":
+        query = (
+            select(
+                Barcode.value.label("barcode"),
+                Owner.name.label("owner"),
+                VerificationJob.id.label("verification_job_id"),
+                VerificationJob.update_dt.label("verification_dt"),
+            )
+            .select_from(Tray)
+            .join(Item, Item.tray_id == Tray.id)
+            .join(VerificationJob, Item.verification_job_id == VerificationJob.id)
+            .join(Barcode, Tray.barcode_id == Barcode.id)
+            .join(Owner, Tray.owner_id == Owner.id)
+            .where(
+                Item.status == ItemStatus.Verified,
+                VerificationJob.status == "Completed",
+            )
+            .distinct(Tray.id)
+        )
+    else:
+        # Non-Tray
+        query = (
+            select(
+                Barcode.value.label("barcode"),
+                Owner.name.label("owner"),
+                VerificationJob.id.label("verification_job_id"),
+                VerificationJob.update_dt.label("verification_dt"),
+            )
+            .select_from(NonTrayItem)
+            .join(VerificationJob, NonTrayItem.verification_job_id == VerificationJob.id)
+            .join(Barcode, NonTrayItem.barcode_id == Barcode.id)
+            .join(Owner, NonTrayItem.owner_id == Owner.id)
+            .where(
+                NonTrayItem.status == NonTrayItemStatus.Verified,
+                VerificationJob.status == "Completed",
+            )
+        )
+
+    if params.from_dt:
+        query = query.where(VerificationJob.update_dt >= params.from_dt)
+    if params.to_dt:
+        query = query.where(VerificationJob.update_dt <= params.to_dt)
+
+    return query
+
+
+@router.get("/verification-status", response_model=Page[VerificationStatusReportOutput])
+def get_verification_status_report(
+    session: Session = Depends(get_session),
+    params: VerificationReportParams = Depends(),
+) -> list:
+    """
+    Get a paginated list of verification status items.
+    """
+    query = get_verification_status_query(params)
+    return paginate(session, query)
+
+
+@router.get("/verification-status/download", response_class=StreamingResponse)
+def get_verification_status_download_csv(
+    session: Session = Depends(get_session),
+    params: VerificationReportParams = Depends(),
+):
+    query = get_verification_status_query(params)
+
+    def generate_csv():
+        output = StringIO()
+        writer = csv.writer(output)
+        # Write header row
+        writer.writerow(
+            [
+                "Barcode",
+                "Owner",
+                "Verification Job #",
+                "Verification Date",
+            ]
+        )
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        # Execute query
+        for row in session.execute(query):
+            writer.writerow(
+                [
+                    row.barcode,
+                    row.owner,
+                    row.verification_job_id,
+                    row.verification_dt,
+                ]
+            )
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    # Create a StreamingResponse
+    return StreamingResponse(
+        generate_csv(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=verification_status.csv"
         },
     )

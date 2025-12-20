@@ -819,6 +819,40 @@ const generateReportModal = () => {
         }
       ]
       break
+    case 'Verification Status':
+      reportForm.value = {
+        from_dt: null,
+        to_dt: null,
+        container_type: 'Tray'
+      }
+      reportParams.value = [
+        {
+          query: 'from_dt',
+          label: 'Date (From)'
+        },
+        {
+          query: 'to_dt',
+          label: 'Date (To)'
+        },
+        {
+          query: 'container_type',
+          label: 'Container Type',
+          options: [
+            {
+              label: 'Tray',
+              value: 'Tray'
+            },
+            {
+              label: 'Non-Tray',
+              value: 'Non-Tray'
+            }
+          ],
+          optionValue: 'value',
+          optionLabel: 'label',
+          required: true
+        }
+      ]
+      break
     case 'Tray/Item Count By Aisle':
       reportForm.value = {
         building_id: null, // required

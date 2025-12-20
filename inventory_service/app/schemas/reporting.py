@@ -394,3 +394,22 @@ class MoveDiscrepancyOutput(MoveDiscrepancyBaseOutput):
             }
         }
     )
+
+
+class VerificationStatusReportOutput(BaseModel):
+    barcode: str
+    owner: str
+    verification_job_id: int
+    verification_dt: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "barcode": "12345",
+                "owner": "Bilbo Baggins",
+                "verification_job_id": 1,
+                "verification_dt": "2023-10-08T20:46:56.764426",
+            }
+        }
+    )

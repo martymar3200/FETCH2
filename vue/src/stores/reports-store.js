@@ -16,15 +16,16 @@ export const useReportsStore = defineStore('reports-store', {
     generateReportEndpoint (reportType) {
       const endpointMap = {
         'Item Accession': inventoryServiceApi.reportingAccessionItems,
-        'Shelving Job Discrepancy':inventoryServiceApi.reportingShelvingDiscrepancies,
-        'Shelving Move Discrepancy':inventoryServiceApi.reportingMoveDiscrepancies,
+        'Shelving Job Discrepancy': inventoryServiceApi.reportingShelvingDiscrepancies,
+        'Shelving Move Discrepancy': inventoryServiceApi.reportingMoveDiscrepancies,
         'Open Locations': inventoryServiceApi.reportingOpenLocations,
         'Tray/Item Count By Aisle': inventoryServiceApi.reportingAislesItemsCount,
         'Non-Tray Count': inventoryServiceApi.reportingNonTrayItemsCount,
         'Total Item Retrieved': inventoryServiceApi.reportingRetrievalsCount,
         'Item in Tray': inventoryServiceApi.reportingTrayItemsCount,
         'User Job Summary': inventoryServiceApi.reportingUserJobsCount,
-        'Verification Change': inventoryServiceApi.reportingVerificationChangesSummary
+        'Verification Change': inventoryServiceApi.reportingVerificationChangesSummary,
+        'Verification Status': inventoryServiceApi.reportingVerificationStatus
       }
 
       return endpointMap[reportType] || null
@@ -39,7 +40,7 @@ export const useReportsStore = defineStore('reports-store', {
               size: this.apiPageSizeDefault,
               ...paramsObj
             }
-          } )
+          })
           this.reportData = res.data.items // Store the report data
           this.reportDataTotal = res.data.total // keep track of response total for pagination
           this.reportQueryParams = paramsObj // Remember the query params for download
