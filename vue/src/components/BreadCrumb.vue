@@ -161,6 +161,36 @@ const breadcrumbList = computed(() => {
         { text: 'Manage Shelf Type' }
       ]
       break
+    case 'admin-manage-priority':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Admin',
+          to: '/admin'
+        },
+        { text: 'Manage Priority' }
+      ]
+      break
+    case 'admin-manage-delivery-location':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Admin',
+          to: '/admin'
+        },
+        { text: 'Manage Delivery Location' }
+      ]
+      break
+    case 'admin-manage-request-type':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Admin',
+          to: '/admin'
+        },
+        { text: 'Manage Request Type' }
+      ]
+      break
     case 'admin-location-manage-buildings':
       breadCrumbs = [
         ...breadCrumbs,

@@ -87,22 +87,35 @@ const adminLinkList = computed(() => {
       sublinks: [
         {
           title: 'Add/Edit/Remove Owners',
-          hidden: !checkUserPermission('can_manage_owners')
+          hidden: !checkUserPermission('can_manage_list_configurations')
         },
+
         {
           title: 'Add/Edit/Remove Media Type',
-          hidden: !checkUserPermission('can_manage_media_type')
+          hidden: !checkUserPermission('can_manage_list_configurations')
         },
         {
           title: 'Add/Edit/Remove Size Class',
-          hidden: !checkUserPermission('can_manage_size_class')
+          hidden: !checkUserPermission('can_manage_list_configurations')
         },
         {
           title: 'Add/Edit/Remove Shelf Type',
-          hidden: !checkUserPermission('can_manage_shelf_type')
+          hidden: !checkUserPermission('can_manage_list_configurations')
+        },
+        {
+          title: 'Add/Edit/Remove Priority',
+          hidden: !checkUserPermission('can_manage_list_configurations')
+        },
+        {
+          title: 'Add/Edit/Remove Delivery Location',
+          hidden: !checkUserPermission('can_manage_list_configurations')
+        },
+        {
+          title: 'Add/Edit/Remove Request Type',
+          hidden: !checkUserPermission('can_manage_list_configurations')
         }
       ],
-      hidden: !(checkUserPermission('can_manage_size_class') || checkUserPermission('can_manage_owners') || checkUserPermission('can_manage_media_type') || checkUserPermission('can_manage_shelf_type'))
+      hidden: !checkUserPermission('can_manage_list_configurations')
     },
     {
       title: 'Location Manager',
@@ -169,6 +182,15 @@ const handleRouting = (link) => {
       break
     case 'Add/Edit/Remove Shelf Type':
       router.push({ name: 'admin-manage-shelf-type' })
+      break
+    case 'Add/Edit/Remove Priority':
+      router.push({ name: 'admin-manage-priority' })
+      break
+    case 'Add/Edit/Remove Delivery Location':
+      router.push({ name: 'admin-manage-delivery-location' })
+      break
+    case 'Add/Edit/Remove Request Type':
+      router.push({ name: 'admin-manage-request-type' })
       break
     default:
       showLocationManageRouteModal.value = link.title

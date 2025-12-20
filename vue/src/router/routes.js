@@ -98,7 +98,7 @@ const routes = [
         component: () => import('@/pages/AdminPage.vue'),
         meta: {
           requiresAuth: true,
-          requiresPerm: 'can_manage_owners'
+          requiresPerm: 'can_manage_list_configurations'
         }
       },
       {
@@ -116,7 +116,7 @@ const routes = [
         component: () => import('@/pages/AdminPage.vue'),
         meta: {
           requiresAuth: true,
-          requiresPerm: 'can_manage_media_type'
+          requiresPerm: 'can_manage_list_configurations'
         }
       },
       {
@@ -125,7 +125,7 @@ const routes = [
         component: () => import('@/pages/AdminPage.vue'),
         meta: {
           requiresAuth: true,
-          requiresPerm: 'can_manage_size_class'
+          requiresPerm: 'can_manage_list_configurations'
         }
       },
       {
@@ -134,7 +134,34 @@ const routes = [
         component: () => import('@/pages/AdminPage.vue'),
         meta: {
           requiresAuth: true,
-          requiresPerm: 'can_manage_shelf_type'
+          requiresPerm: 'can_manage_list_configurations'
+        }
+      },
+      {
+        name: 'admin-manage-priority',
+        path: 'admin/manage/priority',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_list_configurations'
+        }
+      },
+      {
+        name: 'admin-manage-delivery-location',
+        path: 'admin/manage/delivery-location',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_list_configurations'
+        }
+      },
+      {
+        name: 'admin-manage-request-type',
+        path: 'admin/manage/request-type',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_list_configurations'
         }
       },
       {

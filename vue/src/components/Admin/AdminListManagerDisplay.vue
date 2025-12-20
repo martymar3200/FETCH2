@@ -139,7 +139,10 @@ const {
   deleteSizeClass,
   deleteMediaType,
   deleteOwner,
-  deleteShelfType
+  deleteShelfType,
+  deletePriority,
+  deleteDeliveryLocation,
+  deleteRequestType
 } = useOptionStore()
 const {
   optionsTotal,
@@ -147,7 +150,10 @@ const {
   mediaTypes,
   sizeClass,
   shelfTypes,
-  ownersTiers
+  ownersTiers,
+  requestsPriorities,
+  requestsLocations,
+  requestsTypes
 } = storeToRefs(useOptionStore())
 
 // Local Data
@@ -163,6 +169,15 @@ const listData = computed(() => {
       break
     case 'size-class':
       tableData = sizeClass.value
+      break
+    case 'priority':
+      tableData = requestsPriorities.value
+      break
+    case 'delivery-location':
+      tableData = requestsLocations.value
+      break
+    case 'request-type':
+      tableData = requestsTypes.value
       break
     case 'shelf-type': {
     // remove any duplicate shelf types by type name
@@ -194,6 +209,12 @@ const renderTableTitle = computed(() => {
     title = 'Media Type'
   } else if (mainProps.listType == 'shelf-type') {
     title = 'Shelf Type'
+  } else if (mainProps.listType == 'priority') {
+    title = 'Priority'
+  } else if (mainProps.listType == 'delivery-location') {
+    title = 'Delivery Location'
+  } else if (mainProps.listType == 'request-type') {
+    title = 'Request Type'
   } else {
     title = 'Size Class'
   }
@@ -207,6 +228,12 @@ const renderTableAction = computed(() => {
     actionText = 'Add Media Type'
   } else if (mainProps.listType == 'shelf-type') {
     actionText = 'Add Shelf Type'
+  } else if (mainProps.listType == 'priority') {
+    actionText = 'Add Priority'
+  } else if (mainProps.listType == 'delivery-location') {
+    actionText = 'Add Delivery Location'
+  } else if (mainProps.listType == 'request-type') {
+    actionText = 'Add Request Type'
   } else {
     actionText = 'Add Size Class'
   }
@@ -295,9 +322,9 @@ const generateTableOptionsMenu = () => {
     ]
   } else {
     options = [
-      { text: 'Edit Size Class' },
+      { text: `Edit ${renderTableTitle.value}` },
       {
-        text: 'Delete Size Class',
+        text: `Delete ${renderTableTitle.value}`,
         optionClass: 'text-negative'
       }
     ]
@@ -447,6 +474,84 @@ const generateListTableInfo = () => {
         'parent_owner_id',
         'owner_tier_id'
       ]
+
+      break
+    case 'priority':
+      listTableColumns.value = [
+        {
+          name: 'actions',
+          field: 'actions',
+          label: '',
+          align: 'center',
+          sortable: false,
+          required: true
+        },
+        {
+          name: 'value',
+          field: 'value',
+          label: 'Priority Value',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      listTableVisibleColumns.value = [
+        'actions',
+        'value'
+      ]
+      break
+    case 'delivery-location':
+      listTableColumns.value = [
+        {
+          name: 'actions',
+          field: 'actions',
+          label: '',
+          align: 'center',
+          sortable: false,
+          required: true
+        },
+        {
+          name: 'name',
+          field: 'name',
+          label: 'Name',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'address',
+          field: 'address',
+          label: 'Address',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      listTableVisibleColumns.value = [
+        'actions',
+        'name',
+        'address'
+      ]
+      break
+    case 'request-type':
+      listTableColumns.value = [
+        {
+          name: 'actions',
+          field: 'actions',
+          label: '',
+          align: 'center',
+          sortable: false,
+          required: true
+        },
+        {
+          name: 'request_type',
+          field: 'type',
+          label: 'Request Type',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      listTableVisibleColumns.value = [
+        'actions',
+        'request_type'
+      ]
       break
     default:
       break
@@ -474,6 +579,12 @@ const loadListData = async (qParams) => {
           page++
         }
       }
+    } else if (mainProps.listType == 'priority') {
+      await getOptions('requestsPriorities', qParams)
+    } else if (mainProps.listType == 'delivery-location') {
+      await getOptions('requestsLocations', qParams)
+    } else if (mainProps.listType == 'request-type') {
+      await getOptions('requestsTypes', qParams)
     } else {
       await getOptions('sizeClass', qParams)
     }
@@ -537,6 +648,15 @@ const deleteListOption = async (id) => {
         }
         break
       }
+      case 'priority':
+        await deletePriority(id)
+        break
+      case 'delivery-location':
+        await deleteDeliveryLocation(id)
+        break
+      case 'request-type':
+        await deleteRequestType(id)
+        break
       default:
         break
     }

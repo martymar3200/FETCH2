@@ -201,6 +201,12 @@ const {
   postShelfType,
   patchShelfType,
   deleteShelfType,
+  postPriority,
+  patchPriority,
+  postDeliveryLocation,
+  patchDeliveryLocation,
+  postRequestType,
+  patchRequestType,
   getOptions
 } = useOptionStore()
 
@@ -337,6 +343,54 @@ const generateListModal = async () => {
       ]
 
       break
+    case 'priority':
+      inputForm.value = {
+        value: mainProps.listData.value ?? ''
+      }
+      inputFormOriginal.value = { ...toRaw(inputForm.value) }
+
+      inputFields.value = [
+        {
+          field: 'value',
+          label: 'Priority Value',
+          required: true
+        }
+      ]
+      break
+    case 'delivery-location':
+      inputForm.value = {
+        name: mainProps.listData.name ?? '',
+        address: mainProps.listData.address ?? ''
+      }
+      inputFormOriginal.value = { ...toRaw(inputForm.value) }
+
+      inputFields.value = [
+        {
+          field: 'name',
+          label: 'Name',
+          required: false // Name is nullable in model but let's see. Model says Optional[str] = unique. Address is required.
+        },
+        {
+          field: 'address',
+          label: 'Address',
+          required: true
+        }
+      ]
+      break
+    case 'request-type':
+      inputForm.value = {
+        type: mainProps.listData.type ?? ''
+      }
+      inputFormOriginal.value = { ...toRaw(inputForm.value) }
+
+      inputFields.value = [
+        {
+          field: 'type',
+          label: 'Request Type',
+          required: true
+        }
+      ]
+      break
     case 'shelf-type': {
       const matchingShelfTypes = shelfTypes.value.filter(s => s.type == mainProps.listData.type)
       inputForm.value = {
@@ -414,6 +468,15 @@ const addNewListType = async () => {
         break
       case 'owner':
         await postOwner(payload)
+        break
+      case 'priority':
+        await postPriority(payload)
+        break
+      case 'delivery-location':
+        await postDeliveryLocation(payload)
+        break
+      case 'request-type':
+        await postRequestType(payload)
         break
       default:
         break
@@ -507,6 +570,15 @@ const updateListType = async () => {
         await patchOwner(payload)
         break
       }
+      case 'priority':
+        await patchPriority(payload)
+        break
+      case 'delivery-location':
+        await patchDeliveryLocation(payload)
+        break
+      case 'request-type':
+        await patchRequestType(payload)
+        break
       default:
         break
     }
