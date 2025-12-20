@@ -56,6 +56,18 @@ def complete_accession_job(accession_job_id: int, original_status: str, audit_in
             accession_job.last_transition = datetime.now(timezone.utc)
             commit_record(session, accession_job)
 
+            # Check if Verification Job already exists for a given accession job
+            existing_verification_job_query = select(VerificationJob).where(
+                VerificationJob.accession_job_id == accession_job.id
+            )
+            existing_verification_job = session.execute(existing_verification_job_query).scalars().first()
+            
+            if existing_verification_job:
+               inventory_logger.warning(
+                   f"Verification Job already exists for Accession Job {accession_job.id}. Skipping creation."
+               )
+               return
+
             # Create Verification Job
             verification_job_input = VerificationJobInput(
                 accession_job_id=accession_job.id,

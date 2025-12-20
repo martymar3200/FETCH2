@@ -219,7 +219,7 @@ def update_accession_job(
 
     existing_accession_job = commit_record(session, existing_accession_job)
 
-    if mutated_data.get("status") == "Completed":
+    if mutated_data.get("status") == "Completed" and original_status != "Completed":
         # V2 BATCH UPDATE FIX
         if existing_accession_job.items:
             items_barcode_ids = [
