@@ -114,6 +114,10 @@
             "description": "Can manage options/configurations lists."
         },
         {
+            "name": "can_manage_system_configurations",
+            "description": "User can manage system configuration options."
+        },
+        {
             "name": "can_assign_and_reassign_refile_job",
             "description": "Can assign and reassign refile job user."
         },

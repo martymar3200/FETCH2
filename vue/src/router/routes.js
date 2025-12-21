@@ -165,6 +165,15 @@ const routes = [
         }
       },
       {
+        name: 'admin-manage-barcode-type',
+        path: 'admin/manage/barcode-type',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
         name: 'record-management-items',
         path: 'record-management/items/:barcode?',
         component: () => import('@/pages/RecordManagementPage.vue'),

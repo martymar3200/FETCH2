@@ -83,6 +83,16 @@ const adminLinkList = computed(() => {
       hidden: !checkUserPermission('can_manage_groups_and_permissions')
     },
     {
+      title: 'System Configurations',
+      sublinks: [
+        {
+          title: 'Barcode Types',
+          hidden: !checkUserPermission('can_manage_system_configurations')
+        }
+      ],
+      hidden: !checkUserPermission('can_manage_system_configurations')
+    },
+    {
       title: 'List Configurations',
       sublinks: [
         {
@@ -167,6 +177,9 @@ const handleRouting = (link) => {
   switch (link.title) {
     case 'Buildings':
       router.push({ name: 'admin-location-manage-buildings' })
+      break
+    case 'Barcode Types':
+      router.push({ name: 'admin-manage-barcode-type' })
       break
     case 'Bulk Upload Ladders/Shelves':
       showBulkUploadLocationModal.value = true

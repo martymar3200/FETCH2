@@ -14,6 +14,7 @@ export default {
   authSsoLogin: '/auth/sso/login/',
   authSsoLogout: '/auth/sso/logout/',
   barcodes: '/barcodes/',
+  barcodeTypes: '/barcodes/types/',
   barcodesValue: '/barcodes/value/',
   batchUpload: '/batch-upload/',
   batchUploadLocationManagement: '/batch-upload/location-management',

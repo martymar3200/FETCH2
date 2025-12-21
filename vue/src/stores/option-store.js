@@ -6,6 +6,7 @@ export const useOptionStore = defineStore('option-store', {
     optionsTotal: 0,
     aisles: [],
     buildings: [],
+    barcodeTypes: [],
     containerTypes: [
       {
         id: 1,
@@ -389,6 +390,22 @@ export const useOptionStore = defineStore('option-store', {
       try {
         await this.$api.delete(`${inventoryServiceApi.requestsTypes}${id}`)
         this.requestsTypes = this.requestsTypes.filter(t => t.id !== id)
+      } catch (error) {
+        throw error
+      }
+    },
+    async getBarcodeType (id) {
+      try {
+        const res = await this.$api.get(`${inventoryServiceApi.barcodeTypes}${id}`)
+        this.barcodeTypes = [res.data]
+      } catch (error) {
+        throw error
+      }
+    },
+    async patchBarcodeType (payload) {
+      try {
+        const res = await this.$api.patch(`${inventoryServiceApi.barcodeTypes}${payload.id}`, payload)
+        this.barcodeTypes[this.barcodeTypes.findIndex(bt => bt.id == payload.id)] = res.data
       } catch (error) {
         throw error
       }

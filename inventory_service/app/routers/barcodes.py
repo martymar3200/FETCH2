@@ -1,4 +1,5 @@
 # /code/app/routers/barcodes.py - FINAL CORRECTED V2
+import re
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
@@ -114,6 +115,13 @@ def create_barcode(
 
         if not barcode_type:
             raise BadRequest(detail=f"Barcode Type '{barcode_input.type}' not found.")
+
+        # 2a. Validate Barcode Pattern
+        if barcode_type.allowed_pattern:
+            if not re.fullmatch(barcode_type.allowed_pattern, barcode_input.value):
+                raise ValidationException(
+                    detail=f"Barcode '{barcode_input.value}' does not match the required pattern for type '{barcode_input.type}'."
+                )
 
         # 3. Create the Barcode
         # We manually map the input fields to the model because input has 'type' (str) 

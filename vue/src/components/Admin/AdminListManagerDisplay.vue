@@ -31,6 +31,7 @@
               :class="'order-1'"
             >
               <q-btn
+                v-if="renderTableAction"
                 no-caps
                 unelevated
                 icon="add"
@@ -153,7 +154,8 @@ const {
   ownersTiers,
   requestsPriorities,
   requestsLocations,
-  requestsTypes
+  requestsTypes,
+  barcodeTypes
 } = storeToRefs(useOptionStore())
 
 // Local Data
@@ -178,6 +180,9 @@ const listData = computed(() => {
       break
     case 'request-type':
       tableData = requestsTypes.value
+      break
+    case 'barcode-type':
+      tableData = barcodeTypes.value
       break
     case 'shelf-type': {
     // remove any duplicate shelf types by type name
@@ -215,6 +220,8 @@ const renderTableTitle = computed(() => {
     title = 'Delivery Location'
   } else if (mainProps.listType == 'request-type') {
     title = 'Request Type'
+  } else if (mainProps.listType == 'barcode-type') {
+    title = 'Barcode Type'
   } else {
     title = 'Size Class'
   }
@@ -234,6 +241,8 @@ const renderTableAction = computed(() => {
     actionText = 'Add Delivery Location'
   } else if (mainProps.listType == 'request-type') {
     actionText = 'Add Request Type'
+  } else if (mainProps.listType == 'barcode-type') {
+    actionText = ''
   } else {
     actionText = 'Add Size Class'
   }
@@ -320,6 +329,8 @@ const generateTableOptionsMenu = () => {
         optionClass: 'text-negative'
       }
     ]
+  } else if (mainProps.listType == 'barcode-type') {
+    options = [{ text: 'Edit Barcode Type' }]
   } else {
     options = [
       { text: `Edit ${renderTableTitle.value}` },
@@ -553,6 +564,37 @@ const generateListTableInfo = () => {
         'request_type'
       ]
       break
+    case 'barcode-type':
+      listTableColumns.value = [
+        {
+          name: 'actions',
+          field: 'actions',
+          label: '',
+          align: 'center',
+          sortable: false,
+          required: true
+        },
+        {
+          name: 'name',
+          field: 'name',
+          label: 'Name',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'allowed_pattern',
+          field: 'allowed_pattern',
+          label: 'Allowed Pattern',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      listTableVisibleColumns.value = [
+        'actions',
+        'name',
+        'allowed_pattern'
+      ]
+      break
     default:
       break
   }
@@ -585,6 +627,8 @@ const loadListData = async (qParams) => {
       await getOptions('requestsLocations', qParams)
     } else if (mainProps.listType == 'request-type') {
       await getOptions('requestsTypes', qParams)
+    } else if (mainProps.listType == 'barcode-type') {
+      await getOptions('barcodeTypes', qParams)
     } else {
       await getOptions('sizeClass', qParams)
     }

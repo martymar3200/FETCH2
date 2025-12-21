@@ -52,6 +52,13 @@
                   :disabled="field.disabled"
                   :aria-label="`${field.field}_input`"
                 />
+                <div
+                  v-if="field.hint"
+                  class="text-caption text-grey-7 q-mt-xs"
+                  style="white-space: pre-wrap;"
+                >
+                  {{ field.hint }}
+                </div>
               </div>
             </div>
             <!-- select inputs -->
@@ -207,7 +214,8 @@ const {
   patchDeliveryLocation,
   postRequestType,
   patchRequestType,
-  getOptions
+  getOptions,
+  patchBarcodeType
 } = useOptionStore()
 
 // Local Data
@@ -388,6 +396,28 @@ const generateListModal = async () => {
           field: 'type',
           label: 'Request Type',
           required: true
+        }
+      ]
+      break
+    case 'barcode-type':
+      inputForm.value = {
+        name: mainProps.listData.name ?? '',
+        allowed_pattern: mainProps.listData.allowed_pattern ?? ''
+      }
+      inputFormOriginal.value = { ...toRaw(inputForm.value) }
+
+      inputFields.value = [
+        {
+          field: 'name',
+          label: 'Name',
+          required: true,
+          disabled: true
+        },
+        {
+          field: 'allowed_pattern',
+          label: 'Allowed Pattern',
+          required: true,
+          hint: 'Common Regex symbols:\n^ : Start of string\n$ : End of string\n\\d : Digit [0-9]\n{n} : Exactly n times\n{n,m} : Between n and m times\n[A-Z] : Uppercase letter'
         }
       ]
       break
@@ -578,6 +608,9 @@ const updateListType = async () => {
         break
       case 'request-type':
         await patchRequestType(payload)
+        break
+      case 'barcode-type':
+        await patchBarcodeType(payload)
         break
       default:
         break

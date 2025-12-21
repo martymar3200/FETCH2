@@ -50,7 +50,7 @@ def get_barcode_types_list(
         query = sorter.apply_sorting(query, sort_params)
 
     # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(query)
+    return paginate(session, query)
 
 
 @router.get("/types/{id}", response_model=BarcodeTypesDetailReadOutput)

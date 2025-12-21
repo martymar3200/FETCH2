@@ -191,6 +191,16 @@ const breadcrumbList = computed(() => {
         { text: 'Manage Request Type' }
       ]
       break
+    case 'admin-manage-barcode-type':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Admin',
+          to: '/admin'
+        },
+        { text: 'Manage Barcode Types' }
+      ]
+      break
     case 'admin-location-manage-buildings':
       breadCrumbs = [
         ...breadCrumbs,
