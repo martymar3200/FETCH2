@@ -35,6 +35,9 @@ from app.models.shelf_positions import ShelfPosition
 from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.barcodes import Barcode
 from app.models.shelving_job_discrepancies import ShelvingJobDiscrepancy
+from app.models.owners import Owner
+from app.models.size_class import SizeClass
+from app.models.shelf_types import ShelfType
 from app.schemas.shelving_jobs import (
     ShelvingJobInput,
     ShelvingJobUpdateInput,
@@ -658,40 +661,75 @@ def reassign_container_location(
         )
 
     # Check if the container owner and size class match to shelf
-    if (
-        container.size_class_id != shelf_type.size_class_id
-        or container.owner_id != shelf.owner_id
-    ):
-        # Create a Discrepancy
-        discrepancy_error = "Unknown"
-        if container.container_type_id == 1:
-            discrepancy_tray_id = container.id
-            discrepancy_non_tray_id = None
+    # Allow auto-assignment if shelf has "Unassigned" values
+    shelf_owner = session.get(Owner, shelf.owner_id)
+    shelf_size_class = session.get(SizeClass, shelf_type.size_class_id)
+    
+    owner_mismatch = container.owner_id != shelf.owner_id
+    size_class_mismatch = container.size_class_id != shelf_type.size_class_id
+    
+    if owner_mismatch or size_class_mismatch:
+        shelf_owner_unassigned = shelf_owner and shelf_owner.name == "Unassigned"
+        shelf_size_class_unassigned = shelf_size_class and shelf_size_class.name == "Unassigned"
+        
+        can_auto_assign = (
+            (not owner_mismatch or shelf_owner_unassigned) and
+            (not size_class_mismatch or shelf_size_class_unassigned)
+        )
+        
+        if can_auto_assign:
+            # Auto-assign owner from container
+            if owner_mismatch and shelf_owner_unassigned:
+                shelf.owner_id = container.owner_id
+                session.add(shelf)
+            
+            # Auto-assign shelf_type by finding existing ShelfType with matching size_class
+            if size_class_mismatch and shelf_size_class_unassigned:
+                matching_shelf_type = session.execute(
+                    select(ShelfType).where(ShelfType.size_class_id == container.size_class_id)
+                ).scalars().first()
+                
+                if not matching_shelf_type:
+                    raise ValidationException(
+                        detail=f"No ShelfType exists for size class {container.size_class_id}. "
+                               "Item cannot be shelved."
+                    )
+                
+                shelf.shelf_type_id = matching_shelf_type.id
+                session.add(shelf)
+                # Update shelf_type reference for subsequent logic
+                shelf_type = matching_shelf_type
         else:
-            discrepancy_tray_id = None
-            discrepancy_non_tray_id = container.id
-        if container.size_class_id != shelf_type.size_class_id:
-            discrepancy_error = f"""Size Discrepancy - Container size_id: {container.size_class_id} does not match Shelf size_id: {shelf_type.size_class_id}"""
-        if container.owner_id != shelf.owner_id:
-            discrepancy_error = f"""Owner Discrepancy does not match Container owner_id: {container.owner_id} does not match Shelf owner_id: {shelf.owner_id}"""
+            # Create a Discrepancy
+            discrepancy_error = "Unknown"
+            if container.container_type_id == 1:
+                discrepancy_tray_id = container.id
+                discrepancy_non_tray_id = None
+            else:
+                discrepancy_tray_id = None
+                discrepancy_non_tray_id = container.id
+            if container.size_class_id != shelf_type.size_class_id:
+                discrepancy_error = f"""Size Discrepancy - Container size_id: {container.size_class_id} does not match Shelf size_id: {shelf_type.size_class_id}"""
+            if container.owner_id != shelf.owner_id:
+                discrepancy_error = f"""Owner Discrepancy does not match Container owner_id: {container.owner_id} does not match Shelf owner_id: {shelf.owner_id}"""
 
-        new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
-            shelving_job_id=id,
-            tray_id=discrepancy_tray_id,
-            non_tray_item_id=discrepancy_non_tray_id,
-            assigned_user_id=shelving_job.user_id,
-            owner_id=shelf.owner_id,
-            size_class_id=shelf_type.size_class_id,
-            assigned_location=shelf_position.location,
-            pre_assigned_location=pre_assigned_location,
-            error=f"{discrepancy_error}",
-        )
-        commit_record(session, new_shelving_job_discrepancy)
+            new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
+                shelving_job_id=id,
+                tray_id=discrepancy_tray_id,
+                non_tray_item_id=discrepancy_non_tray_id,
+                assigned_user_id=shelving_job.user_id,
+                owner_id=shelf.owner_id,
+                size_class_id=shelf_type.size_class_id,
+                assigned_location=shelf_position.location,
+                pre_assigned_location=pre_assigned_location,
+                error=f"{discrepancy_error}",
+            )
+            commit_record(session, new_shelving_job_discrepancy)
 
-        raise ValidationException(
-            detail=f"Container Barcode {reassignment_input.container_barcode_value} "
-                   "does not match Shelf owner and size class."
-        )
+            raise ValidationException(
+                detail=f"Container Barcode {reassignment_input.container_barcode_value} "
+                       "does not match Shelf owner and size class."
+            )
 
     # Checking and verifying Verification Job
     if container.verification_job_id:
@@ -888,39 +926,74 @@ def reassign_container_proposed_location(
         raise ValidationException(detail=f"Shelf ID {shelf.id} has no available space")
 
     # Check if the container owner and size class match to shelf
-    if (
-        container.size_class_id != shelf_type.size_class_id
-        or container.owner_id != shelf.owner_id
-    ):
-        # Create a Discrepancy
-        discrepancy_error = "Unknown"
-        if container.container_type_id == 1:
-            discrepancy_tray_id = container.id
-            discrepancy_non_tray_id = None
+    # Allow auto-assignment if shelf has "Unassigned" values
+    shelf_owner = session.get(Owner, shelf.owner_id)
+    shelf_size_class = session.get(SizeClass, shelf_type.size_class_id)
+    
+    owner_mismatch = container.owner_id != shelf.owner_id
+    size_class_mismatch = container.size_class_id != shelf_type.size_class_id
+    
+    if owner_mismatch or size_class_mismatch:
+        shelf_owner_unassigned = shelf_owner and shelf_owner.name == "Unassigned"
+        shelf_size_class_unassigned = shelf_size_class and shelf_size_class.name == "Unassigned"
+        
+        can_auto_assign = (
+            (not owner_mismatch or shelf_owner_unassigned) and
+            (not size_class_mismatch or shelf_size_class_unassigned)
+        )
+        
+        if can_auto_assign:
+            # Auto-assign owner from container
+            if owner_mismatch and shelf_owner_unassigned:
+                shelf.owner_id = container.owner_id
+                session.add(shelf)
+            
+            # Auto-assign shelf_type by finding existing ShelfType with matching size_class
+            if size_class_mismatch and shelf_size_class_unassigned:
+                matching_shelf_type = session.execute(
+                    select(ShelfType).where(ShelfType.size_class_id == container.size_class_id)
+                ).scalars().first()
+                
+                if not matching_shelf_type:
+                    raise ValidationException(
+                        detail=f"No ShelfType exists for size class {container.size_class_id}. "
+                               "Item cannot be shelved."
+                    )
+                
+                shelf.shelf_type_id = matching_shelf_type.id
+                session.add(shelf)
+                # Update shelf_type reference for subsequent logic
+                shelf_type = matching_shelf_type
         else:
-            discrepancy_tray_id = None
-            discrepancy_non_tray_id = container.id
-        if container.size_class_id != shelf_type.size_class_id:
-            discrepancy_error = f"""Size Discrepancy - Container size_id: {container.size_class_id} does not match Shelf size_id: {shelf_type.size_class_id}"""
-        if container.owner_id != shelf.owner_id:
-            discrepancy_error = f"""Owner Discrepancy does not match Container owner_id: {container.owner_id} does not match Shelf owner_id: {shelf.owner_id}"""
+            # Create a Discrepancy
+            discrepancy_error = "Unknown"
+            if container.container_type_id == 1:
+                discrepancy_tray_id = container.id
+                discrepancy_non_tray_id = None
+            else:
+                discrepancy_tray_id = None
+                discrepancy_non_tray_id = container.id
+            if container.size_class_id != shelf_type.size_class_id:
+                discrepancy_error = f"""Size Discrepancy - Container size_id: {container.size_class_id} does not match Shelf size_id: {shelf_type.size_class_id}"""
+            if container.owner_id != shelf.owner_id:
+                discrepancy_error = f"""Owner Discrepancy does not match Container owner_id: {container.owner_id} does not match Shelf owner_id: {shelf.owner_id}"""
 
-        new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
-            shelving_job_id=id,
-            tray_id=discrepancy_tray_id,
-            non_tray_item_id=discrepancy_non_tray_id,
-            assigned_user_id=shelving_job.user_id,
-            owner_id=shelf.owner_id,
-            size_class_id=shelf_type.size_class_id,
-            assigned_location=shelf_position.location,
-            pre_assigned_location=shelf_position_location,
-            error=f"{discrepancy_error}",
-        )
-        commit_record(session, new_shelving_job_discrepancy)
+            new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
+                shelving_job_id=id,
+                tray_id=discrepancy_tray_id,
+                non_tray_item_id=discrepancy_non_tray_id,
+                assigned_user_id=shelving_job.user_id,
+                owner_id=shelf.owner_id,
+                size_class_id=shelf_type.size_class_id,
+                assigned_location=shelf_position.location,
+                pre_assigned_location=shelf_position_location,
+                error=f"{discrepancy_error}",
+            )
+            commit_record(session, new_shelving_job_discrepancy)
 
-        raise ValidationException(
-            detail=f"Container Barcode {reassignment_input.container_barcode_value} does not match Shelf owner and size class."
-        )
+            raise ValidationException(
+                detail=f"Container Barcode {reassignment_input.container_barcode_value} does not match Shelf owner and size class."
+            )
 
     setattr(
         container, "shelf_position_proposed_id",

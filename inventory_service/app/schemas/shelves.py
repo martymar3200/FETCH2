@@ -14,7 +14,7 @@ from app.schemas.barcodes import BarcodeDetailReadOutput
 class ShelfInput(BaseModel):
     sort_priority: Optional[conint(ge=0, le=32767)] = None
     ladder_id: conint(ge=0, le=2147483647)
-    container_type_id: conint(ge=0, le=2147483647)
+    container_type_id: Optional[conint(ge=0, le=2147483647)] = None
     shelf_type_id: conint(ge=0, le=2147483647)
     shelf_number_id: Optional[conint(ge=0, le=32767)] = None
     shelf_number: Optional[int] = None

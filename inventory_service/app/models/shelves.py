@@ -63,7 +63,7 @@ class Shelf(Base):
     sort_priority: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True, default=None)
     
     # Foreign Keys (Integer)
-    container_type_id: Mapped[int] = mapped_column(ForeignKey(ContainerType.__table__.c.id), nullable=False)
+    container_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey(ContainerType.__table__.c.id), nullable=True)
     shelf_number_id: Mapped[int] = mapped_column(ForeignKey(ShelfNumber.__table__.c.id), nullable=False)
     shelf_type_id: Mapped[int] = mapped_column(ForeignKey(ShelfType.__table__.c.id), nullable=False)
     owner_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Owner.__table__.c.id), nullable=True)
@@ -76,7 +76,7 @@ class Shelf(Base):
     shelf_type: Mapped[ShelfType] = relationship(back_populates="shelves")
     shelf_number: Mapped[ShelfNumber] = relationship(back_populates="shelves")
     
-    container_type: Mapped[ContainerType] = relationship(
+    container_type: Mapped[Optional[ContainerType]] = relationship(
         back_populates="shelves", 
         foreign_keys=[container_type_id]
     )
