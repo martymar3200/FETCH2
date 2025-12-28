@@ -1,6 +1,6 @@
 from operator import or_
 
-from sqlalchemy import asc, desc, func, inspect, case, Text, Integer
+from sqlalchemy import asc, desc, func, inspect, case, Text, Integer, nulls_last
 from sqlalchemy.types import Enum as enum
 from sqlalchemy.orm import Query, aliased
 from sqlalchemy.sql import union_all, select
@@ -161,10 +161,13 @@ class RequestSorter(BaseSorter):
             )
 
             # Ensure sorting by barcode value from both barcode tables
+            # Use nulls_last to keep NULL values at the end regardless of sort direction
             query = query.order_by(
-                order_func(
-                    func.coalesce(
-                        barcode_item_alias.value, barcode_non_tray_alias.value
+                nulls_last(
+                    order_func(
+                        func.coalesce(
+                            barcode_item_alias.value, barcode_non_tray_alias.value
+                        )
                     )
                 )
             )
@@ -193,10 +196,13 @@ class RequestSorter(BaseSorter):
             )
 
             # Select the correct media type name for sorting (prioritize Item media type first)
+            # Use nulls_last to keep NULL values at the end regardless of sort direction
             query = query.order_by(
-                order_func(
-                    func.coalesce(
-                        media_type_item_alias.name, media_type_non_tray_alias.name
+                nulls_last(
+                    order_func(
+                        func.coalesce(
+                            media_type_item_alias.name, media_type_non_tray_alias.name
+                        )
                     )
                 )
             )
@@ -228,13 +234,14 @@ class RequestSorter(BaseSorter):
             ).alias("location_map")
 
             # Join the subquery with ShelfPosition and order by ShelfPosition.location
+            # Use nulls_last to keep NULL values at the end regardless of sort direction
             query = (
                 query.outerjoin(location_subquery, Request.id == location_subquery.c.id)
                 .outerjoin(
                     shelf_position_alias,
                     location_subquery.c.shelf_position_id == shelf_position_alias.id,
                 )
-                .order_by(order_func(shelf_position_alias.location))
+                .order_by(nulls_last(order_func(shelf_position_alias.location)))
             )
 
             return query

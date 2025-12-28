@@ -6,7 +6,7 @@
           ref="requestTableComponent"
           :table-columns="requestDisplayType == 'request_view' ? requestTableColumns : requestBatchTableColumns"
           :table-visible-columns="requestDisplayType == 'request_view' ? requestTableVisibleColumns : requestBatchTableVisibleColumns"
-          :filter-options="showCreatePickList || showAddPickList ? [] : requestDisplayType == 'request_view' ? requestTableFilters : requestBatchTableFilters"
+          :filter-options="requestDisplayType == 'request_view' ? requestTableFilters : requestBatchTableFilters"
           :table-data="requestJobList"
           :enable-table-reorder="false"
           :enable-selection="showCreatePickList || showAddPickList"
@@ -633,6 +633,7 @@ const addToPickListJob = ref(null)
 const selectedRequestItems = ref([])
 const showCreateRequestByType = ref(null)
 const filterRequestsByBuilding = ref(null)
+const activePickListBuildingFilter = ref(null)
 
 // Logic
 const handleAlert = inject('handle-alert')
@@ -668,6 +669,7 @@ const resetPickListForm = () => {
   showAddPickList.value = false
   showPickListModal.value = null
   filterRequestsByBuilding.value = null
+  activePickListBuildingFilter.value = null
   addToPickListJob.value = null
   clearTableSelection()
 }
@@ -676,10 +678,13 @@ const loadRequestJobs = async (qParams) => {
   try {
     appIsLoadingData.value = true
     if (requestDisplayType.value == 'request_view') {
+      const isPickListMode = showCreatePickList.value || showAddPickList.value
       await getRequestJobList({
         ...qParams,
         queue: true,
-        unassociated_pick_list: showCreatePickList.value || showAddPickList.value ? true : false
+        unassociated_pick_list: isPickListMode ? true : false,
+        // Persist building filter during pick list mode for sorting/pagination
+        ...(isPickListMode && activePickListBuildingFilter.value ? { building_id: activePickListBuildingFilter.value } : {})
       })
     } else {
       await getRequestBatchJobList({ ...qParams })
@@ -697,10 +702,12 @@ const loadRequestJobs = async (qParams) => {
 const loadRequestJobsByBuilding = async () => {
   try {
     appActionIsLoadingData.value = true
-    // this function only gets called during the creation/add picklist workflow
     // change table view back to request view and clear out any pagination settings
     requestDisplayType.value = 'request_view'
     requestTableComponent.value.resetTablePagination()
+    // Store the selected building filter so it persists during sorting/pagination
+    activePickListBuildingFilter.value = filterRequestsByBuilding.value
+
     await getRequestJobList({
       building_id: filterRequestsByBuilding.value,
       unassociated_pick_list: true
