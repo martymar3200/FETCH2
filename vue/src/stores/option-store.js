@@ -409,6 +409,30 @@ export const useOptionStore = defineStore('option-store', {
       } catch (error) {
         throw error
       }
+    },
+    async getSystemSetting (key) {
+      try {
+        const res = await this.$api.get(`${inventoryServiceApi.systemSettings}${key}`)
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+    async postSystemSetting (payload) {
+      try {
+        const res = await this.$api.post(inventoryServiceApi.systemSettings, payload)
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+    async patchSystemSetting (key, payload) {
+      try {
+        const res = await this.$api.patch(`${inventoryServiceApi.systemSettings}${key}`, payload)
+        return res.data
+      } catch (error) {
+        throw error
+      }
     }
   }
 })

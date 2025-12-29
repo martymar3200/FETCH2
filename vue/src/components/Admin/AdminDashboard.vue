@@ -88,6 +88,10 @@ const adminLinkList = computed(() => {
         {
           title: 'Barcode Types',
           hidden: !checkUserPermission('can_manage_system_configurations')
+        },
+        {
+          title: 'Shelf Position Direction',
+          hidden: !checkUserPermission('can_manage_system_configurations')
         }
       ],
       hidden: !checkUserPermission('can_manage_system_configurations')
@@ -180,6 +184,9 @@ const handleRouting = (link) => {
       break
     case 'Barcode Types':
       router.push({ name: 'admin-manage-barcode-type' })
+      break
+    case 'Shelf Position Direction':
+      router.push({ name: 'admin-manage-shelf-position-direction' })
       break
     case 'Bulk Upload Ladders/Shelves':
       showBulkUploadLocationModal.value = true

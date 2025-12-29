@@ -49,7 +49,8 @@ export const useShelvingStore = defineStore('shelving-store', {
       create_dt: new Date().toLocaleDateString(),
       status: '',
       trays: [],
-      non_tray_items: []
+      non_tray_items: [],
+      nextAvailablePosition: null
     },
     shelvingJobContainer: {
       id: null,
@@ -115,8 +116,8 @@ export const useShelvingStore = defineStore('shelving-store', {
         true: 3
       }
       return containerList.sort(new Intl.Collator('en', {
-        numeric:true,
-        sensitivity:'accent'
+        numeric: true,
+        sensitivity: 'accent'
       }).compare).sort((a, b) => sortBoolOrder[a.scanned_for_shelving] - sortBoolOrder[b.scanned_for_shelving])
     },
     allContainersShelved: (state) => {
@@ -200,6 +201,15 @@ export const useShelvingStore = defineStore('shelving-store', {
             shelf_barcode: res.data.barcode,
             owner: res.data.owner,
             size_class: res.data.shelf_type.size_class
+          }
+          // Also fetch next available position
+          try {
+            const nextPosRes = await this.$api.get(`${inventoryServiceApi.shelvesBarcode}${barcode_value}/next-position`)
+            this.directToShelfJob.nextAvailablePosition = nextPosRes.data.next_available_position
+          } catch (nextPosError) {
+            // If next position fetch fails, continue without it
+            console.warn('Failed to fetch next available position:', nextPosError)
+            this.directToShelfJob.nextAvailablePosition = null
           }
         }
         return res
@@ -342,6 +352,11 @@ export const useShelvingStore = defineStore('shelving-store', {
         this.shelvingJobContainer = {
           ...this.shelvingJobContainer,
           ...res.data
+        }
+
+        // Update next available position from response
+        if (res.data.next_available_position !== undefined) {
+          this.directToShelfJob.nextAvailablePosition = res.data.next_available_position
         }
 
         // update the containers at the direct shelving job level and add the new container

@@ -11,8 +11,12 @@
     <AdminGroups v-if="route.name == 'admin-groups' && !route.params.groupId" />
     <AdminGroupDetails v-if="route.name == 'admin-groups' && route.params.groupId" />
 
+    <AdminShelfPositionDirection
+      v-if="route.name == 'admin-manage-shelf-position-direction'"
+    />
+
     <AdminListManagerDisplay
-      v-if="route.name.includes('admin-manage')"
+      v-if="route.name.includes('admin-manage') && route.name !== 'admin-manage-shelf-position-direction'"
       :list-type="route.name.split('admin-manage-').pop()"
     />
 
@@ -32,6 +36,7 @@ import AdminGroups from '@/components/Admin/AdminGroups.vue'
 import AdminGroupDetails from '@/components/Admin/AdminGroupDetails.vue'
 import AdminListManagerDisplay from '@/components/Admin/AdminListManagerDisplay.vue'
 import AdminLocationManagerDisplay from '@/components/Admin/AdminLocationManagerDisplay.vue'
+import AdminShelfPositionDirection from '@/components/Admin/AdminShelfPositionDirection.vue'
 
 const route = useRoute()
 

@@ -59,6 +59,7 @@ export default {
   shelvingJobs: '/shelving-jobs/',
   sides: '/sides/',
   sizeClass: '/size_class/',
+  systemSettings: '/system-settings/',
   trays: '/trays/',
   traysBarcode: '/trays/barcode/',
   traysMove: '/trays/move/',

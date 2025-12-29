@@ -422,6 +422,7 @@ class ReAssignmentOutput(BaseModel):
     size_class: Optional[NestedSizeClassForShelvingJob] = None
     shelf_position: Optional[ShelfPositionNestedForShelvingJob] = None
     container_type: Optional[ContainerTypeDetailReadOutput] = None
+    next_available_position: Optional[int] = None
 
     model_config = ConfigDict(
         json_schema_extra={

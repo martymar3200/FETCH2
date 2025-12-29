@@ -391,10 +391,26 @@ const triggerContainerScan = (barcode_value) => {
       autoClose: true
     })
     return
-  } else {
-    shelvingJobContainer.value.barcode.value = barcode_value
-    showScanContainerModal.value = true
   }
+
+  // Check if shelf is full (online mode only)
+  if (!appIsOffline.value && directToShelfJob.value.nextAvailablePosition === null) {
+    handleAlert({
+      type: 'error',
+      text: 'Shelf Full, no available shelf positions.',
+      autoClose: true
+    })
+    return
+  }
+
+  shelvingJobContainer.value.barcode.value = barcode_value
+
+  // Auto-populate shelf position with next available (online mode only)
+  if (!appIsOffline.value && directToShelfJob.value.nextAvailablePosition) {
+    shelvingJobContainer.value.shelf_position_number = directToShelfJob.value.nextAvailablePosition
+  }
+
+  showScanContainerModal.value = true
 }
 const assignContainerLocation = async () => {
   try {

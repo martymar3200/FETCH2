@@ -685,6 +685,10 @@ def reassign_container_location(
             
             # Auto-assign shelf_type by finding existing ShelfType with matching size_class
             if size_class_mismatch and shelf_size_class_unassigned:
+                # Get old capacity before changing shelf_type
+                old_shelf_type = session.get(ShelfType, shelf.shelf_type_id)
+                old_capacity = old_shelf_type.max_capacity if old_shelf_type else 0
+                
                 matching_shelf_type = session.execute(
                     select(ShelfType).where(ShelfType.size_class_id == container.size_class_id)
                 ).scalars().first()
@@ -695,8 +699,39 @@ def reassign_container_location(
                                "Item cannot be shelved."
                     )
                 
+                new_capacity = matching_shelf_type.max_capacity
+                
+                # Update shelf_type
                 shelf.shelf_type_id = matching_shelf_type.id
                 session.add(shelf)
+                
+                # Create shelf positions for the new capacity
+                if new_capacity > old_capacity:
+                    new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
+                    
+                    position_numbers_query = select(ShelfPositionNumber).where(
+                        ShelfPositionNumber.number.in_(new_position_numbers_range)
+                    )
+                    position_numbers_map = {
+                        p.number: p for p in session.execute(position_numbers_query).scalars().all()
+                    }
+                    
+                    for position_num in new_position_numbers_range:
+                        shelf_pos_num_obj = position_numbers_map.get(position_num)
+                        if shelf_pos_num_obj:
+                            new_position = ShelfPosition(
+                                shelf_id=shelf.id,
+                                shelf_position_number_id=shelf_pos_num_obj.id,
+                            )
+                            session.add(new_position)
+                    
+                    session.flush()  # Ensure positions are created before recalculating
+                
+                # Recalculate available space
+                if hasattr(shelf, 'calc_available_space'):
+                    shelf.calc_available_space(session=session)
+                    session.add(shelf)
+                
                 # Update shelf_type reference for subsequent logic
                 shelf_type = matching_shelf_type
         else:
@@ -766,6 +801,16 @@ def reassign_container_location(
         update_shelf_space_after_non_tray(
             container, container.shelf_position_id, old_shelf_position_id
         )
+
+    # Calculate next available position for frontend auto-suggest
+    from app.routers.shelves import get_next_available_position
+    from app.routers.system_settings import get_setting_value
+    
+    direction = get_setting_value(session, "shelf_position_auto_assign_direction", "low_to_high")
+    next_position = get_next_available_position(session, shelf.id, direction)
+    
+    # Add next_available_position to the response
+    container.next_available_position = next_position
 
     return container
 
@@ -950,6 +995,10 @@ def reassign_container_proposed_location(
             
             # Auto-assign shelf_type by finding existing ShelfType with matching size_class
             if size_class_mismatch and shelf_size_class_unassigned:
+                # Get old capacity before changing shelf_type
+                old_shelf_type = session.get(ShelfType, shelf.shelf_type_id)
+                old_capacity = old_shelf_type.max_capacity if old_shelf_type else 0
+                
                 matching_shelf_type = session.execute(
                     select(ShelfType).where(ShelfType.size_class_id == container.size_class_id)
                 ).scalars().first()
@@ -960,8 +1009,39 @@ def reassign_container_proposed_location(
                                "Item cannot be shelved."
                     )
                 
+                new_capacity = matching_shelf_type.max_capacity
+                
+                # Update shelf_type
                 shelf.shelf_type_id = matching_shelf_type.id
                 session.add(shelf)
+                
+                # Create shelf positions for the new capacity
+                if new_capacity > old_capacity:
+                    new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
+                    
+                    position_numbers_query = select(ShelfPositionNumber).where(
+                        ShelfPositionNumber.number.in_(new_position_numbers_range)
+                    )
+                    position_numbers_map = {
+                        p.number: p for p in session.execute(position_numbers_query).scalars().all()
+                    }
+                    
+                    for position_num in new_position_numbers_range:
+                        shelf_pos_num_obj = position_numbers_map.get(position_num)
+                        if shelf_pos_num_obj:
+                            new_position = ShelfPosition(
+                                shelf_id=shelf.id,
+                                shelf_position_number_id=shelf_pos_num_obj.id,
+                            )
+                            session.add(new_position)
+                    
+                    session.flush()  # Ensure positions are created before recalculating
+                
+                # Recalculate available space
+                if hasattr(shelf, 'calc_available_space'):
+                    shelf.calc_available_space(session=session)
+                    session.add(shelf)
+                
                 # Update shelf_type reference for subsequent logic
                 shelf_type = matching_shelf_type
         else:

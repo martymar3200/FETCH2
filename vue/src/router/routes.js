@@ -174,6 +174,15 @@ const routes = [
         }
       },
       {
+        name: 'admin-manage-shelf-position-direction',
+        path: 'admin/manage/shelf-position-direction',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
         name: 'record-management-items',
         path: 'record-management/items/:barcode?',
         component: () => import('@/pages/RecordManagementPage.vue'),

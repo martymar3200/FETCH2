@@ -89,6 +89,7 @@ from app.routers import (
     verification_changes,
     item_retrieval_events,
     non_tray_item_retrieval_events,
+    system_settings,
 )
 
 
@@ -276,5 +277,6 @@ app.include_router(audit_trails.router)
 app.include_router(verification_changes.router)
 app.include_router(item_retrieval_events.router)
 app.include_router(non_tray_item_retrieval_events.router)
+app.include_router(system_settings.router)
 
 add_pagination(app)

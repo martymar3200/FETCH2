@@ -171,6 +171,88 @@ def get_shelf_by_barcode_value(value: str, session: Session = Depends(get_sessio
     return shelf
 
 
+def get_next_available_position(session: Session, shelf_id: int, direction: str = "low_to_high") -> Optional[int]:
+    """
+    Calculate the next available shelf position number.
+    
+    Args:
+        session: Database session
+        shelf_id: The shelf ID
+        direction: 'low_to_high' or 'high_to_low'
+    
+    Returns:
+        The next available position number, or None if shelf is full
+    """
+    # Get all positions for this shelf
+    positions_query = (
+        select(ShelfPosition, ShelfPositionNumber.number)
+        .join(ShelfPositionNumber, ShelfPosition.shelf_position_number_id == ShelfPositionNumber.id)
+        .where(ShelfPosition.shelf_id == shelf_id)
+    )
+    
+    if direction == "high_to_low":
+        positions_query = positions_query.order_by(ShelfPositionNumber.number.desc())
+    else:
+        positions_query = positions_query.order_by(ShelfPositionNumber.number.asc())
+    
+    positions = session.execute(positions_query).all()
+    
+    for position, position_number in positions:
+        # Check if position is occupied by a tray
+        tray = session.execute(
+            select(Tray.id).where(Tray.shelf_position_id == position.id).limit(1)
+        ).first()
+        
+        if tray:
+            continue
+        
+        # Check if position is occupied by a non-tray item
+        non_tray = session.execute(
+            select(NonTrayItem.id).where(NonTrayItem.shelf_position_id == position.id).limit(1)
+        ).first()
+        
+        if non_tray:
+            continue
+        
+        # Position is available
+        return position_number
+    
+    # No available positions
+    return None
+
+
+@router.get("/barcode/{value}/next-position")
+def get_shelf_next_available_position(value: str, session: Session = Depends(get_session)):
+    """
+    Retrieve a shelf's next available position using a barcode value.
+    Returns the shelf info along with next_available_position.
+    """
+    from app.routers.system_settings import get_setting_value
+    
+    statement = select(Shelf).join(Barcode).where(Barcode.value == value)
+    shelf = session.execute(statement).scalars().first()
+    if not shelf:
+        raise NotFound(detail=f"Shelf with barcode value {value} not found")
+    
+    # Get the direction setting
+    direction = get_setting_value(session, "shelf_position_auto_assign_direction", "low_to_high")
+    
+    # Get next available position
+    next_position = get_next_available_position(session, shelf.id, direction)
+    
+    return {
+        "shelf_id": shelf.id,
+        "shelf_barcode_value": shelf.barcode.value if shelf.barcode else None,
+        "owner_id": shelf.owner_id,
+        "owner_name": shelf.owner.name if shelf.owner else None,
+        "size_class_id": shelf.shelf_type.size_class_id if shelf.shelf_type else None,
+        "size_class_name": shelf.shelf_type.size_class.name if shelf.shelf_type and shelf.shelf_type.size_class else None,
+        "max_capacity": shelf.shelf_type.max_capacity if shelf.shelf_type else None,
+        "available_space": shelf.available_space,
+        "next_available_position": next_position
+    }
+
+
 @router.get("/barcode/{value}/shelved", response_model=Page[dict])
 def get_shelved_entities_by_shelf_barcode_value(
     value: str, session: Session = Depends(get_session)

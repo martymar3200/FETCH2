@@ -72,6 +72,7 @@ fixture_data = [
     ("types", "client_priorities.json"),#good
     ("entities", "client_delivery_locations.json"),#good
     ("types", "client_shelf_numbers.json"),#good
+    ("types", "client_system_settings.json"),#good
 ]
 
 def seed_data():
