@@ -1,5 +1,6 @@
 <template>
   <div class="shelf">
+    <!-- Header with title -->
     <div class="row">
       <div class="col">
         <h1 class="text-h4 text-bold q-mb-xs-md q-mb-sm-lg">
@@ -8,246 +9,92 @@
       </div>
     </div>
 
-    <div class="row">
-      <div class="col-xs-12 col-lg-4 q-pr-xs-none q-pr-lg-md q-pb-xs-md q-pb-lg-none">
-        <BarcodeBox
-          :barcode="shelfDetails.barcode.value"
-          class="q-py-xs-sm q-py-sm-md"
-        />
-      </div>
-      <template v-if="currentScreenSize !== 'xs'">
-        <div class="col-sm-4 col-lg-3">
-          <div class="column no-wrap">
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Shelf Number
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.shelf_number.number }}
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Owner
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.owner?.name ? shelfDetails.owner?.name : "" }}
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Size Class
-              </label>
-              <p class="shelf-details-text outline">
-                {{ shelfDetails.shelf_type?.size_class.name }}
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Created Date
-              </label>
-              <p class="shelf-details-text">
-                {{ formatDateTime(shelfDetails.create_dt).date }}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div
-          class="col-sm-4 col-lg-3"
-        >
-          <div class="column no-wrap">
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Width
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.width }} in
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Height
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.height }} in
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Depth
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.depth }} in
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Available Quantity
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.available_space }}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-4 col-lg-2">
-          <div class="column no-wrap">
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Used Quantity
-              </label>
-              <p class="shelf-details-text">
-                {{ renderUsedCapacity() }}
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Max Quantity
-              </label>
-              <p class="shelf-details-text">
-                {{ shelfDetails.shelf_type?.max_capacity }}
-              </p>
-            </div>
-
-            <div class="shelf-details">
-              <label class="shelf-details-label text-h6">
-                Shelf Location
-              </label>
-              <p
-                v-if="renderShelfBuilding()"
-                class="shelf-details-text outline q-mr-sm"
-              >
-                {{ renderShelfBuilding() }}
-              </p>
-              <p class="shelf-details-text outline">
-                {{ renderShelfLocation(shelfDetails) }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </template>
-      <template v-else>
-        <div class="col-12 q-pb-sm">
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Shelf Number
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.id }}
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Owner
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.owner?.name ? shelfDetails.owner?.name : "" }}
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Size Class
-            </label>
-            <p class="shelf-details-text outline">
-              {{ shelfDetails.shelf_type?.size_class.name }}
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Created Date
-            </label>
-            <p class="shelf-details-text">
-              {{ formatDateTime(shelfDetails.create_dt).date }}
-            </p>
-          </div>
-        </div>
-        <div class="col-12 q-pb-sm">
-          <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
-            Shelf Dimensions
-          </h1>
-
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Width
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.width }} in
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Height
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.height }} in
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Depth
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.depth }} in
-            </p>
-          </div>
-        </div>
-        <div class="col-12 q-pb-sm">
-          <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
-            Shelf Capacity
-          </h1>
-
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Available Quantity
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.available_space }}
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Used Quantity
-            </label>
-            <p class="shelf-details-text">
-              {{ renderUsedCapacity() }}
-            </p>
-          </div>
-          <div class="shelf-details">
-            <label class="shelf-details-label">
-              Max Quantity
-            </label>
-            <p class="shelf-details-text">
-              {{ shelfDetails.shelf_type?.max_capacity }}
-            </p>
-          </div>
-        </div>
-        <div class="col-12 q-pb-sm">
-          <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
-            Shelf Location
-          </h1>
-
-          <div class="shelf-details">
-            <p
-              v-if="renderShelfBuilding()"
-              class="shelf-details-text outline q-mr-sm"
-            >
-              {{ renderShelfBuilding() }}
-            </p>
-            <p class="shelf-details-text outline">
-              {{ renderShelfLocation(shelfDetails) }}
-            </p>
-          </div>
-        </div>
-      </template>
+    <!-- Barcode and Location header -->
+    <div class="barcode-header q-mb-lg">
+      <span class="text-h4 text-bold">{{ shelfDetails.barcode?.value }}</span>
+      <span class="text-h4 text-bold location-text">
+        <template v-if="renderShelfBuilding()">{{ renderShelfBuilding() }} - </template>
+        {{ renderShelfLocation() }}
+      </span>
     </div>
 
+    <!-- Sections Container -->
+    <div class="row q-col-gutter-md q-mb-lg">
+      <!-- General Section -->
+      <div class="col-xs-12 col-md-4">
+        <div class="section-card">
+          <h2 class="section-title text-h6 text-bold q-mb-md">
+            General
+          </h2>
+          <div class="section-content">
+            <div class="detail-row">
+              <span class="detail-label">Owner</span>
+              <span class="detail-value">{{ shelfDetails.owner?.name || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Size</span>
+              <span class="detail-value">{{ shelfDetails.shelf_type?.size_class?.name || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Created Date</span>
+              <span class="detail-value">{{ formatDateTime(shelfDetails.create_dt).date || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Shelf Type</span>
+              <span class="detail-value">{{ shelfDetails.shelf_type?.name || '—' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dimensions Section -->
+      <div class="col-xs-12 col-md-4">
+        <div class="section-card">
+          <h2 class="section-title text-h6 text-bold q-mb-md">
+            Dimensions
+          </h2>
+          <div class="section-content">
+            <div class="detail-row">
+              <span class="detail-label">Width</span>
+              <span class="detail-value">{{ shelfDetails.width }} in</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Height</span>
+              <span class="detail-value">{{ shelfDetails.height }} in</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Depth</span>
+              <span class="detail-value">{{ shelfDetails.depth }} in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Available Space Section -->
+      <div class="col-xs-12 col-md-4">
+        <div class="section-card">
+          <h2 class="section-title text-h6 text-bold q-mb-md">
+            Available Space
+          </h2>
+          <div class="section-content">
+            <div class="detail-row">
+              <span class="detail-label">Max Quantity</span>
+              <span class="detail-value">{{ shelfDetails.shelf_type?.max_capacity || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Used Quantity</span>
+              <span class="detail-value">{{ renderUsedCapacity() }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Available Quantity</span>
+              <span class="detail-value">{{ shelfDetails.available_space ?? '—' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Containers in Shelf Table -->
     <div class="row q-mt-lg q-mb-xs-xl q-mb-sm-none">
       <div class="col-grow q-mb-xs-md q-mb-sm-none">
         <EssentialTable
@@ -280,17 +127,14 @@
 
 <script setup>
 import { inject, onMounted, ref, watch } from 'vue'
-import { useRouter  } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useRecordManagementStore } from '@/stores/record-management-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { storeToRefs } from 'pinia'
-import BarcodeBox from '@/components/BarcodeBox.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
 
 const router = useRouter()
-
-// Composables
 const { currentScreenSize } = useCurrentScreenSize()
 
 // Store Data
@@ -302,7 +146,7 @@ const {
 } = storeToRefs(useRecordManagementStore())
 const { appIsLoadingData } = storeToRefs(useGlobalStore())
 
-// Local Data
+// Table Configuration
 const containerTableVisibleColumns = ref([
   'barcode_value',
   'shelf_position_number'
@@ -318,13 +162,13 @@ const containerTableColumns = ref([
   {
     name: 'shelf_position_number',
     field: 'shelf_position_number',
-    label: 'Position', // The column header text
+    label: 'Position',
     align: 'left',
     sortable: true
   }
 ])
 
-// Logic
+// Injected Helper Functions
 const formatDateTime = inject('format-date-time')
 const handleAlert = inject('handle-alert')
 
@@ -332,11 +176,11 @@ onMounted(() => {
   loadShelfContainers()
 })
 
-// if user changes to another shelf while in the shelf display we need to make sure to load that shelves request history
 watch(() => shelfDetails.value.barcode, () => {
   loadShelfContainers()
 })
 
+// Helper Methods
 const renderShelfBuilding = () => {
   let building = ''
   if (shelfDetails.value.location) {
@@ -344,6 +188,7 @@ const renderShelfBuilding = () => {
   }
   return building
 }
+
 const renderShelfLocation = () => {
   let module, aisle, side, ladder, shelf = ''
   if (shelfDetails.value.location) {
@@ -356,11 +201,13 @@ const renderShelfLocation = () => {
   }
   return `${module}-${aisle}-${side == 'Right' ? 'R' : side == 'Left' ? 'L' : side}-${ladder}-${shelf}`.replace('undefined-', '')
 }
+
 const renderUsedCapacity = () => {
   const usedSpace = shelfDetails.value.shelf_type?.max_capacity - shelfDetails.value.available_space
   return typeof usedSpace === 'number' && !Number.isNaN(usedSpace) ? usedSpace : 0
 }
 
+// Navigation
 const routeToItemDetail = (item) => {
   if (item.type == 'tray') {
     router.push({
@@ -396,37 +243,55 @@ const loadShelfContainers = async (qParams) => {
 </script>
 
 <style lang="scss" scoped>
-.shelf {
-  &-details {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 1rem;
+.barcode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid $primary;
+}
 
-    @media (max-width: $breakpoint-sm-min) {
-      margin-bottom: 8px;
-    }
+.location-text {
+  margin-left: auto;
+  color: rgba(0, 0, 0, 0.7);
+}
 
-    &-label {
-      width: 100%;
+.section-card {
+  background: $color-white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1.25rem;
+  height: 100%;
+}
 
-      @media (max-width: $breakpoint-sm-min) {
-        width: initial;
-        margin-right: 4px;
-      }
-    }
+.section-title {
+  color: $primary;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
 
-    &-text {
-      min-width: 1px;
-      min-height: 28px; // this offsets any text with outline/highlight classes
+.section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
 
-      @media (max-width: $breakpoint-sm-min) {
-        min-height: initial;
-      }
-    }
-  }
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
+  flex-shrink: 0;
+}
+
+.detail-value {
+  text-align: right;
+  color: rgba(0, 0, 0, 0.87);
 }
 </style>

@@ -301,6 +301,9 @@ class ItemDetailReadOutput(ItemDetailWriteOutput):
     tray: Optional[TrayDetailReadOutput] = None
     last_requested_dt: Optional[datetime] = None
     last_refiled_dt: Optional[datetime] = None
+    last_refile_job_id: Optional[int] = None
+    last_withdraw_job_id: Optional[int] = None
+    last_request_id: Optional[int] = None
 
     model_config = ConfigDict(
         json_schema_extra={

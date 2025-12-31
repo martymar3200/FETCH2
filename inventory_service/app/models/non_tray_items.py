@@ -129,6 +129,25 @@ class NonTrayItem(Base):
         if not self.refile_jobs: return None
         return max(refile_job.update_dt for refile_job in self.refile_jobs)
 
+    @property
+    def last_refile_job_id(self):
+        if not self.refile_jobs: return None
+        latest = max(self.refile_jobs, key=lambda j: j.update_dt)
+        return latest.id
+
+    @property
+    def last_withdraw_job_id(self):
+        if not self.withdraw_jobs: return None
+        latest = max(self.withdraw_jobs, key=lambda j: j.update_dt)
+        return latest.id
+
+    @property
+    def last_request_id(self):
+        if not self.requests: return None
+        latest = max(self.requests, key=lambda r: r.create_dt)
+        return latest.id
+
+
     # --- RELATIONSHIPS ---
     
     # 1. Barcode (CRITICAL FIX: Use back_populates instead of backref)

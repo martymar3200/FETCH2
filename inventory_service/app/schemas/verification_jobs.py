@@ -126,6 +126,7 @@ class VerificationJobBaseOutput(BaseModel):
     owner_id: Optional[int] = None
     media_type_id: Optional[int] = None
     size_class_id: Optional[int] = None
+    update_dt: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
 
