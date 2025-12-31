@@ -1,5 +1,5 @@
-from typing import Optional
-from pydantic import BaseModel, field_validator, computed_field, ConfigDict
+from typing import Optional, Any
+from pydantic import BaseModel, field_validator, computed_field, ConfigDict, Field
 from datetime import timedelta, datetime
 
 from app.models.refile_jobs import RefileJobStatus
@@ -121,6 +121,7 @@ class RefileJobBaseOutput(BaseModel):
         return self.item_shelved_refiled_count + self.non_tray_item_shelved_refiled_count
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "example": {
                 "id": 1,
@@ -145,10 +146,12 @@ class RefileJobBaseOutput(BaseModel):
 class RefileJobListOutput(RefileJobBaseOutput):
     assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
-    items: Optional[list] = None
-    non_tray_items: Optional[list] = None
+    # Exclude raw items from JSON serialization - only counts are needed for list view
+    items: Optional[Any] = Field(default=None, exclude=True)
+    non_tray_items: Optional[Any] = Field(default=None, exclude=True)
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "example": {
                 "id": 1,
@@ -322,6 +325,7 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
     refile_job_items: Optional[list[NestedForRefileJob]] = None
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "example": {
                 "id": 1,

@@ -420,6 +420,24 @@ def get_refile_queue(params):
             NonTrayItem.container_type_id.in_(container_type_subquery)
         )
 
+    # Barcode value filtering - starts with matching
+    if params.barcode_value:
+        item_query_conditions.append(
+            Barcode.value.like(f"{params.barcode_value}%")
+        )
+        non_tray_item_query_conditions.append(
+            Barcode.value.like(f"{params.barcode_value}%")
+        )
+
+    # Item location filtering - case-insensitive contains matching
+    if params.item_location:
+        item_query_conditions.append(
+            ShelfPosition.location.ilike(f"%{params.item_location}%")
+        )
+        non_tray_item_query_conditions.append(
+            ShelfPosition.location.ilike(f"%{params.item_location}%")
+        )
+
     # Get items scanned for refile queue
     item_query_conditions.append(Item.scanned_for_refile_queue == True)
     non_tray_item_query_conditions.append(NonTrayItem.scanned_for_refile_queue == True)

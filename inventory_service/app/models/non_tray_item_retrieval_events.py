@@ -22,7 +22,7 @@ class NonTrayItemRetrievalEvent(Base): # <--- Inherit from Base
     __tablename__ = "non_tray_items_retrieval_events"
 
     # Primary Key
-    id: Mapped[Optional[int]] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     
     # Foreign Keys
     # Note: Mapped[int] because nullable=False in original model

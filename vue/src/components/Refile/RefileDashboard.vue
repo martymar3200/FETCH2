@@ -6,23 +6,22 @@
           ref="refileTableComponent"
           :table-columns="refileDisplayType == 'refile_job' ? refileTableColumns : queueTableColumns"
           :table-visible-columns="refileDisplayType == 'refile_job' ? refileTableVisibleColumns : queueTableVisibleColumns"
-          :filter-options="refileDisplayType == 'refile_job' ? refileTableFilters : queueTableFilters"
           :table-data="refileDisplayType == 'refile_job' ? refileJobList : refileQueueList"
           :row-key="refileDisplayType == 'refile_job' ? 'id' : 'barcode_value'"
           :enable-table-reorder="false"
           :enable-selection="showCreateRefileJob || showAddRefileJob"
           :heading-row-class="'q-mb-xs-md q-mb-md-xl'"
-          :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
           :enable-pagination="true"
           :pagination-total="refileDisplayType == 'refile_job' ? refileJobListTotal : refileQueueListTotal"
           :pagination-loading="appIsLoadingData"
+          :hide-table-rearrange="true"
           @update-pagination="loadRefileJobs($event)"
           @selected-table-row="refileDisplayType == 'refile_job' ? loadRefileJob($event.id) : null"
           @selected-data="selectedRefileItems = $event"
         >
           <template #heading-row>
             <div
-              class="col-sm-5 col-md-12 q-mb-md-sm"
+              class="col-sm-5 col-md-auto q-mb-md-sm"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? '' : 'self-center'"
             >
               <h1 class="text-h4 text-bold">
@@ -30,17 +29,65 @@
               </h1>
             </div>
 
+            <!-- View toggle - left justified after title -->
             <div
-              class="col-xs-grow col-sm-7 col-md-auto flex"
-              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : 'order-1'"
+              class="col-auto q-ml-md self-center"
+              :class="currentScreenSize == 'xs' ? 'col-12 q-mb-md' : ''"
             >
+              <ToggleButtonInput
+                v-model="refileDisplayType"
+                :options="[
+                  {label: 'Refile Job', value: 'refile_job'},
+                  {label: ``, value: 'refile_queue', slot: 'right'}
+                ]"
+                @update:model-value="clearTableSelection(); refileTableComponent.resetTablePagination(); loadRefileJobs();"
+                class="refile-table-toggle toggle-modern"
+              >
+                <template #right>
+                  <div class="items-center no-wrap">
+                    <div class="text-center">
+                      Refile Queue <span class="refile-table-toggle-count">{{ formattedRefileQueueCount }}</span>
+                    </div>
+                  </div>
+                </template>
+              </ToggleButtonInput>
+            </div>
+
+            <div class="col-grow" />
+
+            <!-- Filter buttons and Create - right justified -->
+            <div
+              class="col-auto flex items-center"
+              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
+            >
+              <q-btn
+                flat
+                dense
+                no-caps
+                :color="showFilterRow ? 'accent' : 'grey-7'"
+                :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
+                :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
+                class="q-mr-sm"
+                @click="showFilterRow = !showFilterRow"
+              />
+              <q-btn
+                v-if="showFilterRow"
+                flat
+                dense
+                no-caps
+                color="grey-7"
+                label="Clear"
+                icon="clear_all"
+                class="q-mr-md"
+                @click="clearColumnFilters"
+              />
               <q-btn
                 no-caps
                 unelevated
                 icon-right="arrow_drop_down"
                 color="accent"
                 label="Create"
-                class="text-body1 q-ml-xs-none q-ml-sm-sm"
+                class="text-body1 btn-modern"
                 aria-label="CreateRefileJobMenu"
                 aria-haspopup="menu"
                 :aria-expanded="refileJobMenuState"
@@ -102,28 +149,6 @@
             </div>
 
             <div
-              class="col-xs-12 col-sm-auto col-md-auto q-mb-xs-md q-mb-sm-none"
-            >
-              <ToggleButtonInput
-                v-model="refileDisplayType"
-                :options="[
-                  {label: 'Refile Job', value: 'refile_job'},
-                  {label: ``, value: 'refile_queue', slot: 'right'}
-                ]"
-                @update:model-value="loadRefileJobs()"
-                class="refile-table-toggle"
-              >
-                <template #right>
-                  <div class="items-center no-wrap">
-                    <div class="text-center">
-                      Refile Queue <span class="refile-table-toggle-count">{{ formattedRefileQueueCount }}</span>
-                    </div>
-                  </div>
-                </template>
-              </ToggleButtonInput>
-            </div>
-
-            <div
               v-if="(showCreateRefileJob || showAddRefileJob) && currentScreenSize !== 'xs'"
               class="col-12 order-2 flex"
             >
@@ -162,32 +187,216 @@
             />
           </template>
 
+          <!-- Filter row inside table header -->
+          <template #header-filter-row="{ cols }">
+            <q-tr
+              v-if="showFilterRow"
+              class="filter-row"
+            >
+              <!-- Empty cell for checkbox column when selection is enabled -->
+              <q-th
+                v-if="showCreateRefileJob || showAddRefileJob"
+                class="filter-cell"
+                style="width: 50px;"
+              />
+              <q-th
+                v-for="col in cols"
+                :key="col.name"
+                class="filter-cell"
+              >
+                <!-- Refile Job View Filters -->
+                <template v-if="refileDisplayType === 'refile_job'">
+                  <!-- Job ID filter -->
+                  <q-input
+                    v-if="col.name === 'id'"
+                    v-model="jobColumnFilters.id"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Status filter -->
+                  <q-select
+                    v-else-if="col.name === 'status'"
+                    v-model="jobColumnFilters.status"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="jobStatusOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Assigned User filter -->
+                  <q-select
+                    v-else-if="col.name === 'assigned_user_id'"
+                    v-model="jobColumnFilters.assigned_user"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="userOptionsFromData.length > 0 ? userOptionsFromData : userOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+                </template>
+
+                <!-- Refile Queue View Filters -->
+                <template v-else>
+                  <!-- Location filter -->
+                  <q-input
+                    v-if="col.name === 'location'"
+                    v-model="queueColumnFilters.location"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Container Type filter -->
+                  <q-select
+                    v-else-if="col.name === 'container_type'"
+                    v-model="queueColumnFilters.container_type"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="containerTypeOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Media Type filter -->
+                  <q-select
+                    v-else-if="col.name === 'media_type'"
+                    v-model="queueColumnFilters.media_type"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="mediaTypeOptionsFromData.length > 0 ? mediaTypeOptionsFromData : mediaTypeOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Barcode filter -->
+                  <q-input
+                    v-else-if="col.name === 'barcode_value'"
+                    v-model="queueColumnFilters.barcode_value"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Owner filter -->
+                  <q-select
+                    v-else-if="col.name === 'owner'"
+                    v-model="queueColumnFilters.owner"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="ownerOptionsFromData.length > 0 ? ownerOptionsFromData : ownerOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Size Class filter -->
+                  <q-select
+                    v-else-if="col.name === 'size_class'"
+                    v-model="queueColumnFilters.size_class"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="sizeClassOptionsFromData.length > 0 ? sizeClassOptionsFromData : sizeClassOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+                </template>
+              </q-th>
+            </q-tr>
+          </template>
+
           <template #table-td="{ colName, value }">
             <span
-              v-if="colName == 'size_class'"
-              class="outline text-nowrap"
-              :class="'outline'"
+              v-if="colName == 'status'"
+              class="status-badge"
+              :class="getStatusBadgeClass(value)"
             >
-              {{ value }}
-            </span>
-            <span
-              v-else-if="colName == 'media_type'"
-              class="outline text-nowrap"
-              :class="'text-highlight'"
-            >
-              {{ value }}
-            </span>
-            <span
-              v-else-if="colName == 'status'"
-              class="outline text-nowrap"
-              :class="value == 'Completed' || value == 'Created' ? 'text-highlight' : value == 'Paused' || value == 'Running' ? 'text-highlight-warning' : value == 'New' ? 'text-highlight-accent' : null "
-            >
+              <q-icon
+                :name="getStatusIcon(value)"
+                size="16px"
+              />
               {{ value }}
             </span>
             <span v-else-if="colName == 'create_dt'">
               {{ formatDateTime(value).date }}
             </span>
             <span v-else-if="colName == 'last_transition'">
+              {{ formatDateTime(value).date }}
+            </span>
+            <span v-else-if="colName == 'scanned_for_refile_queue_dt'">
               {{ formatDateTime(value).date }}
             </span>
           </template>
@@ -346,6 +555,174 @@ const {
 } = storeToRefs(useRefileStore())
 const { userData } = storeToRefs(useUserStore())
 
+// Filter State
+const showFilterRow = ref(false)
+
+// Column filter state for Refile Job View
+const jobColumnFilters = ref({
+  id: null,
+  status: [
+    'Created',
+    'Paused',
+    'Running'
+  ], // Default to active jobs
+  assigned_user: []
+})
+
+// Column filter state for Refile Queue View
+const queueColumnFilters = ref({
+  location: null,
+  container_type: [],
+  media_type: [],
+  barcode_value: null,
+  owner: [],
+  size_class: []
+})
+
+// Static filter dropdown options
+const jobStatusOptions = [
+  {
+    label: 'Created',
+    value: 'Created'
+  },
+  {
+    label: 'Paused',
+    value: 'Paused'
+  },
+  {
+    label: 'Running',
+    value: 'Running'
+  },
+  {
+    label: 'Completed',
+    value: 'Completed'
+  }
+]
+
+const containerTypeOptions = [
+  {
+    label: 'Tray',
+    value: 'Tray'
+  },
+  {
+    label: 'Non-Tray',
+    value: 'Non-Tray'
+  }
+]
+
+// Dynamic filter options from current table data
+const userOptionsFromData = computed(() => {
+  const userSet = new Set()
+  refileJobList.value.forEach(row => {
+    if (row.assigned_user?.name) {
+      userSet.add(row.assigned_user.name)
+    }
+  })
+  return Array.from(userSet).sort().map(u => ({
+    label: u,
+    value: u
+  }))
+})
+
+const mediaTypeOptionsFromData = computed(() => {
+  const types = new Set()
+  refileQueueList.value.forEach(row => {
+    if (row.media_type) {
+      types.add(row.media_type)
+    }
+  })
+  return Array.from(types).sort().map(t => ({
+    label: t,
+    value: t
+  }))
+})
+
+const ownerOptionsFromData = computed(() => {
+  const ownerSet = new Set()
+  refileQueueList.value.forEach(row => {
+    if (row.owner) {
+      ownerSet.add(row.owner)
+    }
+  })
+  return Array.from(ownerSet).sort().map(o => ({
+    label: o,
+    value: o
+  }))
+})
+
+const sizeClassOptionsFromData = computed(() => {
+  const sizes = new Set()
+  refileQueueList.value.forEach(row => {
+    if (row.size_class) {
+      sizes.add(row.size_class)
+    }
+  })
+  return Array.from(sizes).sort().map(s => ({
+    label: s,
+    value: s
+  }))
+})
+
+// Fallback options from store data
+const userOptions = computed(() =>
+  users.value.map(u => ({
+    label: u.name,
+    value: u.name
+  }))
+)
+
+const mediaTypeOptions = computed(() =>
+  mediaTypes.value.map(m => ({
+    label: m.name,
+    value: m.name
+  }))
+)
+
+const ownerOptions = computed(() =>
+  owners.value.map(o => ({
+    label: o.name,
+    value: o.name
+  }))
+)
+
+const sizeClassOptions = computed(() =>
+  sizeClass.value.map(s => ({
+    label: s.name,
+    value: s.name
+  }))
+)
+
+// Status badge helper functions
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'Created':
+      return 'mdi-plus-circle'
+    case 'Running':
+      return 'mdi-progress-clock'
+    case 'Paused':
+      return 'mdi-pause-circle'
+    case 'Completed':
+      return 'mdi-check-circle'
+    default:
+      return 'mdi-help-circle'
+  }
+}
+
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'Created':
+      return 'status-badge--created'
+    case 'Running':
+      return 'status-badge--running'
+    case 'Paused':
+      return 'status-badge--paused'
+    case 'Completed':
+      return 'status-badge--completed'
+    default:
+      return ''
+  }
+}
+
 // Local Data
 const refileJobModalComponent = ref(null)
 const refileJobMenuState = ref(false)
@@ -410,45 +787,6 @@ const refileTableColumns = ref([
     sortable: true
   }
 ])
-const refileTableFilters = computed(() => {
-  let tablesFilters = []
-  tablesFilters = [
-    {
-      field: 'status',
-      label: 'Status',
-      options: [
-        {
-          text: 'Created',
-          value: true
-        },
-        {
-          text: 'Paused',
-          value: true
-        },
-        {
-          text: 'Running',
-          value: true
-        },
-        {
-          text: 'Completed',
-          value: false
-        }
-      ]
-    },
-    {
-      field: row => row.assigned_user ? row.assigned_user.name : '',
-      label: 'Assigned User',
-      apiField: 'assigned_user',
-      options: users.value.map(usr => {
-        return {
-          text: usr.name,
-          value: false
-        }
-      })
-    }
-  ]
-  return tablesFilters
-})
 const queueTableVisibleColumns = ref([
   'location',
   'container_type',
@@ -456,7 +794,7 @@ const queueTableVisibleColumns = ref([
   'barcode_value',
   'owner',
   'size_class',
-  'create_dt'
+  'scanned_for_refile_queue_dt'
 ])
 const queueTableColumns = ref([
   {
@@ -464,7 +802,8 @@ const queueTableColumns = ref([
     field: row => `${row.module_number}-${row.aisle_number}-${row.side_orientation == 'Right' ? 'R' : row.side_orientation == 'Left' ? 'L' : row.side_orientation}-${row.ladder_number}-${row.shelf_number}-${row.shelf_position_number}`,
     label: 'Item Location',
     align: 'left',
-    sortable: true
+    sortable: true,
+    style: 'min-width: 150px'
   },
   {
     name: 'container_type',
@@ -485,7 +824,8 @@ const queueTableColumns = ref([
     field: row => row.barcode_value,
     label: 'Item Barcode',
     align: 'left',
-    sortable: true
+    sortable: true,
+    style: 'min-width: 150px'
   },
   {
     name: 'owner',
@@ -509,52 +849,6 @@ const queueTableColumns = ref([
     sortable: true
   }
 ])
-const queueTableFilters =  ref([
-  {
-    field: 'container_type',
-    label: 'Container Type',
-    options: [
-      {
-        text: 'Tray',
-        value: false
-      },
-      {
-        text: 'Non-Tray',
-        value: false
-      }
-    ]
-  },
-  {
-    field: 'media_type',
-    label: 'Media Type',
-    options: mediaTypes.value.map(m => {
-      return {
-        text: m.name,
-        value: false
-      }
-    })
-  },
-  {
-    field: 'owner',
-    label: 'Owner',
-    options: owners.value.map(o => {
-      return {
-        text: o.name,
-        value: false
-      }
-    })
-  },
-  {
-    field: 'size_class',
-    label: 'Size Class',
-    options: sizeClass.value.map(s => {
-      return {
-        text: s.name,
-        value: false
-      }
-    })
-  }
-])
 const refileDisplayType = ref('refile_job')
 const showAddItemToQueue = ref(false)
 const showCreateRefileJob = ref(false)
@@ -563,9 +857,10 @@ const showRefileJobModal = ref(null)
 const selectedRefileItems = ref([])
 const filterRefileByBuilding = ref(null)
 const addToRefileJob = ref(null)
-const formattedRefileQueueCount = computed( () => {
+const formattedRefileQueueCount = computed(() => {
   return refileQueueListTotal.value.toLocaleString()
 })
+
 // Logic
 const handleAlert = inject('handle-alert')
 const formatDateTime = inject('format-date-time')
@@ -618,13 +913,59 @@ const loadRefileJobs = async (qParams) => {
   try {
     appIsLoadingData.value = true
     if (refileDisplayType.value == 'refile_job') {
-      await getRefileJobList({
+      // Build filter params
+      const filterParams = {
         ...qParams,
-        status: refileTableFilters.value.find(fltr => fltr.field == 'status').options.flatMap(opt => opt.value == true ? opt.text : []),
         user_id: checkUserPermission('can_view_all_refile_jobs') ? null : userData.value.user_id
-      })
+      }
+
+      // Apply column filters
+      if (jobColumnFilters.value.id) {
+        filterParams.id = jobColumnFilters.value.id
+      }
+      if (jobColumnFilters.value.status && jobColumnFilters.value.status.length > 0) {
+        filterParams.status = jobColumnFilters.value.status
+      }
+      if (jobColumnFilters.value.assigned_user && jobColumnFilters.value.assigned_user.length > 0) {
+        filterParams.assigned_user = jobColumnFilters.value.assigned_user
+      }
+
+      await getRefileJobList(filterParams)
     } else {
-      await getRefileQueueList({ ...qParams })
+      // Build queue filter params
+      const isRefileJobMode = showCreateRefileJob.value || showAddRefileJob.value
+      const queueFilterParams = {
+        ...qParams,
+        // Persist building filter during refile job creation mode
+        ...(isRefileJobMode && filterRefileByBuilding.value ? { building_id: filterRefileByBuilding.value } : {})
+      }
+
+      if (queueColumnFilters.value.location) {
+        // Convert displayed location format to database format
+        let locationSearch = queueColumnFilters.value.location
+        locationSearch = locationSearch.replace(/-R-/gi, '-Right-')
+        locationSearch = locationSearch.replace(/-L-/gi, '-Left-')
+        locationSearch = locationSearch.replace(/-R$/gi, '-Right')
+        locationSearch = locationSearch.replace(/-L$/gi, '-Left')
+        queueFilterParams.item_location = locationSearch
+      }
+      if (queueColumnFilters.value.container_type && queueColumnFilters.value.container_type.length > 0) {
+        queueFilterParams.container_type = queueColumnFilters.value.container_type
+      }
+      if (queueColumnFilters.value.media_type && queueColumnFilters.value.media_type.length > 0) {
+        queueFilterParams.media_type = queueColumnFilters.value.media_type
+      }
+      if (queueColumnFilters.value.barcode_value) {
+        queueFilterParams.barcode_value = queueColumnFilters.value.barcode_value
+      }
+      if (queueColumnFilters.value.owner && queueColumnFilters.value.owner.length > 0) {
+        queueFilterParams.owner = queueColumnFilters.value.owner
+      }
+      if (queueColumnFilters.value.size_class && queueColumnFilters.value.size_class.length > 0) {
+        queueFilterParams.size_class = queueColumnFilters.value.size_class
+      }
+
+      await getRefileQueueList(queueFilterParams)
     }
   } catch (error) {
     handleAlert({
@@ -636,6 +977,36 @@ const loadRefileJobs = async (qParams) => {
     appIsLoadingData.value = false
   }
 }
+
+// Apply column filters
+const applyColumnFilters = () => {
+  if (refileTableComponent.value) {
+    refileTableComponent.value.resetTablePagination()
+  }
+  loadRefileJobs()
+}
+
+// Clear all column filters
+const clearColumnFilters = () => {
+  if (refileDisplayType.value === 'refile_job') {
+    jobColumnFilters.value = {
+      id: null,
+      status: [],
+      assigned_user: []
+    }
+  } else {
+    queueColumnFilters.value = {
+      location: null,
+      container_type: [],
+      media_type: [],
+      barcode_value: null,
+      owner: [],
+      size_class: []
+    }
+  }
+  applyColumnFilters()
+}
+
 const loadRefileQueueByBuilding = async () => {
   // this function only gets called during the creation/add refile job process
   try {
@@ -738,6 +1109,33 @@ const updateRefileJob = async () => {
 </script>
 
 <style lang="scss" scoped>
+.toggle-modern {
+  :deep(.q-btn-group) {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  :deep(.q-btn) {
+    border-radius: 0;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease-in-out;
+
+    &:first-child {
+      border-top-left-radius: 10px;
+      border-bottom-left-radius: 10px;
+    }
+
+    &:last-child {
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+  }
+}
+
 .refile-table-toggle {
   :deep(.q-btn) {
     flex: auto;
@@ -755,5 +1153,31 @@ const updateRefileJob = async () => {
       border-color: $color-white;
     }
   }
+}
+
+// Table horizontal scroll and minimum column widths
+:deep(.q-table__container) {
+  overflow-x: auto;
+}
+
+:deep(.q-table) {
+  min-width: 1000px;
+}
+
+:deep(.filter-row) {
+  .filter-cell {
+    min-width: 120px;
+    padding: 4px 8px;
+  }
+
+  .column-filter-input {
+    min-width: 100px;
+    width: 100%;
+  }
+}
+
+:deep(.q-table th) {
+  min-width: 100px;
+  white-space: nowrap;
 }
 </style>

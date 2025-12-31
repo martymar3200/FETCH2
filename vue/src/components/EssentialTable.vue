@@ -177,7 +177,7 @@
           :row-key="rowKey"
           :wrap-cells="true"
           :hide-selected-banner="true"
-          column-sort-order="da"
+          column-sort-order="ad"
           :hide-pagination="enablePagination ? false : true"
           v-model:pagination="paginationConfig"
           :loading="paginationLoading"
@@ -204,27 +204,55 @@
             />
           </template>
 
-          <template #header-cell="props">
-            <q-th
-              class=""
-              :class="props.col.__thClass"
-              :style="props.col.headerStyle"
-            >
-              <span
-                :tabindex="props.col.label ? 0 : -1"
-                class="flex no-wrap items-center"
-                :aria-label="`${props.col.label.replaceAll('#', 'Number')}TableColumnSortAscendDescend`"
-                @keydown.enter="props.sort(props.col.name)"
-                @click="props.sort(props.col.name)"
+          <!-- Slot for additional header rows (e.g., filter row) -->
+          <template #header="props">
+            <q-tr :props="props">
+              <!-- Header cell for selection checkbox column with select-all -->
+              <q-th
+                v-if="enableSelection"
+                auto-width
               >
-                {{ props.col.label }}
-                <q-icon
-                  name="arrow_upward"
-                  class="q-table__sort-icon q-table__sort-icon--left"
-                  aria-label="tableColumnSortIcon"
+                <q-checkbox
+                  v-model="props.selected"
+                  aria-label="tableSelectAll"
                 />
-              </span>
-            </q-th>
+              </q-th>
+              <q-th
+                v-for="col in props.cols"
+                :key="col.name"
+                :props="props"
+                :class="col.__thClass"
+                :style="col.headerStyle"
+                :auto-width="col.name === 'actions'"
+                class="custom-header-cell"
+              >
+                <span
+                  v-if="col.name !== 'actions'"
+                  :tabindex="col.label ? 0 : -1"
+                  class="flex no-wrap items-center cursor-pointer"
+                  :aria-label="`${col.label.replaceAll('#', 'Number')}TableColumnSortAscendDescend`"
+                  @keydown.enter="col.sortable ? props.sort(col.name) : null"
+                  @click="col.sortable ? props.sort(col.name) : null"
+                >
+                  {{ col.label }}
+                  <q-icon
+                    v-if="col.sortable"
+                    name="arrow_upward"
+                    class="custom-sort-icon q-ml-xs"
+                    :class="{
+                      'sort-active': paginationConfig.sortBy === col.name,
+                      'sort-descending': paginationConfig.sortBy === col.name && paginationConfig.descending
+                    }"
+                    size="14px"
+                  />
+                </span>
+              </q-th>
+            </q-tr>
+            <!-- Filter row slot -->
+            <slot
+              name="header-filter-row"
+              :cols="props.cols"
+            />
           </template>
 
           <template #body-selection="scope">
@@ -581,13 +609,19 @@ const onTableRequest = (props, tableFilters) => {
     }
 
     // emit to parent to get next set of paged data with refrenced query params
-    emit('update-pagination', {
+    const emitParams = {
       ...paginationConfig.value,
       size: paginationConfig.value.rowsPerPage,
-      page: paginationConfig.value.page,
-      sort_by: paginationConfig.value.sortBy,
-      sort_order: paginationConfig.value.descending ? 'desc' : 'asc'
-    })
+      page: paginationConfig.value.page
+    }
+
+    // Only include sort params if sortBy has a value
+    if (paginationConfig.value.sortBy) {
+      emitParams.sort_by = paginationConfig.value.sortBy
+      emitParams.sort_order = paginationConfig.value.descending ? 'desc' : 'asc'
+    }
+
+    emit('update-pagination', emitParams)
   }
 }
 

@@ -1,25 +1,191 @@
 // custom default styling for q-table component
 .q-table {
+  // Modern 3D card effect with layered shadows
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    0 16px 32px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba($secondary, 0.15);
+
   th {
     vertical-align: baseline;
     font-size: $font-default;
-    padding: 7px 10px;
-    border-bottom-color: $secondary;
+    padding: 12px 14px;
+    border-bottom: 2px solid $secondary;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: $primary;
+
+    // Hide Quasar's auto-injected sort icon (it appears on its own row)
+    >.q-table__sort-icon {
+      display: none !important;
+    }
 
     @media (max-width: $breakpoint-sm-min) {
       font-size: .98rem;
       vertical-align: baseline;
+      padding: 8px 10px;
     }
   }
 
+  // Custom sort icon styling (inline with column label)
+  .custom-sort-icon {
+    opacity: 0.4;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+
+    // When column is actively sorted
+    &.sort-active {
+      opacity: 1;
+      color: $accent;
+    }
+
+    // Rotate arrow for descending sort
+    &.sort-descending {
+      transform: rotate(180deg);
+    }
+  }
+
+  .custom-header-cell:hover .custom-sort-icon {
+    opacity: 0.8;
+  }
+
   tbody {
+
+    // Enhanced zebra striping
+    tr:nth-child(even) {
+      background: rgba($secondary, 0.06);
+    }
+
+    // Smooth row hover with subtle lift effect
+    tr {
+      transition: all 0.2s ease-in-out;
+
+      &:hover {
+        background: rgba($accent, 0.08);
+        box-shadow: 0 2px 8px rgba($accent, 0.12);
+        transform: translateY(-1px);
+      }
+    }
+
     td {
-      padding: 7px 10px;
+      padding: 10px 14px;
       font-size: 1rem;
-  
+      border-bottom: 1px solid rgba($secondary, 0.1);
+
       @media (max-width: $breakpoint-sm-min) {
         font-size: 13px;
+        padding: 8px 10px;
       }
     }
   }
+}
+
+// Status badge/pill styling
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+
+  .q-icon {
+    margin-right: 6px;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+  }
+
+  // Status-specific colors
+  &--created {
+    background: linear-gradient(135deg, #0066cc 0%, #3399ff 100%);
+    color: white;
+  }
+
+  &--running {
+    background: linear-gradient(135deg, #1a8000 0%, #2db800 100%);
+    color: white;
+  }
+
+  &--paused {
+    background: linear-gradient(135deg, #e6a700 0%, #F2C037 100%);
+    color: #1D1D1D;
+  }
+
+  &--completed,
+  &.status-completed {
+    background: linear-gradient(135deg, #1b9aaa 0%, #06d6a0 100%);
+    color: white;
+  }
+
+  // New status - same as Created (blue)
+  &.status-new {
+    background: linear-gradient(135deg, #0066cc 0%, #3399ff 100%);
+    color: white;
+  }
+
+  // In Progress status (amber/orange)
+  &.status-in-progress {
+    background: linear-gradient(135deg, #e6a700 0%, #F2C037 100%);
+    color: #1D1D1D;
+  }
+
+  // Failed status (red)
+  &.status-failed {
+    background: linear-gradient(135deg, #a00000 0%, #d32f2f 100%);
+    color: white;
+  }
+
+  // Cancelled status (grey)
+  &.status-cancelled {
+    background: linear-gradient(135deg, #666666 0%, #999999 100%);
+    color: white;
+  }
+}
+
+// Column filter input styling
+.column-filter-input {
+  min-width: 80px;
+
+  .q-field__control {
+    min-height: 32px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .q-field__native {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+
+  &.q-select {
+    .q-field__native {
+      min-height: 24px;
+    }
+  }
+}
+
+// Filter row within table header
+.filter-row {
+  background: linear-gradient(180deg, #f5f5f5 0%, #eeeeee 100%);
+
+  .filter-cell {
+    padding: 8px 14px !important;
+    vertical-align: middle;
+  }
+}
+
+// Status badge error fallback
+.status-badge--error {
+  background: linear-gradient(135deg, #a00000 0%, #d32f2f 100%);
+  color: white;
 }

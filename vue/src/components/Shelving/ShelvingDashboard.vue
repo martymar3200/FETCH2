@@ -3,16 +3,16 @@
     <div class="row q-mb-xs-xl q-mb-sm-none">
       <div class="col-grow q-mb-xs-md q-mb-sm-none">
         <EssentialTable
+          ref="shelvingTableRef"
           :table-columns="shelfTableColumns"
           :table-visible-columns="shelfTableVisibleColumns"
-          :filter-options="shelfTableFilters"
           :table-data="shelvingJobList"
           :enable-table-reorder="false"
           :heading-row-class="'q-mb-xs-md q-mb-md-lg'"
-          :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
           :enable-pagination="true"
           :pagination-total="shelvingJobListTotal"
           :pagination-loading="appIsLoadingData"
+          :hide-table-rearrange="true"
           @update-pagination="loadShelvingJobs($event)"
           @selected-table-row="loadShelvingJob($event.id, $event.origin)"
         >
@@ -26,17 +26,40 @@
               </h1>
             </div>
 
+            <div class="col-grow" />
+
             <div
-              class="col-xs-grow col-sm-7 col-md-auto flex"
-              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : 'order-1'"
+              class="col-auto flex items-center"
+              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
+              <q-btn
+                flat
+                dense
+                no-caps
+                :color="showFilterRow ? 'accent' : 'grey-7'"
+                :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
+                :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
+                class="q-mr-sm"
+                @click="showFilterRow = !showFilterRow"
+              />
+              <q-btn
+                v-if="showFilterRow"
+                flat
+                dense
+                no-caps
+                color="grey-7"
+                label="Clear"
+                icon="clear_all"
+                class="q-mr-md"
+                @click="clearColumnFilters"
+              />
               <q-btn
                 no-caps
                 unelevated
                 icon-right="arrow_drop_down"
                 color="accent"
                 label="Create Shelving Job"
-                class="text-body1 q-ml-xs-none q-ml-sm-sm"
+                class="text-body1 btn-modern"
                 :disabled="appIsOffline"
                 aria-label="createShelvingJobMenu"
                 aria-haspopup="menu"
@@ -114,12 +137,69 @@
             </div>
           </template>
 
+          <!-- Filter row inside table header -->
+          <template #header-filter-row="{ cols }">
+            <q-tr
+              v-if="showFilterRow"
+              class="filter-row"
+            >
+              <q-th
+                v-for="col in cols"
+                :key="col.name"
+                class="filter-cell"
+              >
+                <!-- Job Number filter -->
+                <q-input
+                  v-if="col.name === 'id'"
+                  v-model="columnFilters.id"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+
+                <!-- Status filter -->
+                <q-select
+                  v-else-if="col.name === 'status'"
+                  v-model="columnFilters.status"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="statusOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
+              </q-th>
+            </q-tr>
+          </template>
+
           <template #table-td="{ colName, value }">
             <span
               v-if="colName == 'status'"
-              class="outline text-nowrap"
-              :class="value == 'Created' || value == 'Completed' ? 'text-highlight' : value == 'Paused' || value == 'Running' ? 'text-highlight-warning' : 'text-highlight-negative'"
+              class="status-badge"
+              :class="getStatusBadgeClass(value)"
             >
+              <q-icon
+                :name="getStatusIcon(value)"
+                size="16px"
+              />
               {{ value }}
             </span>
             <span
@@ -463,7 +543,6 @@ const {
   modules,
   aisles,
   ladders,
-  users,
   verificationJobsDropdown
 } = storeToRefs(useOptionStore())
 const {
@@ -498,6 +577,70 @@ const { userData } = storeToRefs(useUserStore())
 
 // Local Data
 const createShelvingJobModal = ref(null)
+const shelvingTableRef = ref(null)
+const showFilterRow = ref(false)  // Toggle visibility of filter row
+
+// Column filter state for server-side filtering
+const columnFilters = ref({
+  id: null,
+  status: [
+    'Created',
+    'Paused',
+    'Running'
+  ]  // Default to showing active jobs
+})
+
+// Filter dropdown options
+const statusOptions = [
+  {
+    label: 'Created',
+    value: 'Created'
+  },
+  {
+    label: 'Paused',
+    value: 'Paused'
+  },
+  {
+    label: 'Running',
+    value: 'Running'
+  },
+  {
+    label: 'Completed',
+    value: 'Completed'
+  }
+]
+
+// Status badge helper functions
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'Created':
+      return 'mdi-plus-circle'
+    case 'Running':
+      return 'mdi-play-circle'
+    case 'Paused':
+      return 'mdi-pause-circle'
+    case 'Completed':
+      return 'mdi-check-circle'
+    default:
+      return 'mdi-alert-circle'
+  }
+}
+
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'Created':
+      return 'status-badge--created'
+    case 'Running':
+      return 'status-badge--running'
+    case 'Paused':
+      return 'status-badge--paused'
+    case 'Completed':
+      return 'status-badge--completed'
+    default:
+      return 'status-badge--error'
+  }
+}
+
 const shelfTableVisibleColumns = ref([
   'id',
   'container_count',
@@ -556,45 +699,6 @@ const shelfTableColumns = ref([
     order: 5
   }
 ])
-const shelfTableFilters = computed(() => {
-  let tablesFilters = []
-  tablesFilters = [
-    {
-      field: 'status',
-      label: 'Status',
-      options: [
-        {
-          text: 'Created',
-          value: true
-        },
-        {
-          text: 'Paused',
-          value: true
-        },
-        {
-          text: 'Running',
-          value: true
-        },
-        {
-          text: 'Completed',
-          value: false
-        }
-      ]
-    },
-    {
-      field: row => row.user ? row.user.name : '',
-      label: 'Assigned User',
-      apiField: 'assigned_user',
-      options: users.value.map(usr => {
-        return {
-          text: usr.name,
-          value: false
-        }
-      })
-    }
-  ]
-  return tablesFilters
-})
 const shelvingJobMenuState = ref(false)
 const showShelvingJobModal = ref(null)
 const isCreateShelvingJobFormValid = computed(() => {
@@ -674,11 +778,26 @@ const handleShelvingJobFormChange = async (valueType) => {
 const loadShelvingJobs = async (qParams) => {
   try {
     appIsLoadingData.value = true
-    await getShelvingJobList({
-      ...qParams,
-      status: shelfTableFilters.value.find(fltr => fltr.field == 'status').options.flatMap(opt => opt.value == true ? opt.text : []),
-      user_id: checkUserPermission('can_view_all_shelving_jobs') ? null : userData.value.user_id
-    })
+
+    // Build filter params from column filters
+    const filterParams = {
+      ...qParams
+    }
+
+    // Add id search if provided
+    if (columnFilters.value.id) {
+      filterParams.id = columnFilters.value.id
+    }
+
+    // Add status filter
+    if (columnFilters.value.status && columnFilters.value.status.length > 0) {
+      filterParams.status = columnFilters.value.status
+    }
+
+    // Add user filter based on permission
+    filterParams.user_id = checkUserPermission('can_view_all_shelving_jobs') ? null : userData.value.user_id
+
+    await getShelvingJobList(filterParams)
   } catch (error) {
     handleAlert({
       type: 'error',
@@ -688,6 +807,28 @@ const loadShelvingJobs = async (qParams) => {
   } finally {
     appIsLoadingData.value = false
   }
+}
+
+// Apply column filters - triggers server-side filtering
+const applyColumnFilters = () => {
+  // Reset pagination to page 1 when filters change
+  if (shelvingTableRef.value) {
+    shelvingTableRef.value.resetTablePagination()
+  }
+  loadShelvingJobs()
+}
+
+// Clear all column filters
+const clearColumnFilters = () => {
+  columnFilters.value = {
+    id: null,
+    status: [
+      'Created',
+      'Paused',
+      'Running'
+    ]  // Reset to default active statuses
+  }
+  applyColumnFilters()
 }
 const loadShelvingJob = async (jobId, type) => {
   try {

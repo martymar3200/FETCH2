@@ -338,9 +338,18 @@ class RefileQueueSorter(BaseSorter):
     def custom_sort(self, query: Query, sort_params, order_func):
         """
         Overrides the default sort to allow custom sorting for specific fields.
+        The refile queue uses a union query with aliased columns.
         """
-        if hasattr(query, "c"):
-            return query.order_by(order_func(sort_params.sort_by))
+        # The query is a select(...).select_from(aliased_subquery)
+        # Find the matching column from selected_columns by name
+        sort_by = sort_params.sort_by
+        
+        if hasattr(query, "selected_columns"):
+            for col in query.selected_columns:
+                # Match by the column's name/key
+                col_name = getattr(col, "name", None) or getattr(col, "key", None)
+                if col_name == sort_by:
+                    return query.order_by(order_func(col))
 
         return super().custom_sort(query, sort_params, order_func)
 

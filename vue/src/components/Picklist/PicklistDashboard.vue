@@ -3,29 +3,144 @@
     <div class="row q-mb-xs-xl q-mb-sm-none">
       <div class="col-grow q-mb-xs-md q-mb-sm-none">
         <EssentialTable
+          ref="picklistTableComponent"
           :table-columns="picklistTableColumns"
           :table-visible-columns="picklistTableVisibleColumns"
-          :filter-options="picklistTableFilters"
           :table-data="picklistJobList"
           :enable-table-reorder="false"
           :enable-selection="false"
           :heading-row-class="'q-mb-xs-md q-mb-md-xl'"
-          :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
           :enable-pagination="true"
           :pagination-total="picklistJobListTotal"
           :pagination-loading="appIsLoadingData"
+          :hide-table-rearrange="true"
           @update-pagination="loadPicklistJobs($event)"
           @selected-table-row="loadPicklistJob($event.id)"
         >
           <template #heading-row>
             <div
-              class="col-xs-12 col-sm-5 col-md-12 col-lg-auto q-mb-xs-sm q-mb-sm-none"
-              :class="currentScreenSize == 'xs' ? '' : 'self-center'"
+              class="col-sm-5 col-md-auto q-mb-md-sm"
+              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? '' : 'self-center'"
             >
               <h1 class="text-h4 text-bold">
                 Pick List Jobs
               </h1>
             </div>
+
+            <div class="col-grow" />
+
+            <!-- Filter buttons - right justified -->
+            <div
+              class="col-auto flex items-center"
+              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
+            >
+              <q-btn
+                flat
+                dense
+                no-caps
+                :color="showFilterRow ? 'accent' : 'grey-7'"
+                :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
+                :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
+                class="q-mr-sm"
+                @click="showFilterRow = !showFilterRow"
+              />
+              <q-btn
+                v-if="showFilterRow"
+                flat
+                dense
+                no-caps
+                color="grey-7"
+                label="Clear"
+                icon="clear_all"
+                @click="clearColumnFilters"
+              />
+            </div>
+          </template>
+
+          <!-- Filter row inside table header -->
+          <template #header-filter-row="{ cols }">
+            <q-tr
+              v-if="showFilterRow"
+              class="filter-row"
+            >
+              <q-th
+                v-for="col in cols"
+                :key="col.name"
+                class="filter-cell"
+              >
+                <!-- Job Number filter -->
+                <q-input
+                  v-if="col.name === 'id'"
+                  v-model="columnFilters.id"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  @keyup.enter="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+
+                <!-- Building filter -->
+                <q-select
+                  v-else-if="col.name === 'building_name'"
+                  v-model="columnFilters.building_name"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="buildingOptionsFromData.length > 0 ? buildingOptionsFromData : buildingOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
+
+                <!-- Status filter -->
+                <q-select
+                  v-else-if="col.name === 'status'"
+                  v-model="columnFilters.status"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="statusOptionsFromData.length > 0 ? statusOptionsFromData : picklistStatusOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
+
+                <!-- Assigned User filter -->
+                <q-select
+                  v-else-if="col.name === 'user_id'"
+                  v-model="columnFilters.assigned_user"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="userOptionsFromData.length > 0 ? userOptionsFromData : userOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
+              </q-th>
+            </q-tr>
           </template>
 
           <template #table-td="{ colName, value }">
@@ -37,9 +152,13 @@
             </span>
             <span
               v-else-if="colName == 'status'"
-              class="outline text-nowrap"
-              :class="value == 'Completed' || value == 'Created' ? 'text-highlight' : value == 'Paused' || value == 'Running' ? 'text-highlight-warning' : value == 'New' ? 'text-highlight-accent' : null "
+              class="status-badge"
+              :class="getStatusBadgeClass(value)"
             >
+              <q-icon
+                :name="getStatusIcon(value)"
+                size="16px"
+              />
               {{ value }}
             </span>
             <span v-else-if="colName == 'create_dt'">
@@ -56,7 +175,7 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref, inject } from 'vue'
+import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -86,6 +205,134 @@ const {
 } = usePicklistStore()
 const { picklistJobList, picklistJobListTotal } = storeToRefs(usePicklistStore())
 const { userData } = storeToRefs(useUserStore())
+
+// Filter State
+const showFilterRow = ref(false)
+const picklistTableComponent = ref(null)
+
+// Column filter state
+const columnFilters = ref({
+  id: null,
+  building_name: [],
+  status: [
+    'Created',
+    'Paused',
+    'Running'
+  ], // Default to show active jobs
+  assigned_user: []
+})
+
+// Static filter dropdown options
+const picklistStatusOptions = [
+  {
+    label: 'Created',
+    value: 'Created'
+  },
+  {
+    label: 'Paused',
+    value: 'Paused'
+  },
+  {
+    label: 'Running',
+    value: 'Running'
+  },
+  {
+    label: 'Completed',
+    value: 'Completed'
+  }
+]
+
+// Dynamic filter options from current table data
+const buildingOptionsFromData = computed(() => {
+  const buildingSet = new Set()
+  picklistJobList.value.forEach(row => {
+    if (row.building?.id && row.building?.name) {
+      buildingSet.add(JSON.stringify({
+        id: row.building.id,
+        name: row.building.name
+      }))
+    }
+  })
+  return Array.from(buildingSet).map(b => {
+    const parsed = JSON.parse(b)
+    return {
+      label: parsed.name,
+      value: parsed.name
+    }
+  }).sort((a, b) => a.label.localeCompare(b.label))
+})
+
+const statusOptionsFromData = computed(() => {
+  const statuses = new Set()
+  picklistJobList.value.forEach(row => {
+    if (row.status) {
+      statuses.add(row.status)
+    }
+  })
+  return Array.from(statuses).sort().map(s => ({
+    label: s,
+    value: s
+  }))
+})
+
+const userOptionsFromData = computed(() => {
+  const userSet = new Set()
+  picklistJobList.value.forEach(row => {
+    if (row.user?.name) {
+      userSet.add(row.user.name)
+    }
+  })
+  return Array.from(userSet).sort().map(u => ({
+    label: u,
+    value: u
+  }))
+})
+
+// Fallback options from store data
+const buildingOptions = computed(() =>
+  buildings.value.map(b => ({
+    label: b.name,
+    value: b.name
+  }))
+)
+
+const userOptions = computed(() =>
+  users.value.map(u => ({
+    label: u.name,
+    value: u.name
+  }))
+)
+
+// Status badge helper functions
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'Created':
+      return 'mdi-plus-circle'
+    case 'Running':
+      return 'mdi-progress-clock'
+    case 'Paused':
+      return 'mdi-pause-circle'
+    case 'Completed':
+      return 'mdi-check-circle'
+    default:
+      return 'mdi-help-circle'
+  }
+}
+
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'Created':
+      return 'status-badge--created'
+    case 'Running':
+      return 'status-badge--running'
+    case 'Paused':
+      return 'status-badge--paused'
+    case 'Completed':
+      return 'status-badge--completed'
+    default:
+      return ''
+  }
+}
 
 // Local Data
 const picklistTableVisibleColumns = ref([
@@ -148,52 +395,6 @@ const picklistTableColumns = ref([
     sortable: true
   }
 ])
-const picklistTableFilters =  ref([
-  {
-    field: row => row.building?.name,
-    label: 'Building',
-    apiField: 'building_name',
-    options: buildings.value.map(b => {
-      return {
-        text: b.name,
-        value: false
-      }
-    })
-  },
-  {
-    field: 'status',
-    label: 'Status',
-    options: [
-      {
-        text: 'Created',
-        value: true
-      },
-      {
-        text: 'Paused',
-        value: true
-      },
-      {
-        text: 'Running',
-        value: true
-      },
-      {
-        text: 'Completed',
-        value: false
-      }
-    ]
-  },
-  {
-    field: row => row.user ? row.user.name : '',
-    label: 'Assigned User',
-    apiField: 'assigned_user',
-    options: users.value.map(usr => {
-      return {
-        text: usr.name,
-        value: false
-      }
-    })
-  }
-])
 
 // Logic
 const handleAlert = inject('handle-alert')
@@ -216,11 +417,28 @@ onBeforeMount(() => {
 const loadPicklistJobs = async (qParams) => {
   try {
     appIsLoadingData.value = true
-    await getPicklistJobList({
+
+    // Build filter params
+    const filterParams = {
       ...qParams,
-      status: picklistTableFilters.value.find(fltr => fltr.field == 'status').options.flatMap(opt => opt.value == true ? opt.text : []),
       user_id: checkUserPermission('can_view_all_picklist_jobs') ? null : userData.value.user_id
-    })
+    }
+
+    // Apply column filters
+    if (columnFilters.value.id) {
+      filterParams.id = columnFilters.value.id
+    }
+    if (columnFilters.value.building_name && columnFilters.value.building_name.length > 0) {
+      filterParams.building_name = columnFilters.value.building_name
+    }
+    if (columnFilters.value.status && columnFilters.value.status.length > 0) {
+      filterParams.status = columnFilters.value.status
+    }
+    if (columnFilters.value.assigned_user && columnFilters.value.assigned_user.length > 0) {
+      filterParams.assigned_user = columnFilters.value.assigned_user
+    }
+
+    await getPicklistJobList(filterParams)
   } catch (error) {
     handleAlert({
       type: 'error',
@@ -231,6 +449,26 @@ const loadPicklistJobs = async (qParams) => {
     appIsLoadingData.value = false
   }
 }
+
+// Apply column filters - triggers server-side filtering
+const applyColumnFilters = () => {
+  if (picklistTableComponent.value) {
+    picklistTableComponent.value.resetTablePagination()
+  }
+  loadPicklistJobs()
+}
+
+// Clear all column filters
+const clearColumnFilters = () => {
+  columnFilters.value = {
+    id: null,
+    building_name: [],
+    status: [],
+    assigned_user: []
+  }
+  applyColumnFilters()
+}
+
 const loadPicklistJob = async (id) => {
   try {
     appIsLoadingData.value = true
@@ -254,4 +492,29 @@ const loadPicklistJob = async (id) => {
 </script>
 
 <style lang="scss" scoped>
+// Table horizontal scroll and minimum column widths
+:deep(.q-table__container) {
+  overflow-x: auto;
+}
+
+:deep(.q-table) {
+  min-width: 900px;
+}
+
+:deep(.filter-row) {
+  .filter-cell {
+    min-width: 120px;
+    padding: 4px 8px;
+  }
+
+  .column-filter-input {
+    min-width: 100px;
+    width: 100%;
+  }
+}
+
+:deep(.q-table th) {
+  min-width: 100px;
+  white-space: nowrap;
+}
 </style>

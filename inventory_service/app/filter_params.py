@@ -235,7 +235,7 @@ class RequestFilterParams:
         media_type: List[str] = Query(
             default=None, description="Media type to filter by."
         ),
-        external_request_id: List[str] = Query(default=None, description="External "
+        external_request_id: Optional[str] = Query(default=None, description="External "
                                                                          "Requester "
                                                                          "ID to "
                                                                          "filter by."),

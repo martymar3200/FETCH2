@@ -97,17 +97,25 @@ def get_request_list(
     if params.unassociated_pick_list:
         query = query.where(Request.pick_list_id == None)
         
-    # Barcode Value Logic (V2 Conversion)
+    # Barcode Value Logic (V2 Conversion) - Now uses starts-with matching
     if params.barcode_value:
-        item_id_subquery = select(Item.id).join(Barcode).where(Barcode.value == params.barcode_value).limit(1).scalar_subquery()
-        non_tray_item_id_subquery = select(NonTrayItem.id).join(Barcode).where(Barcode.value == params.barcode_value).limit(1).scalar_subquery()
+        item_id_subquery = (
+            select(Item.id)
+            .join(Barcode, Barcode.id == Item.barcode_id)
+            .where(Barcode.value.like(f"{params.barcode_value}%"))
+            .scalar_subquery()
+        )
+        non_tray_item_id_subquery = (
+            select(NonTrayItem.id)
+            .join(Barcode, Barcode.id == NonTrayItem.barcode_id)
+            .where(Barcode.value.like(f"{params.barcode_value}%"))
+            .scalar_subquery()
+        )
         
-        # NOTE: Original logic had a flaw: it executed the subquery to get a single ID then used .in_()
-        # The correct V2 style is to check OR of the two ID lookups.
         query = query.where(
             or_(
-                Request.item_id == item_id_subquery,
-                Request.non_tray_item_id == non_tray_item_id_subquery,
+                Request.item_id.in_(item_id_subquery),
+                Request.non_tray_item_id.in_(non_tray_item_id_subquery),
             )
         )
     if params.item_barcode:
@@ -157,7 +165,7 @@ def get_request_list(
             )
         )
     if params.external_request_id:
-        query = query.where(Request.external_request_id.in_(params.external_request_id))
+        query = query.where(Request.external_request_id.like(f"{params.external_request_id}%"))
     if params.priority_id:
         query = query.where(Request.priority_id.in_(params.priority_id))
     if params.priority:
@@ -177,19 +185,34 @@ def get_request_list(
             Request.delivery_location_id.in_(params.delivery_location_id)
         )
     if params.item_location:
-        tem_location_subquery = (
+        # Search both items (in trays) and non-tray items
+        # Use ilike for case-insensitive contains matching to handle formatted display values
+        # The display shows abbreviated sides (R/L) but database stores full names (Right/Left)
+        search_pattern = f"%{params.item_location}%"
+        item_location_subquery = (
             select(Item.id)
             .join(Tray, Tray.id == Item.tray_id)
             .join(ShelfPosition, ShelfPosition.id == Tray.shelf_position_id)
-            .where(ShelfPosition.location == params.item_location) # NOTE: Assuming fixed from non_tray_item_location
+            .where(ShelfPosition.location.ilike(search_pattern))
             .distinct().scalar_subquery()
         )
-        query = query.where(Request.item_id.in_(tem_location_subquery))
+        non_tray_location_subquery = (
+            select(NonTrayItem.id)
+            .join(ShelfPosition, ShelfPosition.id == NonTrayItem.shelf_position_id)
+            .where(ShelfPosition.location.ilike(search_pattern))
+            .distinct().scalar_subquery()
+        )
+        query = query.where(
+            or_(
+                Request.item_id.in_(item_location_subquery),
+                Request.non_tray_item_id.in_(non_tray_location_subquery),
+            )
+        )
     if params.non_tray_item_location:
         non_tray_item_location_subquery = (
             select(NonTrayItem.id)
             .join(ShelfPosition, ShelfPosition.id == NonTrayItem.shelf_position_id)
-            .where(ShelfPosition.location == params.non_tray_item_location)
+            .where(ShelfPosition.location.ilike(f"%{params.non_tray_item_location}%"))
             .distinct().scalar_subquery()
         )
         query = query.where(

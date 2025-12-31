@@ -6,24 +6,22 @@
           ref="requestTableComponent"
           :table-columns="requestDisplayType == 'request_view' ? requestTableColumns : requestBatchTableColumns"
           :table-visible-columns="requestDisplayType == 'request_view' ? requestTableVisibleColumns : requestBatchTableVisibleColumns"
-          :filter-options="requestDisplayType == 'request_view' ? requestTableFilters : requestBatchTableFilters"
           :table-data="requestJobList"
           :enable-table-reorder="false"
           :enable-selection="showCreatePickList || showAddPickList"
           :heading-row-class="'q-mb-xs-md q-mb-md-xl'"
-          :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
-          :heading-rearrange-class="showCreatePickList || showAddPickList ? 'q-ml-auto' : null"
           :enable-pagination="true"
           :pagination-total="requestJobListTotal"
           :pagination-loading="appIsLoadingData"
           :rows-per-page-options="[25, 50, 75, 100, 250, 500]"
+          :hide-table-rearrange="true"
           @update-pagination="loadRequestJobs($event)"
           @selected-table-row="loadRequestJob($event.id)"
           @selected-data="selectedRequestItems = $event"
         >
           <template #heading-row>
             <div
-              class="col-sm-5 col-md-12 q-mb-md-sm"
+              class="col-sm-5 col-md-auto q-mb-md-sm"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? '' : 'self-center'"
             >
               <h1 class="text-h4 text-bold">
@@ -31,17 +29,57 @@
               </h1>
             </div>
 
+            <!-- View toggle - left justified after title -->
             <div
-              class="col-xs-grow col-sm-7 col-md-auto flex"
-              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : 'order-1'"
+              class="col-auto q-ml-md self-center"
+              :class="currentScreenSize == 'xs' ? 'col-12 q-mb-md' : ''"
             >
+              <ToggleButtonInput
+                v-model="requestDisplayType"
+                :options="[
+                  {label: 'Request View', value: 'request_view'},
+                  {label: 'Batch View', value: 'batch_view'}
+                ]"
+                @update:model-value="clearTableSelection(); requestTableComponent.resetTablePagination(); loadRequestJobs();"
+                class="text-no-wrap toggle-modern"
+              />
+            </div>
+
+            <div class="col-grow" />
+
+            <!-- Filter buttons and Create - right justified -->
+            <div
+              class="col-auto flex items-center"
+              :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
+            >
+              <q-btn
+                flat
+                dense
+                no-caps
+                :color="showFilterRow ? 'accent' : 'grey-7'"
+                :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
+                :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
+                class="q-mr-sm"
+                @click="showFilterRow = !showFilterRow"
+              />
+              <q-btn
+                v-if="showFilterRow"
+                flat
+                dense
+                no-caps
+                color="grey-7"
+                label="Clear"
+                icon="clear_all"
+                class="q-mr-md"
+                @click="clearColumnFilters"
+              />
               <q-btn
                 no-caps
                 unelevated
                 icon-right="arrow_drop_down"
                 color="accent"
                 label="Create"
-                class="text-body1 q-ml-xs-none q-ml-sm-sm"
+                class="text-body1 btn-modern"
                 :disabled="showCreatePickList || showAddPickList"
                 aria-label="createRequestJobMenu"
                 aria-haspopup="menu"
@@ -119,20 +157,6 @@
             </div>
 
             <div
-              class="col-xs-12 col-sm-auto col-md-auto q-mb-xs-md q-mb-sm-none"
-            >
-              <ToggleButtonInput
-                v-model="requestDisplayType"
-                :options="[
-                  {label: 'Request View', value: 'request_view'},
-                  {label: 'Batch View', value: 'batch_view'}
-                ]"
-                @update:model-value="clearTableSelection(); requestTableComponent.resetTablePagination(); loadRequestJobs();"
-                class="text-no-wrap"
-              />
-            </div>
-
-            <div
               v-if="(showCreatePickList || showAddPickList) && currentScreenSize !== 'xs'"
               class="col-12 order-2 flex"
             >
@@ -171,6 +195,292 @@
             />
           </template>
 
+          <!-- Filter row inside table header -->
+          <template #header-filter-row="{ cols }">
+            <q-tr
+              v-if="showFilterRow"
+              class="filter-row"
+            >
+              <q-th
+                v-for="col in cols"
+                :key="col.name"
+                class="filter-cell"
+              >
+                <!-- Request View Filters -->
+                <template v-if="requestDisplayType === 'request_view'">
+                  <!-- Request ID filter -->
+                  <q-input
+                    v-if="col.name === 'id'"
+                    v-model="columnFilters.id"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Request Type filter -->
+                  <q-select
+                    v-else-if="col.name === 'request_type'"
+                    v-model="columnFilters.request_type"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="requestTypeOptionsFromData.length > 0 ? requestTypeOptionsFromData : requestTypeOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Barcode filter -->
+                  <q-input
+                    v-else-if="col.name === 'barcode_value'"
+                    v-model="columnFilters.barcode"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- External Request ID filter -->
+                  <q-input
+                    v-else-if="col.name === 'external_request_id'"
+                    v-model="columnFilters.external_request_id"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Building filter -->
+                  <q-select
+                    v-else-if="col.name === 'building_name'"
+                    v-model="columnFilters.building_id"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="buildingOptionsFromData.length > 0 ? buildingOptionsFromData : buildingOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Requestor Name filter -->
+                  <q-input
+                    v-else-if="col.name === 'requestor_name'"
+                    v-model="columnFilters.requestor_name"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Status filter -->
+                  <q-select
+                    v-else-if="col.name === 'status'"
+                    v-model="columnFilters.status"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="statusOptionsFromData.length > 0 ? statusOptionsFromData : requestStatusOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Priority filter -->
+                  <q-select
+                    v-else-if="col.name === 'priority'"
+                    v-model="columnFilters.priority"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="priorityOptionsFromData.length > 0 ? priorityOptionsFromData : priorityOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Media Type filter -->
+                  <q-select
+                    v-else-if="col.name === 'media_type'"
+                    v-model="columnFilters.media_type"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="mediaTypeOptionsFromData.length > 0 ? mediaTypeOptionsFromData : mediaTypeOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Item Location filter -->
+                  <q-input
+                    v-else-if="col.name === 'location'"
+                    v-model="columnFilters.location"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Delivery Location filter -->
+                  <q-select
+                    v-else-if="col.name === 'delivery_location'"
+                    v-model="columnFilters.delivery_location"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="deliveryLocationOptionsFromData.length > 0 ? deliveryLocationOptionsFromData : deliveryLocationOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+                </template>
+
+                <!-- Batch View Filters -->
+                <template v-else>
+                  <!-- Import Source filter -->
+                  <q-input
+                    v-if="col.name === 'file_type'"
+                    v-model="batchColumnFilters.file_type"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+
+                  <!-- Status filter (Batch) -->
+                  <q-select
+                    v-else-if="col.name === 'status'"
+                    v-model="batchColumnFilters.status"
+                    dense
+                    outlined
+                    clearable
+                    multiple
+                    emit-value
+                    map-options
+                    :options="batchStatusOptions"
+                    placeholder="All"
+                    class="column-filter-input"
+                    @update:model-value="applyColumnFilters"
+                    @click.stop
+                  />
+
+                  <!-- Uploaded By filter -->
+                  <q-input
+                    v-else-if="col.name === 'user_id'"
+                    v-model="batchColumnFilters.user_name"
+                    dense
+                    outlined
+                    clearable
+                    placeholder="Search..."
+                    class="column-filter-input"
+                    @keyup.enter="applyColumnFilters"
+                    @click.stop
+                  >
+                    <template #prepend>
+                      <q-icon
+                        name="search"
+                        size="16px"
+                        color="grey-6"
+                      />
+                    </template>
+                  </q-input>
+                </template>
+              </q-th>
+            </q-tr>
+          </template>
+
           <template #table-td="{ colName, value }">
             <span
               v-if="colName == 'request_type'"
@@ -181,9 +491,13 @@
             </span>
             <span
               v-else-if="colName == 'status'"
-              class="outline text-nowrap"
-              :class="value == 'Completed' ? 'text-highlight' : value == 'InProgress' ? 'text-highlight-warning' : null"
+              class="status-badge"
+              :class="getStatusBadgeClass(value)"
             >
+              <q-icon
+                :name="getStatusIcon(value)"
+                size="16px"
+              />
               {{ value }}
             </span>
             <span
@@ -323,7 +637,7 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref, reactive, inject } from 'vue'
+import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
@@ -370,6 +684,237 @@ const { postPicklistJob, patchPicklistJobItem } = usePicklistStore()
 const { picklistJob } = storeToRefs(usePicklistStore())
 const { userData } = storeToRefs(useUserStore())
 
+// Filter State
+const showFilterRow = ref(false)
+
+// Column filter state for Request View (server-side filtering)
+const columnFilters = ref({
+  id: null,
+  request_type: [],
+  barcode: null,
+  external_request_id: null,
+  building_id: [],
+  requestor_name: null,
+  status: [],
+  priority: [],
+  media_type: [],
+  location: null,
+  delivery_location: []
+})
+
+// Column filter state for Batch View
+const batchColumnFilters = ref({
+  file_type: null,
+  status: [],
+  user_name: null
+})
+
+// Static filter dropdown options
+const requestTypeOptions = [
+  {
+    label: 'General Delivery',
+    value: 'General Delivery'
+  },
+  {
+    label: 'ILL (InterLibrary Loan)',
+    value: 'ILL (InterLibrary Loan)'
+  },
+  {
+    label: 'Scan and Deliver',
+    value: 'Scan and Deliver'
+  }
+]
+
+const requestStatusOptions = [
+  {
+    label: 'New',
+    value: 'New'
+  },
+  {
+    label: 'InProgress',
+    value: 'InProgress'
+  },
+  {
+    label: 'Completed',
+    value: 'Completed'
+  }
+]
+
+const batchStatusOptions = [
+  {
+    label: 'New',
+    value: 'New'
+  },
+  {
+    label: 'Processing',
+    value: 'Processing'
+  },
+  {
+    label: 'Failed',
+    value: 'Failed'
+  },
+  {
+    label: 'Cancelled',
+    value: 'Cancelled'
+  },
+  {
+    label: 'Completed',
+    value: 'Completed'
+  }
+]
+
+// Dynamic filter options from current table data
+const requestTypeOptionsFromData = computed(() => {
+  const types = new Set()
+  requestJobList.value.forEach(row => {
+    if (row.request_type?.type) {
+      types.add(row.request_type.type)
+    }
+  })
+  return Array.from(types).sort().map(t => ({
+    label: t,
+    value: t
+  }))
+})
+
+const buildingOptionsFromData = computed(() => {
+  const buildingSet = new Set()
+  requestJobList.value.forEach(row => {
+    if (row.building?.id && row.building?.name) {
+      buildingSet.add(JSON.stringify({
+        id: row.building.id,
+        name: row.building.name
+      }))
+    }
+  })
+  return Array.from(buildingSet).map(b => {
+    const parsed = JSON.parse(b)
+    return {
+      label: parsed.name,
+      value: parsed.id
+    }
+  }).sort((a, b) => a.label.localeCompare(b.label))
+})
+
+const statusOptionsFromData = computed(() => {
+  const statuses = new Set()
+  requestJobList.value.forEach(row => {
+    if (row.status) {
+      statuses.add(row.status)
+    }
+  })
+  return Array.from(statuses).sort().map(s => ({
+    label: s,
+    value: s
+  }))
+})
+
+const priorityOptionsFromData = computed(() => {
+  const priorities = new Set()
+  requestJobList.value.forEach(row => {
+    if (row.priority?.value) {
+      priorities.add(row.priority.value)
+    }
+  })
+  return Array.from(priorities).sort().map(p => ({
+    label: p,
+    value: p
+  }))
+})
+
+const mediaTypeOptionsFromData = computed(() => {
+  const types = new Set()
+  requestJobList.value.forEach(row => {
+    const type = row.item?.media_type?.name || row.non_tray_item?.media_type?.name
+    if (type) {
+      types.add(type)
+    }
+  })
+  return Array.from(types).sort().map(t => ({
+    label: t,
+    value: t
+  }))
+})
+
+const deliveryLocationOptionsFromData = computed(() => {
+  const locations = new Set()
+  requestJobList.value.forEach(row => {
+    if (row.delivery_location?.name) {
+      locations.add(row.delivery_location.name)
+    }
+  })
+  return Array.from(locations).sort().map(l => ({
+    label: l,
+    value: l
+  }))
+})
+
+// Fallback options from store data
+const buildingOptions = computed(() =>
+  buildings.value.map(b => ({
+    label: b.name,
+    value: b.id
+  }))
+)
+
+const priorityOptions = computed(() =>
+  requestsPriorities.value.map(p => ({
+    label: p.value,
+    value: p.value
+  }))
+)
+
+const mediaTypeOptions = computed(() =>
+  mediaTypes.value.map(m => ({
+    label: m.name,
+    value: m.name
+  }))
+)
+
+const deliveryLocationOptions = computed(() =>
+  requestsLocations.value.map(dl => ({
+    label: dl.name,
+    value: dl.name
+  }))
+)
+
+// Status badge helper functions
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'New':
+      return 'mdi-plus-circle'
+    case 'InProgress':
+    case 'Processing':
+      return 'mdi-progress-clock'
+    case 'Completed':
+      return 'mdi-check-circle'
+    case 'Failed':
+      return 'mdi-alert-circle'
+    case 'Cancelled':
+      return 'mdi-cancel'
+    default:
+      return 'mdi-help-circle'
+  }
+}
+
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'New':
+      return 'status-new'
+    case 'InProgress':
+    case 'Processing':
+      return 'status-in-progress'
+    case 'Completed':
+      return 'status-completed'
+    case 'Failed':
+      return 'status-failed'
+    case 'Cancelled':
+      return 'status-cancelled'
+    default:
+      return ''
+  }
+}
+
 // Local Data
 const requestJobMenuState = ref(false)
 const requestTableComponent = ref(null)
@@ -407,7 +952,8 @@ const requestTableColumns = ref([
     field: row => row.item ? renderItemBarcodeDisplay(row.item) : renderItemBarcodeDisplay(row.non_tray_item),
     label: 'Barcode',
     align: 'left',
-    sortable: true
+    sortable: true,
+    style: 'min-width: 150px'
   },
   {
     name: 'external_request_id',
@@ -473,85 +1019,6 @@ const requestTableColumns = ref([
     sortable: true
   }
 ])
-const requestTableFilters =  reactive([
-  {
-    field: row => row.request_type?.type,
-    label: 'Request Type',
-    apiField: 'request_type',
-    options: [
-      {
-        text: 'General Delivery',
-        value: false
-      },
-      {
-        text: 'ILL (InterLibrary Loan)',
-        value: false
-      },
-      {
-        text: 'Scan and Deliver',
-        value: false
-      }
-    ]
-  },
-  {
-    field: row => row.building?.name,
-    label: 'Building',
-    apiField: 'building_name',
-    options: buildings.value.map(b => {
-      return {
-        text: b.name,
-        value: false
-      }
-    })
-  },
-  {
-    field: 'status',
-    label: 'Request Status',
-    options: [
-      {
-        text: 'New',
-        value: false
-      },
-      {
-        text: 'InProgress',
-        value: false
-      }
-    ]
-  },
-  {
-    field: row => row.priority?.value,
-    label: 'Priority',
-    apiField: 'priority',
-    options: requestsPriorities.value.map(p => {
-      return {
-        text: p.value,
-        value: false
-      }
-    })
-  },
-  {
-    field: row => row.item ? row.item?.media_type?.name : row.non_tray_item?.media_type?.name,
-    label: 'Media Type',
-    apiField: 'media_type',
-    options: mediaTypes.value.map(m => {
-      return {
-        text: m.name,
-        value: false
-      }
-    })
-  },
-  {
-    field: row => row.delivery_location?.name,
-    label: 'Delivery Location',
-    apiField: 'delivery_location',
-    options: requestsLocations.value.map(dl => {
-      return {
-        text: dl.name,
-        value: false
-      }
-    })
-  }
-])
 const requestBatchTableVisibleColumns = ref([
   'file_type',
   'request_count',
@@ -594,34 +1061,6 @@ const requestBatchTableColumns = ref([
     label: 'Date Imported',
     align: 'left',
     sortable: true
-  }
-])
-const requestBatchTableFilters =  ref([
-  {
-    field: 'status',
-    label: 'Status',
-    options: [
-      {
-        text: 'New',
-        value: false
-      },
-      {
-        text: 'Processing',
-        value: false
-      },
-      {
-        text: 'Failed',
-        value: false
-      },
-      {
-        text: 'Cancelled',
-        value: false
-      },
-      {
-        text: 'Completed',
-        value: false
-      }
-    ]
   }
 ])
 const requestDisplayType = ref('request_view')
@@ -679,15 +1118,78 @@ const loadRequestJobs = async (qParams) => {
     appIsLoadingData.value = true
     if (requestDisplayType.value == 'request_view') {
       const isPickListMode = showCreatePickList.value || showAddPickList.value
-      await getRequestJobList({
+
+      // Build filter params from column filters
+      const filterParams = {
         ...qParams,
         queue: true,
         unassociated_pick_list: isPickListMode ? true : false,
         // Persist building filter during pick list mode for sorting/pagination
         ...(isPickListMode && activePickListBuildingFilter.value ? { building_id: activePickListBuildingFilter.value } : {})
-      })
+      }
+
+      // Apply column filters (only when not in pick list mode)
+      if (!isPickListMode) {
+        if (columnFilters.value.id) {
+          filterParams.id = columnFilters.value.id
+        }
+        if (columnFilters.value.request_type && columnFilters.value.request_type.length > 0) {
+          filterParams.request_type = columnFilters.value.request_type
+        }
+        if (columnFilters.value.barcode) {
+          filterParams.barcode_value = columnFilters.value.barcode
+        }
+        if (columnFilters.value.external_request_id) {
+          filterParams.external_request_id = columnFilters.value.external_request_id
+        }
+        if (columnFilters.value.building_id && columnFilters.value.building_id.length > 0) {
+          filterParams.building_id = columnFilters.value.building_id
+        }
+        if (columnFilters.value.requestor_name) {
+          filterParams.requestor_name = columnFilters.value.requestor_name
+        }
+        if (columnFilters.value.status && columnFilters.value.status.length > 0) {
+          filterParams.status = columnFilters.value.status
+        }
+        if (columnFilters.value.priority && columnFilters.value.priority.length > 0) {
+          filterParams.priority = columnFilters.value.priority
+        }
+        if (columnFilters.value.media_type && columnFilters.value.media_type.length > 0) {
+          filterParams.media_type = columnFilters.value.media_type
+        }
+        if (columnFilters.value.location) {
+          // Convert displayed location format to database format
+          // Display uses "R" and "L", database stores "Right" and "Left"
+          let locationSearch = columnFilters.value.location
+          // Replace standalone -R- with -Right- and -L- with -Left-
+          locationSearch = locationSearch.replace(/-R-/gi, '-Right-')
+          locationSearch = locationSearch.replace(/-L-/gi, '-Left-')
+          // Handle if R or L is at the end (e.g., "M1-A2-R")
+          locationSearch = locationSearch.replace(/-R$/gi, '-Right')
+          locationSearch = locationSearch.replace(/-L$/gi, '-Left')
+          filterParams.item_location = locationSearch
+        }
+        if (columnFilters.value.delivery_location && columnFilters.value.delivery_location.length > 0) {
+          filterParams.delivery_location = columnFilters.value.delivery_location
+        }
+      }
+
+      await getRequestJobList(filterParams)
     } else {
-      await getRequestBatchJobList({ ...qParams })
+      // Batch View filters
+      const batchFilterParams = { ...qParams }
+
+      if (batchColumnFilters.value.file_type) {
+        batchFilterParams.file_type = batchColumnFilters.value.file_type
+      }
+      if (batchColumnFilters.value.status && batchColumnFilters.value.status.length > 0) {
+        batchFilterParams.status = batchColumnFilters.value.status
+      }
+      if (batchColumnFilters.value.user_name) {
+        batchFilterParams.user_name = batchColumnFilters.value.user_name
+      }
+
+      await getRequestBatchJobList(batchFilterParams)
     }
   } catch (error) {
     handleAlert({
@@ -698,6 +1200,41 @@ const loadRequestJobs = async (qParams) => {
   } finally {
     appIsLoadingData.value = false
   }
+}
+
+// Apply column filters - triggers server-side filtering
+const applyColumnFilters = () => {
+  // Reset pagination to page 1 when filters change
+  if (requestTableComponent.value) {
+    requestTableComponent.value.resetTablePagination()
+  }
+  loadRequestJobs()
+}
+
+// Clear all column filters
+const clearColumnFilters = () => {
+  if (requestDisplayType.value === 'request_view') {
+    columnFilters.value = {
+      id: null,
+      request_type: [],
+      barcode: null,
+      external_request_id: null,
+      building_id: [],
+      requestor_name: null,
+      status: [],
+      priority: [],
+      media_type: [],
+      location: null,
+      delivery_location: []
+    }
+  } else {
+    batchColumnFilters.value = {
+      file_type: null,
+      status: [],
+      user_name: null
+    }
+  }
+  applyColumnFilters()
 }
 const loadRequestJobsByBuilding = async () => {
   try {
@@ -820,4 +1357,57 @@ const updatePickListJob = async () => {
 </script>
 
 <style lang="scss" scoped>
+.toggle-modern {
+  :deep(.q-btn-group) {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  :deep(.q-btn) {
+    border-radius: 0;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease-in-out;
+
+    &:first-child {
+      border-top-left-radius: 10px;
+      border-bottom-left-radius: 10px;
+    }
+
+    &:last-child {
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+  }
+}
+
+// Table horizontal scroll and minimum column widths
+:deep(.q-table__container) {
+  overflow-x: auto;
+}
+
+:deep(.q-table) {
+  min-width: 1400px; // Ensure table has minimum width to prevent cramping
+}
+
+:deep(.filter-row) {
+  .filter-cell {
+    min-width: 120px;
+    padding: 4px 8px;
+  }
+
+  .column-filter-input {
+    min-width: 100px;
+    width: 100%;
+  }
+}
+
+// Ensure table header cells also have minimum widths
+:deep(.q-table th) {
+  min-width: 100px;
+  white-space: nowrap;
+}
 </style>
