@@ -1,0 +1,2 @@
+# Ignore all certificate files (generated locally by mkcert)
+*.pem

@@ -72,6 +72,7 @@ services:
         container_name: fetch-inventory-api
         volumes:
             - /var/log/fetch:/code/app/logs:rw
+            - ./.certs:/code/certs:ro
         networks:
             - fetch
         depends_on:
@@ -110,6 +111,8 @@ services:
             context: ../vue
             dockerfile: images/web.local.Containerfile
         container_name: fetch-web
+        volumes:
+            - ./.certs:/etc/nginx/certs:ro
         ports:
             #- "8000:80"
             - "8000:443"
