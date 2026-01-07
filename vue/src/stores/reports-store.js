@@ -25,7 +25,8 @@ export const useReportsStore = defineStore('reports-store', {
         'Item in Tray': inventoryServiceApi.reportingTrayItemsCount,
         'User Job Summary': inventoryServiceApi.reportingUserJobsCount,
         'Verification Change': inventoryServiceApi.reportingVerificationChangesSummary,
-        'Verification Status': inventoryServiceApi.reportingVerificationStatus
+        'Verification Status': inventoryServiceApi.reportingVerificationStatus,
+        'Withdrawn Items': inventoryServiceApi.reportingWithdrawnItems
       }
 
       return endpointMap[reportType] || null

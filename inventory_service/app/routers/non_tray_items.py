@@ -10,7 +10,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 # CRITICAL FIX: Replaced from sqlmodel import Session, select
 from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
-from sqlalchemy import select     # select is imported from sqlalchemy now
+from sqlalchemy import select, update     # select is imported from sqlalchemy now
 from datetime import datetime, timezone
 
 from starlette.responses import StreamingResponse
@@ -247,28 +247,60 @@ def create_non_tray_item(
 
     # Set default status to Accessioned for new non-tray items
     new_non_tray_item.status = NonTrayItemStatus.Accessioned
+    
     # check if existing withdrawn non-tray with this barcode
-    # V2 FIX: session.exec().first() -> session.execute(select(...)).scalars().first()
+    # Query by withdrawn_barcode_id since withdrawn items have barcode_id = None
     previous_non_tray_item = session.execute(
         select(NonTrayItem).where(
-            NonTrayItem.barcode_id == new_non_tray_item.barcode_id
+            NonTrayItem.withdrawn_barcode_id == new_non_tray_item.barcode_id
         )
     ).scalars().first()
+    
     if previous_non_tray_item:
-        # use existing, and patch values
-        for field, value in new_non_tray_item.model_dump(exclude={"id"}).items():
-            setattr(previous_non_tray_item, field, value)
-        new_non_tray_item = previous_non_tray_item
-        new_non_tray_item.scanned_for_verification = False
-        new_non_tray_item.scanned_for_shelving = False
-        new_non_tray_item.scanned_for_refile_queue = False
+        # Reuse the existing withdrawn non-tray item record
+        # Restore barcode relationship
+        previous_non_tray_item.barcode_id = new_non_tray_item.barcode_id
+        previous_non_tray_item.withdrawn_barcode_id = None
         
-        # V2 FIX: Direct object manipulation/assignment is removed. Use the update function.
+        # Clear withdrawal tracking fields
+        previous_non_tray_item.withdrawal_dt = None
+        previous_non_tray_item.withdrawn_location = None
+        previous_non_tray_item.withdrawn_internal_location = None
+        previous_non_tray_item.withdrawn_loc_bcodes = None
+        
+        # Update with new accession data
+        previous_non_tray_item.accession_dt = datetime.now(timezone.utc)
+        previous_non_tray_item.accession_job_id = new_non_tray_item.accession_job_id
+        previous_non_tray_item.owner_id = new_non_tray_item.owner_id
+        previous_non_tray_item.size_class_id = new_non_tray_item.size_class_id
+        previous_non_tray_item.media_type_id = new_non_tray_item.media_type_id
+        previous_non_tray_item.subcollection_id = new_non_tray_item.subcollection_id
+        previous_non_tray_item.container_type_id = new_non_tray_item.container_type_id
+        
+        # Clear verification and shelving (needs to be re-verified)
+        previous_non_tray_item.verification_job_id = None
+        previous_non_tray_item.scanned_for_verification = False
+        previous_non_tray_item.scanned_for_shelving = False
+        previous_non_tray_item.scanned_for_refile_queue = False
+        previous_non_tray_item.scanned_for_refile = None
+        previous_non_tray_item.shelf_position_id = None
+        previous_non_tray_item.shelf_position_proposed_id = None
+        previous_non_tray_item.shelving_job_id = None
+        
+        # Mark as scanned for this accession job
+        previous_non_tray_item.scanned_for_accession = True
+        
+        # Reset status
+        previous_non_tray_item.status = NonTrayItemStatus.Accessioned
+        
+        # Mark barcode as no longer withdrawn
         session.execute(
             update(Barcode)
             .where(Barcode.id == new_non_tray_item.barcode_id)
             .values(withdrawn=False)
         )
+        
+        new_non_tray_item = previous_non_tray_item
 
     session.add(new_non_tray_item)
     session.commit()

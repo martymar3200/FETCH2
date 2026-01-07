@@ -219,6 +219,7 @@ const reportOptions =  ref([
   'User Job Summary',
   'Verification Change',
   'Verification Status',
+  'Withdrawn Items',
   // ======================================================
   // ========= START: ADD NEW OPTION TO DROPDOWN ==========
   // ======================================================
@@ -839,6 +840,44 @@ const generateReportTableFields = (qParams) => {
         'owner',
         'verification_job_id',
         'verification_dt'
+      ]
+      break
+    case 'Withdrawn Items':
+      generatedTableColumns.value = [
+        {
+          name: 'barcode',
+          field: 'barcode',
+          label: 'Barcode',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'owner',
+          field: 'owner',
+          label: 'Owner',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'withdrawn_location',
+          field: 'withdrawn_location',
+          label: 'Last Location',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'withdrawal_dt',
+          field: 'withdrawal_dt',
+          label: 'Withdrawal Date',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'barcode',
+        'owner',
+        'withdrawn_location',
+        'withdrawal_dt'
       ]
       break
     default:

@@ -34,6 +34,7 @@ from app.utilities import (
     validate_item_not_shelved,
     validate_container_not_shelved, start_session_with_audit_info,
 )
+from app.events import update_shelf_space_after_non_tray
 from starlette import status
 from app.schemas.withdraw_jobs import (
     WithdrawJobInput,
@@ -183,11 +184,13 @@ def update_withdraw_job(
             pick_list = PickList(
                 create_dt=updated_dt,
                 update_dt=updated_dt,
-                withdraw_job_id=id,
+                last_transition=updated_dt,
             )
             session.add(pick_list)
             session.commit()
             session.refresh(pick_list)
+            # Set the pick_list_id on the withdraw job
+            existing_withdraw_job.pick_list_id = pick_list.id
             session.commit()
 
         elif withdraw_job_input.add_to_picklist:
@@ -443,13 +446,19 @@ def update_withdraw_job(
                     shelf_position_id=None,
                     shelf_position_proposed_id=None,
                 ))
+            non_tray_item_barcodes = [item.barcode_id for item in non_tray_items_to_update]
+            # Store shelf_position_ids before updating (they get set to None in the update)
+            shelf_position_ids_to_update = [item.shelf_position_id for item in non_tray_items_to_update]
+            
             session.execute(
                 update(Barcode).filter(Barcode.id.in_(non_tray_item_barcodes)).values(
                     withdrawn=True, update_dt=updated_dt
                 )
             )
-            for non_tray_item in non_tray_items_to_update:
-                update_shelf_space_after_non_tray(non_tray_item, non_tray_item.shelf_position_id, None)
+            # Update shelf space using the saved shelf_position_ids
+            for shelf_position_id in shelf_position_ids_to_update:
+                if shelf_position_id:
+                    update_shelf_space_after_non_tray(None, None, shelf_position_id)
 
     if withdraw_job_input.status:
         if withdraw_job_input.run_timestamp:

@@ -413,3 +413,23 @@ class VerificationStatusReportOutput(BaseModel):
             }
         }
     )
+
+
+class WithdrawnItemsReportOutput(BaseModel):
+    barcode: Optional[str] = None
+    owner: Optional[str] = None
+    withdrawn_location: Optional[str] = None
+    withdrawal_dt: Optional[datetime] = None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "barcode": "12345678901",
+                "owner": "Library of Congress",
+                "withdrawn_location": "Fort Meade-1-1-L-27-1-8",
+                "withdrawal_dt": "2023-10-08T20:46:56.764426",
+            }
+        }
+    )
+

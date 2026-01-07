@@ -934,6 +934,51 @@ const generateReportModal = () => {
         }
       ]
       break
+    case 'Withdrawn Items':
+      reportForm.value = {
+        from_dt: null,
+        to_dt: null,
+        owner_id: null,
+        container_type: null
+      }
+      reportParams.value = [
+        {
+          query: 'from_dt',
+          label: 'Withdrawal Date (From)'
+        },
+        {
+          query: 'to_dt',
+          label: 'Withdrawal Date (To)'
+        },
+        {
+          query: 'owner_id',
+          multiple: true,
+          label: 'Owner',
+          options: owners,
+          optionType: 'owners'
+        },
+        {
+          query: 'container_type',
+          label: 'Container Type',
+          options: [
+            {
+              label: 'All',
+              value: null
+            },
+            {
+              label: 'Tray',
+              value: 'Tray'
+            },
+            {
+              label: 'Non-Tray',
+              value: 'Non-Tray'
+            }
+          ],
+          optionValue: 'value',
+          optionLabel: 'label'
+        }
+      ]
+      break
     default:
       break
   }

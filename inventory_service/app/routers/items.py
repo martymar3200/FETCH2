@@ -252,25 +252,55 @@ def create_item(item_input: ItemInput, session: Session = Depends(get_session)):
     new_item.status = ItemStatus.Accessioned
 
     # check if existing withdrawn item with this barcode
-    # V2 FIX: session.exec().first() -> session.execute(select(...)).scalars().first()
+    # Query by withdrawn_barcode_id since withdrawn items have barcode_id = None
     previous_item = session.execute(
-        select(Item).where(Item.barcode_id == new_item.barcode_id)
+        select(Item).where(Item.withdrawn_barcode_id == new_item.barcode_id)
     ).scalars().first()
     
     if previous_item:
-        # use existing, and patch values
-        for field, value in new_item.model_dump(exclude={"id"}).items():
-            setattr(previous_item, field, value)
-        new_item = previous_item
-        new_item.scanned_for_verification = False
-        new_item.scanned_for_refile_queue = False
+        # Reuse the existing withdrawn item record
+        # Restore barcode relationship
+        previous_item.barcode_id = new_item.barcode_id
+        previous_item.withdrawn_barcode_id = None
         
-        # V2 FIX: Direct object manipulation/assignment is removed. Use the update function.
+        # Clear withdrawal tracking fields
+        previous_item.withdrawal_dt = None
+        previous_item.withdrawn_location = None
+        previous_item.withdrawn_internal_location = None
+        previous_item.withdrawn_loc_bcodes = None
+        
+        # Update with new accession data
+        previous_item.accession_dt = datetime.now(timezone.utc)
+        previous_item.accession_job_id = new_item.accession_job_id
+        previous_item.owner_id = new_item.owner_id
+        previous_item.size_class_id = new_item.size_class_id
+        previous_item.media_type_id = new_item.media_type_id
+        previous_item.subcollection_id = new_item.subcollection_id
+        previous_item.title = new_item.title
+        previous_item.volume = new_item.volume
+        previous_item.condition = new_item.condition
+        previous_item.arbitrary_data = new_item.arbitrary_data
+        
+        # Clear verification (needs to be re-verified)
+        previous_item.verification_job_id = None
+        previous_item.scanned_for_verification = False
+        previous_item.scanned_for_refile_queue = False
+        previous_item.scanned_for_refile = None
+        
+        # Mark as scanned for this accession job
+        previous_item.scanned_for_accession = True
+        
+        # Reset status
+        previous_item.status = ItemStatus.Accessioned
+        
+        # Mark barcode as no longer withdrawn
         session.execute(
             update(Barcode)
             .where(Barcode.id == new_item.barcode_id)
             .values(withdrawn=False)
         )
+        
+        new_item = previous_item
     session.add(new_item)
     session.commit()
     session.refresh(new_item)

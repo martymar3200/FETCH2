@@ -578,3 +578,29 @@ class VerificationReportParams:
         self.from_dt = from_dt
         self.to_dt = to_dt
         self.container_type = container_type
+
+
+class WithdrawnItemsReportParams:
+    """
+    Query params for Withdrawn Items Report.
+    """
+    def __init__(
+        self,
+        from_dt: datetime = Query(
+            default=None, description="Start withdrawal date to filter by."
+        ),
+        to_dt: datetime = Query(
+            default=None, description="End withdrawal date to filter by."
+        ),
+        owner_id: list[int] = Query(
+            default=None, description="ID of the owner to filter items."
+        ),
+        container_type: str = Query(
+            default=None, description="Container Type (Tray, Non-Tray, or None for All)."
+        )
+    ):
+        self.from_dt = from_dt
+        self.to_dt = to_dt
+        self.owner_id = owner_id
+        self.container_type = container_type
+

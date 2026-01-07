@@ -9,7 +9,7 @@ from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate
 # CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
+from sqlalchemy.orm import Session, aliased # Session is imported from sqlalchemy.orm now
 from sqlalchemy import select, func, union_all, literal, and_, asc, desc, distinct
 from sqlalchemy.types import String
 from starlette.responses import StreamingResponse
@@ -93,6 +93,7 @@ from app.filter_params import (
     RetrievalCountParams,
     MoveDiscrepancyParams,
     VerificationReportParams,
+    WithdrawnItemsReportParams,
 )
 from app.schemas.reporting import (
     AccessionItemsDetailOutput,
@@ -106,6 +107,7 @@ from app.schemas.reporting import (
     RetrievalItemCountReadOutput,
     MoveDiscrepancyOutput,
     VerificationStatusReportOutput,
+    WithdrawnItemsReportOutput,
 )
 from app.models.items import ItemStatus
 from app.models.non_tray_items import NonTrayItemStatus
@@ -2115,3 +2117,136 @@ def get_verification_status_download_csv(
             "Content-Disposition": "attachment; filename=verification_status.csv"
         },
     )
+
+
+def get_withdrawn_items_query(params: WithdrawnItemsReportParams):
+    """
+    Build query for withdrawn items report.
+    """
+    # Alias for withdrawn barcode lookup
+    WithdrawnBarcode = aliased(Barcode)
+    WithdrawnBarcodeNonTray = aliased(Barcode)
+
+    # Build Tray Items query
+    tray_query = (
+        select(
+            WithdrawnBarcode.value.label("barcode"),
+            Owner.name.label("owner"),
+            Item.withdrawn_location.label("withdrawn_location"),
+            Item.withdrawal_dt.label("withdrawal_dt"),
+        )
+        .select_from(Item)
+        .outerjoin(WithdrawnBarcode, Item.withdrawn_barcode_id == WithdrawnBarcode.id)
+        .outerjoin(Owner, Item.owner_id == Owner.id)
+        .where(Item.status == ItemStatus.Withdrawn)
+    )
+
+    # Build Non-Tray Items query
+    non_tray_query = (
+        select(
+            WithdrawnBarcodeNonTray.value.label("barcode"),
+            Owner.name.label("owner"),
+            NonTrayItem.withdrawn_location.label("withdrawn_location"),
+            NonTrayItem.withdrawal_dt.label("withdrawal_dt"),
+        )
+        .select_from(NonTrayItem)
+        .outerjoin(WithdrawnBarcodeNonTray, NonTrayItem.withdrawn_barcode_id == WithdrawnBarcodeNonTray.id)
+        .outerjoin(Owner, NonTrayItem.owner_id == Owner.id)
+        .where(NonTrayItem.status == NonTrayItemStatus.Withdrawn)
+    )
+
+    # Apply date filters to Tray query
+    if params.from_dt:
+        tray_query = tray_query.where(Item.withdrawal_dt >= params.from_dt)
+    if params.to_dt:
+        tray_query = tray_query.where(Item.withdrawal_dt <= params.to_dt)
+    if params.owner_id:
+        tray_query = tray_query.where(Item.owner_id.in_(params.owner_id))
+
+    # Apply date filters to Non-Tray query
+    if params.from_dt:
+        non_tray_query = non_tray_query.where(NonTrayItem.withdrawal_dt >= params.from_dt)
+    if params.to_dt:
+        non_tray_query = non_tray_query.where(NonTrayItem.withdrawal_dt <= params.to_dt)
+    if params.owner_id:
+        non_tray_query = non_tray_query.where(NonTrayItem.owner_id.in_(params.owner_id))
+
+    # Return based on container type
+    if params.container_type == "Tray":
+        return tray_query
+    elif params.container_type == "Non-Tray":
+        return non_tray_query
+    else:
+        # "All" or None - combine both queries using union_all
+        # Create CTE to allow proper pagination
+        combined_cte = union_all(tray_query, non_tray_query).cte("combined_withdrawn")
+        return select(
+            combined_cte.c.barcode,
+            combined_cte.c.owner,
+            combined_cte.c.withdrawn_location,
+            combined_cte.c.withdrawal_dt
+        )
+
+
+
+@router.get("/withdrawn-items/", response_model=Page[WithdrawnItemsReportOutput])
+def get_withdrawn_items_report(
+    session: Session = Depends(get_session),
+    params: WithdrawnItemsReportParams = Depends(),
+) -> list:
+    """
+    Get a paginated list of withdrawn items.
+    """
+    query = get_withdrawn_items_query(params)
+    return paginate(session, query)
+
+
+@router.get("/withdrawn-items/download", response_class=StreamingResponse)
+def get_withdrawn_items_download_csv(
+    session: Session = Depends(get_session),
+    params: WithdrawnItemsReportParams = Depends(),
+):
+    """
+    Download withdrawn items report as CSV.
+    """
+    query = get_withdrawn_items_query(params)
+
+    def generate_csv():
+        output = StringIO()
+        writer = csv.writer(output)
+        # Write header row
+        writer.writerow(
+            [
+                "Barcode",
+                "Owner",
+                "Last Location",
+                "Withdrawal Date",
+            ]
+        )
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        # Execute query
+        for row in session.execute(query):
+            writer.writerow(
+                [
+                    row.barcode,
+                    row.owner,
+                    row.withdrawn_location,
+                    row.withdrawal_dt,
+                ]
+            )
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    # Create a StreamingResponse
+    return StreamingResponse(
+        generate_csv(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=withdrawn_items.csv"
+        },
+    )
+

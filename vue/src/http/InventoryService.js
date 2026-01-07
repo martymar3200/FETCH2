@@ -48,6 +48,7 @@ export default {
   reportingUserJobsCount: '/reporting/user-jobs/count/',
   reportingVerificationChangesSummary: '/reporting/verification-changes/summary/',
   reportingVerificationStatus: '/reporting/verification-status/',
+  reportingWithdrawnItems: '/reporting/withdrawn-items/',
   requests: '/requests/',
   requestsLocations: '/requests/locations/',
   requestsPriorities: '/requests/priorities/',
