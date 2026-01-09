@@ -166,6 +166,44 @@ export const useOptionStore = defineStore('option-store', {
         throw error
       }
     },
+    async getOwnerDeliveryLocations (ownerId) {
+      try {
+        const res = await this.$api.get(`${inventoryServiceApi.owners}${ownerId}/delivery-locations`)
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+    async addOwnerDeliveryLocation (ownerId, deliveryLocationId) {
+      try {
+        const res = await this.$api.post(`${inventoryServiceApi.owners}${ownerId}/delivery-locations?delivery_location_id=${deliveryLocationId}`)
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+    async removeOwnerDeliveryLocation (ownerId, deliveryLocationId) {
+      try {
+        await this.$api.delete(`${inventoryServiceApi.owners}${ownerId}/delivery-locations/${deliveryLocationId}`)
+      } catch (error) {
+        throw error
+      }
+    },
+    async syncOwnerDeliveryLocations (ownerId, newLocationIds, originalLocationIds) {
+      // Sync delivery location associations: add new ones, remove deleted ones
+      const toAdd = newLocationIds.filter(id => !originalLocationIds.includes(id))
+      const toRemove = originalLocationIds.filter(id => !newLocationIds.includes(id))
+
+      // Add new associations
+      for (const locationId of toAdd) {
+        await this.addOwnerDeliveryLocation(ownerId, locationId)
+      }
+
+      // Remove deleted associations
+      for (const locationId of toRemove) {
+        await this.removeOwnerDeliveryLocation(ownerId, locationId)
+      }
+    },
     async getMediaType (id) {
       try {
         const res = await this.$api.get(`${inventoryServiceApi.mediaTypes}${id}`)

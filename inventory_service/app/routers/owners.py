@@ -197,3 +197,99 @@ def delete_owner(id: int, session: Session = Depends(get_session)):
         )
 
     raise NotFound(detail=f"Owner ID {id} Not Found")
+
+
+# --- Owner-DeliveryLocation Association Endpoints ---
+
+
+@router.get("/{id}/delivery-locations", response_model=list)
+def get_owner_delivery_locations(id: int, session: Session = Depends(get_session)):
+    """
+    Get all delivery locations associated with an owner.
+    """
+    from app.models.owner_delivery_locations import OwnerDeliveryLocation
+    from app.models.delivery_locations import DeliveryLocation
+    
+    owner = session.get(Owner, id)
+    if not owner:
+        raise NotFound(detail=f"Owner ID {id} Not Found")
+    
+    # Query delivery locations for this owner
+    locations = session.execute(
+        select(DeliveryLocation)
+        .join(OwnerDeliveryLocation)
+        .where(OwnerDeliveryLocation.owner_id == id)
+    ).scalars().all()
+    
+    return [{"id": loc.id, "name": loc.name, "address": loc.address} for loc in locations]
+
+
+@router.post("/{id}/delivery-locations", status_code=201)
+def add_owner_delivery_location(
+    id: int,
+    delivery_location_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Add a delivery location to an owner's allowed locations.
+    """
+    from app.models.owner_delivery_locations import OwnerDeliveryLocation
+    from app.models.delivery_locations import DeliveryLocation
+    
+    owner = session.get(Owner, id)
+    if not owner:
+        raise NotFound(detail=f"Owner ID {id} Not Found")
+    
+    delivery_location = session.get(DeliveryLocation, delivery_location_id)
+    if not delivery_location:
+        raise NotFound(detail=f"Delivery Location ID {delivery_location_id} Not Found")
+    
+    # Check if association already exists
+    existing = session.execute(
+        select(OwnerDeliveryLocation).where(
+            OwnerDeliveryLocation.owner_id == id,
+            OwnerDeliveryLocation.delivery_location_id == delivery_location_id
+        )
+    ).scalars().first()
+    
+    if existing:
+        raise ValidationException(detail="This delivery location is already associated with this owner")
+    
+    # Create association
+    new_association = OwnerDeliveryLocation(
+        owner_id=id,
+        delivery_location_id=delivery_location_id
+    )
+    session.add(new_association)
+    session.commit()
+    session.refresh(new_association)
+    
+    return {"id": new_association.id, "owner_id": id, "delivery_location_id": delivery_location_id}
+
+
+@router.delete("/{id}/delivery-locations/{delivery_location_id}")
+def remove_owner_delivery_location(
+    id: int,
+    delivery_location_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Remove a delivery location from an owner's allowed locations.
+    """
+    from app.models.owner_delivery_locations import OwnerDeliveryLocation
+    
+    association = session.execute(
+        select(OwnerDeliveryLocation).where(
+            OwnerDeliveryLocation.owner_id == id,
+            OwnerDeliveryLocation.delivery_location_id == delivery_location_id
+        )
+    ).scalars().first()
+    
+    if not association:
+        raise NotFound(detail="Association not found")
+    
+    session.delete(association)
+    session.commit()
+    
+    return {"detail": "Delivery location removed from owner"}
+

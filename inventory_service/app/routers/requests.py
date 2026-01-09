@@ -357,6 +357,35 @@ def create_request(
     if module:
         request_input.building_id = module.building_id
 
+    # Validate delivery location is allowed for item's owner
+    if request_input.delivery_location_id:
+        # Get the owner_id from the item or non_tray_item
+        owner_id = item.owner_id if item else non_tray_item.owner_id
+        
+        if owner_id:
+            # Import here to avoid circular imports
+            from app.models.owner_delivery_locations import OwnerDeliveryLocation
+            from app.models.owners import Owner
+            
+            # Check if owner has any delivery location restrictions
+            owner_locations = session.execute(
+                select(OwnerDeliveryLocation).where(
+                    OwnerDeliveryLocation.owner_id == owner_id
+                )
+            ).scalars().all()
+            
+            # If owner has delivery location restrictions, validate
+            if owner_locations:
+                allowed_location_ids = [ol.delivery_location_id for ol in owner_locations]
+                if request_input.delivery_location_id not in allowed_location_ids:
+                    # Get owner name for error message
+                    owner = session.get(Owner, owner_id)
+                    owner_name = owner.name if owner else f"ID {owner_id}"
+                    raise BadRequest(
+                        detail=f"Delivery location is not allowed for items owned by '{owner_name}'. "
+                               f"Please select an allowed delivery location for this owner."
+                    )
+
     new_request = Request(**request_input.model_dump(exclude={"barcode_value"}))
 
     # Add the new request to the database

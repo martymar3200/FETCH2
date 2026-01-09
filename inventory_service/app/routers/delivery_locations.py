@@ -42,16 +42,25 @@ def get_delivery_location_list(
     search: Optional[str] = Query(
         None, description="Search by Request " "Delivery Locations Name"
     ),
+    owner_id: Optional[int] = Query(None, description="Filter by owner ID"),
 ) -> list:
     """
-    Get a list of delivery locations
+    Get a list of delivery locations.
+    Optionally filter by owner_id to get only locations allowed for that owner.
     """
+    from app.models.owner_delivery_locations import OwnerDeliveryLocation
 
     # Create a query to retrieve all Delivery Location
     query = select(DeliveryLocation)
 
     if search:
         query = query.where(DeliveryLocation.name.icontains(search))
+    
+    # Filter by owner if specified
+    if owner_id is not None:
+        query = query.join(OwnerDeliveryLocation).where(
+            OwnerDeliveryLocation.owner_id == owner_id
+        )
 
     # Validate and Apply sorting based on sort_params
     if sort_params.sort_by:

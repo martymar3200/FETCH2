@@ -52,6 +52,8 @@ from app.config.exceptions import (
     InternalServerError,
     BadRequest,
 )
+from app.helpers.owner_helpers import is_child_of_owner
+from app.helpers.system_setting_helpers import get_setting_value
 
 router = APIRouter(
     prefix="/shelving-jobs",
@@ -662,26 +664,36 @@ def reassign_container_location(
 
     # Check if the container owner and size class match to shelf
     # Allow auto-assignment if shelf has "Unassigned" values
+    # Also allow child owner items on parent owner shelves if setting is enabled
     shelf_owner = session.get(Owner, shelf.owner_id)
     shelf_size_class = session.get(SizeClass, shelf_type.size_class_id)
     
     owner_mismatch = container.owner_id != shelf.owner_id
     size_class_mismatch = container.size_class_id != shelf_type.size_class_id
     
+    # Check if hierarchical owner shelving is allowed
+    allow_child_owner_shelving = get_setting_value(session, "allow_child_owner_shelving", "false") == "true"
+    is_child_of_shelf_owner = (
+        owner_mismatch and 
+        allow_child_owner_shelving and 
+        is_child_of_owner(session, container.owner_id, shelf.owner_id)
+    )
+    
     if owner_mismatch or size_class_mismatch:
         shelf_owner_unassigned = shelf_owner and shelf_owner.name == "Unassigned"
         shelf_size_class_unassigned = shelf_size_class and shelf_size_class.name == "Unassigned"
         
         can_auto_assign = (
-            (not owner_mismatch or shelf_owner_unassigned) and
+            (not owner_mismatch or shelf_owner_unassigned or is_child_of_shelf_owner) and
             (not size_class_mismatch or shelf_size_class_unassigned)
         )
         
         if can_auto_assign:
-            # Auto-assign owner from container
+            # Auto-assign owner from container (only if shelf is Unassigned, NOT for hierarchical)
             if owner_mismatch and shelf_owner_unassigned:
                 shelf.owner_id = container.owner_id
                 session.add(shelf)
+            # Note: If is_child_of_shelf_owner, shelf.owner_id stays as parent (no update)
             
             # Auto-assign shelf_type by finding existing ShelfType with matching size_class
             if size_class_mismatch and shelf_size_class_unassigned:
@@ -804,7 +816,6 @@ def reassign_container_location(
 
     # Calculate next available position for frontend auto-suggest
     from app.routers.shelves import get_next_available_position
-    from app.routers.system_settings import get_setting_value
     
     direction = get_setting_value(session, "shelf_position_auto_assign_direction", "low_to_high")
     next_position = get_next_available_position(session, shelf.id, direction)
@@ -972,26 +983,36 @@ def reassign_container_proposed_location(
 
     # Check if the container owner and size class match to shelf
     # Allow auto-assignment if shelf has "Unassigned" values
+    # Also allow child owner items on parent owner shelves if setting is enabled
     shelf_owner = session.get(Owner, shelf.owner_id)
     shelf_size_class = session.get(SizeClass, shelf_type.size_class_id)
     
     owner_mismatch = container.owner_id != shelf.owner_id
     size_class_mismatch = container.size_class_id != shelf_type.size_class_id
     
+    # Check if hierarchical owner shelving is allowed
+    allow_child_owner_shelving = get_setting_value(session, "allow_child_owner_shelving", "false") == "true"
+    is_child_of_shelf_owner = (
+        owner_mismatch and 
+        allow_child_owner_shelving and 
+        is_child_of_owner(session, container.owner_id, shelf.owner_id)
+    )
+    
     if owner_mismatch or size_class_mismatch:
         shelf_owner_unassigned = shelf_owner and shelf_owner.name == "Unassigned"
         shelf_size_class_unassigned = shelf_size_class and shelf_size_class.name == "Unassigned"
         
         can_auto_assign = (
-            (not owner_mismatch or shelf_owner_unassigned) and
+            (not owner_mismatch or shelf_owner_unassigned or is_child_of_shelf_owner) and
             (not size_class_mismatch or shelf_size_class_unassigned)
         )
         
         if can_auto_assign:
-            # Auto-assign owner from container
+            # Auto-assign owner from container (only if shelf is Unassigned, NOT for hierarchical)
             if owner_mismatch and shelf_owner_unassigned:
                 shelf.owner_id = container.owner_id
                 session.add(shelf)
+            # Note: If is_child_of_shelf_owner, shelf.owner_id stays as parent (no update)
             
             # Auto-assign shelf_type by finding existing ShelfType with matching size_class
             if size_class_mismatch and shelf_size_class_unassigned:

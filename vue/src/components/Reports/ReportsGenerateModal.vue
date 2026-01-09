@@ -238,6 +238,17 @@
               />
             </div>
           </div>
+
+          <div class="col-12 q-mb-md">
+            <div class="form-group">
+              <q-checkbox
+                v-model="reportForm.include_sub_tiers"
+                label="Include Sub-Tiers"
+                :disable="!reportForm.owner_id?.length"
+                aria-label="includeSubTiersCheckbox"
+              />
+            </div>
+          </div>
         </div>
         <!-- generalized dynamic report forms -->
         <div
@@ -340,6 +351,20 @@
                   :aria-label="`${param.query}_input`"
                   type="number"
                   min="1"
+                />
+              </div>
+            </div>
+            <!-- checkbox inputs -->
+            <div
+              v-else-if="param.type == 'checkbox'"
+              class="col-12 q-mb-md"
+            >
+              <div class="form-group">
+                <q-checkbox
+                  v-model="reportForm[param.query]"
+                  :label="param.label"
+                  :disable="param.dependsOn && !reportForm[param.dependsOn]?.length"
+                  :aria-label="`${param.query}_checkbox`"
                 />
               </div>
             </div>
@@ -533,7 +558,8 @@ const generateReportModal = () => {
         to_dt: null,
         owner_id: null,
         media_type_id: null,
-        size_class_id: null
+        size_class_id: null,
+        include_sub_tiers: false
       }
 
       reportParams.value = [
@@ -565,6 +591,12 @@ const generateReportModal = () => {
           label: 'Size Class',
           options: sizeClass,
           optionType: 'sizeClass'
+        },
+        {
+          query: 'include_sub_tiers',
+          type: 'checkbox',
+          label: 'Include Sub-Tiers',
+          dependsOn: 'owner_id'
         }
       ]
       break
@@ -576,7 +608,8 @@ const generateReportModal = () => {
         aisle_num_from: null,
         aisle_num_to: null,
         from_dt: null,
-        to_dt: null
+        to_dt: null,
+        include_sub_tiers: false
       }
       reportParams.value = [
         {
@@ -625,6 +658,12 @@ const generateReportModal = () => {
         {
           query: 'to_dt',
           label: 'Date (To)'
+        },
+        {
+          query: 'include_sub_tiers',
+          type: 'checkbox',
+          label: 'Include Sub-Tiers',
+          dependsOn: 'owner_id'
         }
       ]
       break
@@ -637,7 +676,8 @@ const generateReportModal = () => {
         aisle_num_to: null,
         from_dt: null,
         to_dt: null,
-        size_class_id: null
+        size_class_id: null,
+        include_sub_tiers: false
       }
       reportParams.value = [
         {
@@ -693,6 +733,12 @@ const generateReportModal = () => {
           label: 'Size Class',
           options: sizeClass,
           optionType: 'sizeClass'
+        },
+        {
+          query: 'include_sub_tiers',
+          type: 'checkbox',
+          label: 'Include Sub-Tiers',
+          dependsOn: 'owner_id'
         }
       ]
       break
@@ -708,7 +754,8 @@ const generateReportModal = () => {
         height: null,
         width: null,
         depth: null,
-        show_partial: true
+        show_partial: true,
+        include_sub_tiers: false
       }
       break
     case 'Refile Discrepancy':
@@ -799,7 +846,8 @@ const generateReportModal = () => {
       reportForm.value = {
         from_dt: null,
         to_dt: null,
-        owner_id: null
+        owner_id: null,
+        include_sub_tiers: false
       }
       reportParams.value = [
         {
@@ -816,6 +864,12 @@ const generateReportModal = () => {
           options: owners,
           optionType: 'owners',
           multiple: true
+        },
+        {
+          query: 'include_sub_tiers',
+          type: 'checkbox',
+          label: 'Include Sub-Tiers',
+          dependsOn: 'owner_id'
         }
       ]
       break
@@ -939,7 +993,8 @@ const generateReportModal = () => {
         from_dt: null,
         to_dt: null,
         owner_id: null,
-        container_type: null
+        container_type: null,
+        include_sub_tiers: false
       }
       reportParams.value = [
         {
@@ -976,6 +1031,12 @@ const generateReportModal = () => {
           ],
           optionValue: 'value',
           optionLabel: 'label'
+        },
+        {
+          query: 'include_sub_tiers',
+          type: 'checkbox',
+          label: 'Include Sub-Tiers',
+          dependsOn: 'owner_id'
         }
       ]
       break

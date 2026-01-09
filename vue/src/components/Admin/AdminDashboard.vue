@@ -92,6 +92,10 @@ const adminLinkList = computed(() => {
         {
           title: 'Shelf Position Direction',
           hidden: !checkUserPermission('can_manage_system_configurations')
+        },
+        {
+          title: 'Child Owner Shelving',
+          hidden: !checkUserPermission('can_manage_system_configurations')
         }
       ],
       hidden: !checkUserPermission('can_manage_system_configurations')
@@ -187,6 +191,9 @@ const handleRouting = (link) => {
       break
     case 'Shelf Position Direction':
       router.push({ name: 'admin-manage-shelf-position-direction' })
+      break
+    case 'Child Owner Shelving':
+      router.push({ name: 'admin-manage-child-owner-shelving' })
       break
     case 'Bulk Upload Ladders/Shelves':
       showBulkUploadLocationModal.value = true

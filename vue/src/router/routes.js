@@ -183,6 +183,15 @@ const routes = [
         }
       },
       {
+        name: 'admin-manage-child-owner-shelving',
+        path: 'admin/manage/child-owner-shelving',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
         name: 'record-management-items',
         path: 'record-management/items/:barcode?',
         component: () => import('@/pages/RecordManagementPage.vue'),

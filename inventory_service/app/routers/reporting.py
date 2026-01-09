@@ -75,6 +75,7 @@ from app.schemas.reporting import (
     MoveDiscrepancyOutput
 )
 from app.config.exceptions import NotFound, BadRequest, InternalServerError
+from app.helpers.owner_helpers import get_owner_with_descendants
 from app.sorting import (
     RetrievalItemCountSorter,
     ShelvingJobDiscrepancySorter,
@@ -274,6 +275,10 @@ def get_accessioned_items_count(
     """
     The count of items that have been accessioned.
     """
+    # Expand owner IDs to include descendants if include_sub_tiers is True
+    if params.owner_id and params.include_sub_tiers:
+        params.owner_id = get_owner_with_descendants(session, params.owner_id)
+
     query = get_accessioned_items_count_query(
         params, sort_params
     )
@@ -534,6 +539,10 @@ def get_open_locations_list(
         shelf_query = shelf_query.where(
             Shelf.available_space <= ShelfType.max_capacity
         )
+
+    # Expand owner IDs to include descendants if include_sub_tiers is True
+    if params.owner_id and params.include_sub_tiers:
+        params.owner_id = get_owner_with_descendants(session, params.owner_id)
 
     # Optimize owner filter with direct join
     if params.owner_id:
@@ -953,6 +962,10 @@ def get_non_tray_item_count(
         if not size_classes:
             raise NotFound(detail="Size class not found")
 
+    # Expand owner IDs to include descendants if include_sub_tiers is True
+    if params.owner_id and params.include_sub_tiers:
+        params.owner_id = get_owner_with_descendants(session, params.owner_id)
+
     # CRITICAL FIX: Paginate now takes only the query object
     return paginate(session, get_non_tray_item_counts_query(params, sort_params))
 
@@ -1110,6 +1123,9 @@ def get_tray_item_count(
 
     # Ensure the owners exists (if owner_id is provided)
     if params.owner_id:
+        # Expand owner IDs to include descendants if include_sub_tiers is True
+        if params.include_sub_tiers:
+            params.owner_id = get_owner_with_descendants(session, params.owner_id)
         # V2 FIX: session.query().filter().all() -> session.execute(select(...)).scalars().all()
         owners = session.execute(select(Owner).filter(Owner.id.in_(params.owner_id))).scalars().all()
         if not owners:
@@ -1820,6 +1836,9 @@ def get_retrieval_count(
     """
     # V2 FIX: session.query().filter().all() -> session.execute(select(...)).scalars().all()
     if params.owner_id:
+        # Expand owner IDs to include descendants if include_sub_tiers is True
+        if params.include_sub_tiers:
+            params.owner_id = get_owner_with_descendants(session, params.owner_id)
         owner = session.execute(select(Owner).filter(Owner.id.in_(params.owner_id))).scalars().all()
         if not owner:
             raise NotFound(detail="Owner(s) not found")
@@ -2197,6 +2216,10 @@ def get_withdrawn_items_report(
     """
     Get a paginated list of withdrawn items.
     """
+    # Expand owner IDs to include descendants if include_sub_tiers is True
+    if params.owner_id and params.include_sub_tiers:
+        params.owner_id = get_owner_with_descendants(session, params.owner_id)
+
     query = get_withdrawn_items_query(params)
     return paginate(session, query)
 

@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from app.database.base import Base
 from app.models.owner_tiers import OwnerTier
 
-# --- CRITICAL: DEFER IMPORTS TO BREAK CIRCULARITY ---
 if TYPE_CHECKING:
     from app.models.items import Item
     from app.models.shelves import Shelf 
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from app.models.trays import Tray # <--- NEEDED
     from app.models.non_tray_item_retrieval_events import NonTrayItemRetrievalEvent
     from app.models.move_discrepancies import MoveDiscrepancy
+    from app.models.owner_delivery_locations import OwnerDeliveryLocation
 # -----------------------------------------------------
 
 
@@ -83,4 +83,10 @@ class Owner(Base):
         back_populates="owner",
         primaryjoin="MoveDiscrepancy.owner_id==Owner.id",
         lazy="selectin"
+    )
+
+    # 6. Owner-DeliveryLocation Relationship
+    owner_delivery_locations: Mapped[List["OwnerDeliveryLocation"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan"
     )

@@ -50,6 +50,7 @@ from app.models.tray_withdrawal import TrayWithdrawal
 from app.models.trays import Tray
 from app.models.users import User
 from app.models.withdraw_jobs import WithdrawJob
+from app.models.owner_delivery_locations import OwnerDeliveryLocation
 
 LOGGER = logging.getLogger(__name__)
 

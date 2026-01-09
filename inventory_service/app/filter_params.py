@@ -315,6 +315,7 @@ class OpenLocationParams:
         show_partial: Optional[bool] = False,
         owner_id: list[int] = Query(default=None),
         size_class_id: list[int] = Query(default=None),
+        include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
     ):
         self.building_id = building_id
         self.module_id = module_id
@@ -327,6 +328,7 @@ class OpenLocationParams:
         self.show_partial = show_partial
         self.owner_id = owner_id
         self.size_class_id = size_class_id
+        self.include_sub_tiers = include_sub_tiers
 
 
 class SortParams(BaseModel):
@@ -356,12 +358,14 @@ class AccessionedItemsParams:
         to_dt: Optional[datetime] = Query(
             default=None, description="End " "accessioned date to " "filter by."
         ),
+        include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
     ):
         self.owner_id = owner_id
         self.size_class_id = size_class_id
         self.media_type_id = media_type_id
         self.from_dt = from_dt
         self.to_dt = to_dt
+        self.include_sub_tiers = include_sub_tiers
 
 
 class AisleItemsCountParams(BaseModel):
@@ -397,6 +401,7 @@ class NonTrayItemsCountParams:
         to_dt: datetime = Query(
             default=None, description="End shelved date to " "filter by."
         ),
+        include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
     ):
         self.building_id = building_id
         self.module_id = module_id
@@ -406,6 +411,7 @@ class NonTrayItemsCountParams:
         self.aisle_num_to = aisle_num_to
         self.from_dt = from_dt
         self.to_dt = to_dt
+        self.include_sub_tiers = include_sub_tiers
 
 
 class TrayItemCountParams:
@@ -432,6 +438,7 @@ class TrayItemCountParams:
         to_dt: datetime = Query(
             default=None, description="End shelved date to " "filter by."
         ),
+        include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
     ):
         self.building_id = building_id
         self.module_id = module_id
@@ -440,6 +447,7 @@ class TrayItemCountParams:
         self.aisle_num_to = aisle_num_to
         self.from_dt = from_dt
         self.to_dt = to_dt
+        self.include_sub_tiers = include_sub_tiers
 
 
 class UserJobItemsCountParams:
@@ -490,7 +498,7 @@ class RetrievalCountParams:
     def __init__(
         self,
         owner_id: list[int] = Query(
-            default=None, description="ID of the user to filter jobs."
+            default=None, description="ID of the owner to filter jobs."
         ),
         from_dt: datetime = Query(
             default=None, description="Start created date to " "filter by."
@@ -498,10 +506,12 @@ class RetrievalCountParams:
         to_dt: datetime = Query(
             default=None, description="End created date to " "filter by."
         ),
+        include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
     ):
         self.owner_id = owner_id
         self.from_dt = from_dt
         self.to_dt = to_dt
+        self.include_sub_tiers = include_sub_tiers
 
 
 class BatchUploadParams:
@@ -597,10 +607,12 @@ class WithdrawnItemsReportParams:
         ),
         container_type: str = Query(
             default=None, description="Container Type (Tray, Non-Tray, or None for All)."
-        )
+        ),
+        include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
     ):
         self.from_dt = from_dt
         self.to_dt = to_dt
         self.owner_id = owner_id
         self.container_type = container_type
+        self.include_sub_tiers = include_sub_tiers
 

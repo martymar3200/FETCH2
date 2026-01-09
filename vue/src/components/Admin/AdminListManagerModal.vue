@@ -195,10 +195,13 @@ const {
   shelfTypes,
   ownersTiers,
   parentOwnerOptions,
-  optionsTotal
+  optionsTotal,
+  requestsLocations
 } = storeToRefs(useOptionStore())
 const {
   getParentOwnerOptions,
+  getOwnerDeliveryLocations,
+  syncOwnerDeliveryLocations,
   postSizeClass,
   patchSizeClass,
   postOwner,
@@ -319,14 +322,32 @@ const generateListModal = async () => {
         }
       ]
       break
-    case 'owner':
+    case 'owner': {
+      // Load delivery locations for the dropdown
+      await getOptions('requestsLocations', { size: 100 })
+      // Load existing delivery locations for this owner when editing
+      let ownerDeliveryLocationIds = []
+      if (mainProps.actionType === 'Edit' && mainProps.listData.id) {
+        try {
+          const existingLocations = await getOwnerDeliveryLocations(mainProps.listData.id)
+          ownerDeliveryLocationIds = existingLocations.map(loc => loc.id)
+        } catch (error) {
+          // If table doesn't exist or API fails, continue with empty array
+          console.warn('Could not load delivery locations for owner:', error)
+        }
+      }
+
       inputForm.value = {
         owner_tier_id: mainProps.listData.owner_tier_id ?? '',
         parent_owner_id: mainProps.listData.parent_owner_id ?? null,
-        name: mainProps.listData.name ?? ''
+        name: mainProps.listData.name ?? '',
+        delivery_location_ids: ownerDeliveryLocationIds
       }
       // create a copy of our input form
-      inputFormOriginal.value = { ...toRaw(inputForm.value) }
+      inputFormOriginal.value = {
+        ...toRaw(inputForm.value),
+        delivery_location_ids: [...ownerDeliveryLocationIds]
+      }
 
       inputFields.value = [
         {
@@ -347,10 +368,18 @@ const generateListModal = async () => {
           field: 'name',
           label: 'Owner Name',
           required: true
+        },
+        {
+          field: 'delivery_location_ids',
+          label: 'Allowed Delivery Locations',
+          options: requestsLocations,
+          allowMultiple: true,
+          required: false
         }
       ]
 
       break
+    }
     case 'priority':
       inputForm.value = {
         value: mainProps.listData.value ?? ''
@@ -597,7 +626,21 @@ const updateListType = async () => {
         break
       }
       case 'owner': {
-        await patchOwner(payload)
+        // First update the owner basic info
+        const ownerPayload = {
+          id: payload.id,
+          owner_tier_id: payload.owner_tier_id,
+          parent_owner_id: payload.parent_owner_id,
+          name: payload.name
+        }
+        await patchOwner(ownerPayload)
+
+        // Sync delivery location associations
+        await syncOwnerDeliveryLocations(
+          payload.id,
+          inputForm.value.delivery_location_ids || [],
+          inputFormOriginal.value.delivery_location_ids || []
+        )
         break
       }
       case 'priority':

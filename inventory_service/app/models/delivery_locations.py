@@ -4,12 +4,16 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, VARCHAR, TIMESTAMP, DateTime, func, Column
 
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
 # REMOVED: from sqlmodel import SQLModel, Field, Relationship
 
 # NEW IMPORT: Import the Base class you created
 from app.database.base import Base
+
+if TYPE_CHECKING:
+    from app.models.requests import Request
+    from app.models.owner_delivery_locations import OwnerDeliveryLocation
 
 
 class DeliveryLocation(Base): # <--- Inherit from Base
@@ -34,3 +38,9 @@ class DeliveryLocation(Base): # <--- Inherit from Base
 
     # --- RELATIONSHIPS ---
     requests: Mapped[List["Request"]] = relationship(back_populates="delivery_location")
+    
+    # Owner-DeliveryLocation many-to-many relationship
+    owner_delivery_locations: Mapped[List["OwnerDeliveryLocation"]] = relationship(
+        back_populates="delivery_location",
+        cascade="all, delete-orphan"
+    )
