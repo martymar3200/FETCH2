@@ -6,10 +6,21 @@
     aria-label="generateReportModal"
   >
     <template #header-content="{ hideModal }">
-      <q-card-section class="row items-center q-pb-none">
-        <h2 class="text-h6 text-bold">
+      <q-card-section class="modal-header row items-center q-pb-sm">
+        <h2 class="text-h6 text-bold q-mb-none">
           {{ reportType }}
         </h2>
+
+        <q-btn
+          flat
+          no-caps
+          dense
+          color="accent"
+          label="Clear Filters"
+          class="q-ml-md text-caption"
+          @click="clearFilters"
+          aria-label="clearFilters"
+        />
 
         <q-btn
           icon="close"
@@ -243,7 +254,7 @@
             <div class="form-group">
               <q-checkbox
                 v-model="reportForm.include_sub_tiers"
-                label="Include Sub-Tiers"
+                label="Include Owner Tiers"
                 :disable="!reportForm.owner_id?.length"
                 aria-label="includeSubTiersCheckbox"
               />
@@ -259,24 +270,31 @@
             v-for="param in reportParams"
             :key="param.query"
           >
-            <!-- date range inputs -->
+            <!-- single date range picker with one calendar for both dates -->
             <div
-              v-if="param.query.includes('_dt')"
-              class="col-6 q-mb-md"
+              v-if="param.query === 'from_dt'"
+              class="col-12 q-mb-lg"
             >
-              <div class="form-group q-pr-xs">
+              <div class="form-group">
                 <label class="form-group-label">
-                  {{ param.label }}
-                  <span
-                    v-if="param.required"
-                    class="text-caption text-negative"
+                  Date Range
+                  <q-icon
+                    name="info"
+                    size="14px"
+                    class="q-ml-xs cursor-pointer text-grey-6"
                   >
-                    (Required)
-                  </span>
+                    <q-tooltip class="text-body2">
+                      Click to select a start and end date
+                    </q-tooltip>
+                  </q-icon>
                 </label>
-                <TextInput
-                  v-model="reportForm[param.query]"
-                  placeholder="Ex: MM/DD/YYYY"
+                <q-input
+                  :model-value="formatDateRange(reportForm.from_dt, reportForm.to_dt)"
+                  outlined
+                  dense
+                  readonly
+                  placeholder="Select date range"
+                  class="date-range-input"
                 >
                   <template #append>
                     <q-icon
@@ -289,25 +307,35 @@
                         transition-hide="scale"
                       >
                         <q-date
-                          v-model="reportForm[param.query]"
-                          mask="MM/DD/YYYY"
+                          :model-value="dateRangeValue"
+                          range
+                          @update:model-value="updateDateRange"
                         >
-                          <div class="row items-center justify-end">
+                          <div class="row items-center justify-end q-gutter-sm">
+                            <q-btn
+                              label="Clear"
+                              flat
+                              @click="clearDateRange"
+                            />
                             <q-btn
                               v-close-popup
-                              label="Close"
+                              label="Done"
                               color="primary"
                               flat
-                              aria-label="closeDatePopup"
                             />
                           </div>
                         </q-date>
                       </q-popup-proxy>
                     </q-icon>
                   </template>
-                </TextInput>
+                </q-input>
               </div>
             </div>
+            <!-- skip to_dt field since it's handled in the range picker above -->
+            <div
+              v-else-if="param.query === 'to_dt'"
+              style="display: none;"
+            />
             <!-- text inputs -->
             <div
               v-else-if="param.type == 'text'"
@@ -354,9 +382,9 @@
                 />
               </div>
             </div>
-            <!-- checkbox inputs -->
+            <!-- checkbox inputs (only render if not grouped with another field) -->
             <div
-              v-else-if="param.type == 'checkbox'"
+              v-else-if="param.type == 'checkbox' && !param.groupWith"
               class="col-12 q-mb-md"
             >
               <div class="form-group">
@@ -370,12 +398,21 @@
             </div>
             <!-- select inputs -->
             <div
-              v-else
-              class="col-12 q-mb-md"
+              v-else-if="!param.type || param.type === 'select'"
+              class="col-12 q-mb-lg"
             >
               <div class="form-group">
                 <label class="form-group-label">
                   {{ param.label }}
+                  <q-icon
+                    name="info"
+                    size="14px"
+                    class="q-ml-xs cursor-pointer text-grey-6"
+                  >
+                    <q-tooltip class="text-body2">
+                      {{ param.tooltip || `Filter by ${param.label.toLowerCase()}` }}
+                    </q-tooltip>
+                  </q-icon>
                   <span
                     v-if="param.required"
                     class="text-caption text-negative"
@@ -397,6 +434,19 @@
                   @update:model-value="param.onUpdate ? param.onUpdate() : null"
                   :aria-label="`${param.query}Select`"
                 />
+                <!-- Render any checkbox grouped with this field -->
+                <template
+                  v-for="groupedParam in reportParams.filter(p => p.groupWith === param.query)"
+                  :key="groupedParam.query"
+                >
+                  <q-checkbox
+                    v-model="reportForm[groupedParam.query]"
+                    :label="groupedParam.label"
+                    :disable="groupedParam.dependsOn && !reportForm[groupedParam.dependsOn]?.length"
+                    :aria-label="`${groupedParam.query}_checkbox`"
+                    class="q-mt-sm"
+                  />
+                </template>
               </div>
             </div>
           </template>
@@ -504,6 +554,75 @@ const isReportFormValid = computed( () => {
   }
 })
 
+// Date range picker helpers
+const dateRangeValue = computed(() => {
+  if (!reportForm.value.from_dt && !reportForm.value.to_dt) {
+    return null
+  }
+  // Convert MM/DD/YYYY to YYYY/MM/DD format for q-date
+  const convertToQDateFormat = (dateStr) => {
+    if (!dateStr) {
+      return null
+    }
+    const [
+      month,
+      day,
+      year
+    ] = dateStr.split('/')
+    return `${year}/${month}/${day}`
+  }
+  const from = convertToQDateFormat(reportForm.value.from_dt)
+  const to = convertToQDateFormat(reportForm.value.to_dt)
+  if (from && to) {
+    return {
+      from,
+      to
+    }
+  }
+  return from || to
+})
+
+const formatDateRange = (fromDt, toDt) => {
+  if (!fromDt && !toDt) {
+    return ''
+  }
+  if (fromDt && toDt) {
+    return `${fromDt} → ${toDt}`
+  }
+  if (fromDt) {
+    return `From: ${fromDt}`
+  }
+  return `To: ${toDt}`
+}
+
+const updateDateRange = (val) => {
+  // Convert YYYY/MM/DD back to MM/DD/YYYY for form storage
+  const convertFromQDateFormat = (dateStr) => {
+    if (!dateStr) {
+      return null
+    }
+    const [
+      year,
+      month,
+      day
+    ] = dateStr.split('/')
+    return `${month}/${day}/${year}`
+  }
+  if (val && typeof val === 'object' && val.from && val.to) {
+    reportForm.value.from_dt = convertFromQDateFormat(val.from)
+    reportForm.value.to_dt = convertFromQDateFormat(val.to)
+  } else if (val && typeof val === 'string') {
+    // Single date selected - use as from date
+    reportForm.value.from_dt = convertFromQDateFormat(val)
+    reportForm.value.to_dt = null
+  }
+}
+
+const clearDateRange = () => {
+  reportForm.value.from_dt = null
+  reportForm.value.to_dt = null
+}
+
 // Logic
 const handleAlert = inject('handle-alert')
 
@@ -547,6 +666,11 @@ const handleLocationFormChange = async (valueType) => {
     case 'Ladder':
       return
   }
+}
+
+// Clear all form filters
+const clearFilters = () => {
+  generateReportModal()
 }
 
 const generateReportModal = () => {
@@ -595,8 +719,9 @@ const generateReportModal = () => {
         {
           query: 'include_sub_tiers',
           type: 'checkbox',
-          label: 'Include Sub-Tiers',
-          dependsOn: 'owner_id'
+          label: 'Include Owner Tiers',
+          dependsOn: 'owner_id',
+          groupWith: 'owner_id'
         }
       ]
       break
@@ -662,8 +787,9 @@ const generateReportModal = () => {
         {
           query: 'include_sub_tiers',
           type: 'checkbox',
-          label: 'Include Sub-Tiers',
-          dependsOn: 'owner_id'
+          label: 'Include Owner Tiers',
+          dependsOn: 'owner_id',
+          groupWith: 'owner_id'
         }
       ]
       break
@@ -737,8 +863,9 @@ const generateReportModal = () => {
         {
           query: 'include_sub_tiers',
           type: 'checkbox',
-          label: 'Include Sub-Tiers',
-          dependsOn: 'owner_id'
+          label: 'Include Owner Tiers',
+          dependsOn: 'owner_id',
+          groupWith: 'owner_id'
         }
       ]
       break
@@ -868,8 +995,9 @@ const generateReportModal = () => {
         {
           query: 'include_sub_tiers',
           type: 'checkbox',
-          label: 'Include Sub-Tiers',
-          dependsOn: 'owner_id'
+          label: 'Include Owner Tiers',
+          dependsOn: 'owner_id',
+          groupWith: 'owner_id'
         }
       ]
       break
@@ -1035,8 +1163,9 @@ const generateReportModal = () => {
         {
           query: 'include_sub_tiers',
           type: 'checkbox',
-          label: 'Include Sub-Tiers',
-          dependsOn: 'owner_id'
+          label: 'Include Owner Tiers',
+          dependsOn: 'owner_id',
+          groupWith: 'owner_id'
         }
       ]
       break
@@ -1102,4 +1231,9 @@ const generateReport = async () => {
 </script>
 
 <style lang="scss" scoped>
+.modal-header {
+  border-bottom: 2px solid $accent;
+  background: linear-gradient(180deg, rgba($accent, 0.03) 0%, transparent 100%);
+  margin-bottom: 8px;
+}
 </style>

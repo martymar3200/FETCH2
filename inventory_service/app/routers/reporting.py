@@ -80,6 +80,7 @@ from app.sorting import (
     RetrievalItemCountSorter,
     ShelvingJobDiscrepancySorter,
     MoveDiscrepancySorter,
+    OpenLocationsSorter,
 )
 from app.filter_params import (
     SortParams,
@@ -550,6 +551,16 @@ def get_open_locations_list(
 
     if params.size_class_id:
         shelf_query = shelf_query.filter(SizeClass.id.in_(params.size_class_id))
+
+    # Search filter params for server-side filtering
+    if params.location_search:
+        shelf_query = shelf_query.filter(Shelf.location.ilike(f"%{params.location_search}%"))
+    if params.shelf_barcode_search:
+        shelf_query = shelf_query.filter(Barcode.value.ilike(f"%{params.shelf_barcode_search}%"))
+    if params.owner_search:
+        shelf_query = shelf_query.filter(Owner.name.ilike(f"%{params.owner_search}%"))
+    if params.size_class_search:
+        shelf_query = shelf_query.filter(SizeClass.short_name.ilike(f"%{params.size_class_search}%"))
 
     # Optimize location filtering
     if params.ladder_id:
@@ -1558,6 +1569,12 @@ def get_user_job_summary_query(params, sort_params=None):
 
     final_query = select(*selection).group_by(*group_by).order_by(*order_by)
 
+    # Search filter params for server-side filtering
+    if params.user_name_search:
+        final_query = final_query.where(combined_query.c.user_name.ilike(f"%{params.user_name_search}%"))
+    if params.job_type_search:
+        final_query = final_query.where(combined_query.c.job_type.ilike(f"%{params.job_type_search}%"))
+
     return final_query
 
 
@@ -2071,10 +2088,17 @@ def get_verification_status_query(params: VerificationReportParams):
             )
         )
 
+
     if params.from_dt:
         query = query.where(VerificationJob.update_dt >= params.from_dt)
     if params.to_dt:
         query = query.where(VerificationJob.update_dt <= params.to_dt)
+
+    # Search filter params for server-side filtering
+    if params.barcode_search:
+        query = query.where(Barcode.value.ilike(f"%{params.barcode_search}%"))
+    if params.owner_search:
+        query = query.where(Owner.name.ilike(f"%{params.owner_search}%"))
 
     return query
 

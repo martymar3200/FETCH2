@@ -316,6 +316,11 @@ class OpenLocationParams:
         owner_id: list[int] = Query(default=None),
         size_class_id: list[int] = Query(default=None),
         include_sub_tiers: bool = Query(default=False, description="Include child owner tiers"),
+        # Search filter params for server-side filtering
+        location_search: Optional[str] = Query(default=None, description="Search shelf location"),
+        shelf_barcode_search: Optional[str] = Query(default=None, description="Search shelf barcode"),
+        owner_search: Optional[str] = Query(default=None, description="Search owner name"),
+        size_class_search: Optional[str] = Query(default=None, description="Search size class"),
     ):
         self.building_id = building_id
         self.module_id = module_id
@@ -329,6 +334,10 @@ class OpenLocationParams:
         self.owner_id = owner_id
         self.size_class_id = size_class_id
         self.include_sub_tiers = include_sub_tiers
+        self.location_search = location_search
+        self.shelf_barcode_search = shelf_barcode_search
+        self.owner_search = owner_search
+        self.size_class_search = size_class_search
 
 
 class SortParams(BaseModel):
@@ -466,10 +475,15 @@ class UserJobItemsCountParams:
         to_dt: datetime = Query(
             default=None, description="End created date to " "filter by."
         ),
+        # Search filter params for server-side filtering
+        user_name_search: Optional[str] = Query(default=None, description="Search user name"),
+        job_type_search: Optional[str] = Query(default=None, description="Search job type"),
     ):
         self.user_id = user_id
         self.from_dt = from_dt
         self.to_dt = to_dt
+        self.user_name_search = user_name_search
+        self.job_type_search = job_type_search
 
 
 class VerificationChangesParams:
@@ -583,11 +597,16 @@ class VerificationReportParams:
         ),
         container_type: str = Query(
             default="Tray", description="Container Type (Tray or Non-Tray)."
-        )
+        ),
+        # Search filter params for server-side filtering
+        barcode_search: Optional[str] = Query(default=None, description="Search barcode"),
+        owner_search: Optional[str] = Query(default=None, description="Search owner name"),
     ):
         self.from_dt = from_dt
         self.to_dt = to_dt
         self.container_type = container_type
+        self.barcode_search = barcode_search
+        self.owner_search = owner_search
 
 
 class WithdrawnItemsReportParams:
