@@ -26,18 +26,11 @@ export const useShelvingStore = defineStore('shelving-store', {
       status: '',
       trays: [],
       non_tray_items: [],
-      verification_jobs: []
-    },
-    originalShelvingJob: null,
-    directToShelfJob: {
-      id: null,
+      verification_jobs: [],
+      // Merged Direct Fields
       shelf_barcode: {
         value: ''
       },
-      user: {
-        name: ''
-      },
-      user_id: null,
       owner: {
         name: ''
       },
@@ -46,12 +39,9 @@ export const useShelvingStore = defineStore('shelving-store', {
         name: ''
       },
       size_class_id: null,
-      create_dt: new Date().toLocaleDateString(),
-      status: '',
-      trays: [],
-      non_tray_items: [],
       nextAvailablePosition: null
     },
+    originalShelvingJob: null,
     shelvingJobContainer: {
       id: null,
       barcode: {
@@ -81,33 +71,14 @@ export const useShelvingStore = defineStore('shelving-store', {
         }
       },
       scanned_for_shelving: false
-    },
-    moveShelfJob: {
-      shelf_barcode: '',
-      tray_barcode: '',
-      user: {
-        first_name: '',
-        last_name: ''
-      },
-      user_id: null,
-      owner: {
-        name: ''
-      },
-      size_class: {
-        name: ''
-      },
-      move_dt: '',
-      available_space: null,
-      containers: []
     }
+
   }),
   getters: {
     shelvingJobContainers: (state) => {
       let containerList = []
       if (state.shelvingJob.id) {
-        containerList = containerList.concat(state.shelvingJob.trays, state.shelvingJob.non_tray_items)
-      } else if (state.directToShelfJob.id) {
-        containerList = containerList.concat(state.directToShelfJob.trays, state.directToShelfJob.non_tray_items)
+        containerList = containerList.concat(state.shelvingJob.trays || [], state.shelvingJob.non_tray_items || [])
       }
       // return the list first sorted alphnumerically then sorted by scanned boolean
       const sortBoolOrder = {
@@ -121,15 +92,17 @@ export const useShelvingStore = defineStore('shelving-store', {
       }).compare).sort((a, b) => sortBoolOrder[a.scanned_for_shelving] - sortBoolOrder[b.scanned_for_shelving])
     },
     allContainersShelved: (state) => {
-      if (state.shelvingJob.id && state.shelvingJob.status !== 'Created') {
-        // if were in a normal shelving job we can check the status to determine if containers need to be verfiied or not
-        return state.shelvingJobContainers.some(c => !c.scanned_for_shelving) ? false : true
-      } else if (state.directToShelfJob.id) {
-        // if were in a direct to shelving job we can check if there is an id to determine if containers need to be verfiied or not
-        return state.shelvingJobContainers.length == 0 || state.shelvingJobContainers.some(c => !c.scanned_for_shelving) ? false : true
-      } else {
+      // Unified logic: if we have containers, they must all be scanned.
+      // For created/empty jobs (Direct start), it's false until populated (or true if considered 'done' when empty? Logic was: length==0 -> true in Direct)
+      // Old Direct logic: return state.shelvingJobContainers.length == 0 || state.shelvingJobContainers.some(c => !c.scanned_for_shelving) ? false : true
+      // This meant: if length 0, true (can complete). If some not scanned, false.
+      // Let's preserve that.
+
+      const containers = state.shelvingJobContainers
+      if (containers.length === 0) {
         return true
       }
+      return !containers.some(c => !c.scanned_for_shelving)
     }
   },
   actions: {
@@ -156,7 +129,13 @@ export const useShelvingStore = defineStore('shelving-store', {
         status: '',
         verification_jobs: [],
         trays: [],
-        non_tray_items: []
+        non_tray_items: [],
+        shelf_barcode: { value: '' },
+        owner: { name: '' },
+        owner_id: null,
+        size_class: { name: '' },
+        size_class_id: null,
+        nextAvailablePosition: null
       }
       this.originalShelvingJob = null
     },
@@ -195,9 +174,9 @@ export const useShelvingStore = defineStore('shelving-store', {
     async getShelfByBarcode (barcode_value) {
       try {
         const res = await this.$api.get(`${inventoryServiceApi.shelvesBarcode}${barcode_value}`)
-        if (this.directToShelfJob.id) {
-          this.directToShelfJob = {
-            ...this.directToShelfJob,
+        if (this.shelvingJob.id) {
+          this.shelvingJob = {
+            ...this.shelvingJob,
             shelf_barcode: res.data.barcode,
             owner: res.data.owner,
             size_class: res.data.shelf_type.size_class
@@ -205,11 +184,11 @@ export const useShelvingStore = defineStore('shelving-store', {
           // Also fetch next available position
           try {
             const nextPosRes = await this.$api.get(`${inventoryServiceApi.shelvesBarcode}${barcode_value}/next-position`)
-            this.directToShelfJob.nextAvailablePosition = nextPosRes.data.next_available_position
+            this.shelvingJob.nextAvailablePosition = nextPosRes.data.next_available_position
           } catch (nextPosError) {
             // If next position fetch fails, continue without it
             console.warn('Failed to fetch next available position:', nextPosError)
-            this.directToShelfJob.nextAvailablePosition = null
+            this.shelvingJob.nextAvailablePosition = null
           }
         }
         return res
@@ -268,39 +247,23 @@ export const useShelvingStore = defineStore('shelving-store', {
         }
       }
     },
-    async getDirectShelvingJob (id) {
-      try {
-        const res = await this.$api.get(`${inventoryServiceApi.shelvingJobs}${id}`)
-        this.directToShelfJob = {
-          ...this.directToShelfJob,
-          ...res.data
-        }
-      } catch (error) {
-        throw error
-      }
-    },
-    async postDirectShelvingJob (payload) {
+
+    /**
+     * Create a new shelving job (unified endpoint)
+     * @param {Object} payload - Must include { origin: 'Direct' | 'List', building_id, ... }
+     * @returns {Object} Created job data
+     */
+    async createShelvingJob (payload) {
       try {
         const res = await this.$api.post(inventoryServiceApi.shelvingJobs, payload)
-        this.directToShelfJob = {
-          ...this.directToShelfJob,
-          ...res.data
-        }
+        this.shelvingJob = res.data
+        this.originalShelvingJob = { ...this.shelvingJob }
+        return res.data
       } catch (error) {
         throw error
       }
     },
-    async patchDirectShelvingJob (payload) {
-      try {
-        const res = await this.$api.patch(`${inventoryServiceApi.shelvingJobs}${payload.id}`, payload)
-        this.directToShelfJob = {
-          ...this.directToShelfJob,
-          ...res.data
-        }
-      } catch (error) {
-        throw error
-      }
-    },
+
     getShelvingJobContainer (barcode_value) {
       // find the container with the matching barcode_value and set the data as the shelvingJobContainer
       this.shelvingJobContainer = this.shelvingJobContainers.find(container => container.barcode.value == barcode_value)
@@ -312,27 +275,42 @@ export const useShelvingStore = defineStore('shelving-store', {
         }
         const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-container-location`, payload)
         this.shelvingJobContainer.shelf_position_id = res.data.shelf_position_id
-        this.shelvingJobContainer.shelf_position.shelf_position_number.number = payload.shelf_position_number
+        if (payload.shelf_position_number && this.shelvingJobContainer.shelf_position?.shelf_position_number) {
+          this.shelvingJobContainer.shelf_position.shelf_position_number.number = payload.shelf_position_number
+        }
         this.shelvingJobContainer = {
           ...this.shelvingJobContainer,
           ...res.data
         }
 
+        // Update next available position from response (from direct job logic)
+        if (res.data.next_available_position !== undefined) {
+          this.shelvingJob.nextAvailablePosition = res.data.next_available_position
+        }
+
+        // Helper to update or add container
+        const updateOrAddContainer = (listName) => {
+          const index = this.shelvingJob[listName].findIndex(container => container.id == payload.container_id)
+          if (index !== -1) {
+            // Update existing
+            const item = this.shelvingJob[listName][index] = this.shelvingJobContainer
+            // move to bottom
+            this.shelvingJob[listName].splice(index, 1)
+            this.shelvingJob[listName].push(item)
+          } else {
+            // Add new (Direct workflow)
+            this.shelvingJob[listName] = [
+              ...this.shelvingJob[listName],
+              this.shelvingJobContainer
+            ]
+          }
+        }
+
         // update the container at the shelving job level as well
-        if (payload.trayed) {
-          const trayItemIndex = this.shelvingJob.trays.findIndex(container => container.id == payload.container_id)
-          const trayItemByIndex = this.shelvingJob.trays[trayItemIndex] = this.shelvingJobContainer
-
-          // move the item to bottom of the list
-          this.shelvingJob.trays.splice(trayItemIndex, 1)
-          this.shelvingJob.trays.push(trayItemByIndex)
+        if (payload.trayed || this.shelvingJobContainer.container_type?.type == 'Tray') {
+          updateOrAddContainer('trays')
         } else {
-          const nonTrayItemIndex = this.shelvingJob.non_tray_items.findIndex(container => container.id == payload.container_id)
-          const nonTrayItemByIndex = this.shelvingJob.non_tray_items[nonTrayItemIndex] = this.shelvingJobContainer
-
-          // move the item to bottom of the list
-          this.shelvingJob.non_tray_items.splice(nonTrayItemIndex, 1)
-          this.shelvingJob.non_tray_items.push(nonTrayItemByIndex)
+          updateOrAddContainer('non_tray_items')
         }
         this.originalShelvingJob = { ...this.shelvingJob }
       } catch (error) {
@@ -343,42 +321,7 @@ export const useShelvingStore = defineStore('shelving-store', {
         }
       }
     },
-    async postDirectShelvingJobContainer (payload) {
-      try {
-        if (globalStore.appIsOffline) {
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-container-location` })
-        }
-        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-container-location`, payload)
-        this.shelvingJobContainer = {
-          ...this.shelvingJobContainer,
-          ...res.data
-        }
 
-        // Update next available position from response
-        if (res.data.next_available_position !== undefined) {
-          this.directToShelfJob.nextAvailablePosition = res.data.next_available_position
-        }
-
-        // update the containers at the direct shelving job level and add the new container
-        if (this.shelvingJobContainer.container_type?.type == 'Tray') {
-          this.directToShelfJob.trays = [
-            ...this.directToShelfJob.trays,
-            this.shelvingJobContainer
-          ]
-        } else {
-          this.directToShelfJob.non_tray_items = [
-            ...this.directToShelfJob.non_tray_items,
-            this.shelvingJobContainer
-          ]
-        }
-      } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
-      }
-    },
     async postShelvingJobContainerProposedLocation (payload) {
       try {
         if (globalStore.appIsOffline) {
@@ -441,40 +384,138 @@ export const useShelvingStore = defineStore('shelving-store', {
         throw error
       }
     },
-    async postMoveTrayLocation (payload) {
+
+
+    // ==============================================================================
+    // SHELVE BY LIST ACTIONS
+    // ==============================================================================
+
+    /**
+     * Create a new Shelve by List job
+     * @deprecated Use createShelvingJob with origin='List' instead
+     */
+    async createShelveByListJob (payload) {
+      // Backward compatibility - delegate to unified action
+      // payload already has necessary fields, just add origin if missing (though backend handles it)
+      return this.createShelvingJob({
+        ...payload,
+        origin: 'List'
+      })
+    },
+
+    /**
+     * Get containers in a Shelve by List job
+     */
+    async getShelveByListContainers (jobId, status = null) {
       try {
-        const res = await this.$api.post(`${inventoryServiceApi.traysMove}${payload.tray_barcode_value}`, payload)
-        return res
+        const params = status ? { status } : {}
+        const res = await this.$api.get(`${inventoryServiceApi.shelvingJobs}${jobId}/containers`, { params })
+        return res.data
       } catch (error) {
-        if (error.response.status == 422) {
-          // return 422 error since these have messages we need to display to the user
-          return error
-        } else {
-          throw error
-        }
+        throw error
       }
     },
-    async postMoveNonTrayLocation (payload) {
+
+    /**
+     * Add a container to a Shelve by List job by barcode
+     */
+    async addContainerToShelveByList (jobId, containerBarcode) {
       try {
-        const res = await this.$api.post(`${inventoryServiceApi.nonTrayItemsMove}${payload.non_tray_barcode_value}`, payload)
-        return res
+        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${jobId}/containers`, {
+          container_barcode: containerBarcode
+        })
+        return res.data
       } catch (error) {
-        if (error.response.status == 422) {
-          // return 422 error since these have messages we need to display to the user
-          return error
-        } else {
-          throw error
-        }
+        throw error
       }
     },
-    async postMoveTrayItemLocation (payload) {
+
+    /**
+     * Remove a container from a Shelve by List job
+     */
+    async removeContainerFromShelveByList (jobId, containerId) {
       try {
-        const res = await this.$api.post(`${inventoryServiceApi.itemsMove}${payload.item_barcode_value}`, payload)
-        return res
+        await this.$api.delete(`${inventoryServiceApi.shelvingJobs}${jobId}/containers/${containerId}`)
+        return true
       } catch (error) {
-        if (error.response.status == 422) {
-          // return 422 error since these have messages we need to display to the user
-          return error
+        throw error
+      }
+    },
+
+    /**
+     * Cancel a Shelve by List job (only if not started)
+     */
+    async cancelShelveByListJob (jobId) {
+      try {
+        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${jobId}/cancel`)
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+
+    /**
+     * Run pre-assignment on a Shelve by List job
+     */
+    async runPreAssignment (jobId, preAssignInput) {
+      try {
+        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${jobId}/pre-assign`, preAssignInput)
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+
+    /**
+     * Override a container's proposed location
+     */
+    async overrideContainerLocation (jobId, containerId, overrideInput) {
+      try {
+        const res = await this.$api.patch(
+          `${inventoryServiceApi.shelvingJobs}${jobId}/containers/${containerId}/override`,
+          overrideInput
+        )
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+
+    /**
+     * Scan a container during Shelve by List execution
+     */
+    async scanContainerForShelveByList (jobId, containerBarcode) {
+      try {
+        const res = await this.$api.post(
+          `${inventoryServiceApi.shelvingJobs}${jobId}/scan-container`,
+          null,
+          { params: { container_barcode: containerBarcode } }
+        )
+        return res.data
+      } catch (error) {
+        throw error
+      }
+    },
+
+    /**
+     * Confirm a container has been shelved (supports offline sync)
+     */
+    async confirmContainerShelved (jobId, confirmation) {
+      try {
+        if (globalStore.appIsOffline) {
+          navigator.serviceWorker.controller.postMessage({
+            queueIncomingApiCall: `${inventoryServiceApi.shelvingJobs}${jobId}/confirm-shelve`
+          })
+        }
+        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${jobId}/confirm-shelve`, confirmation)
+        return res.data
+      } catch (error) {
+        if (globalStore.appIsOffline) {
+          // Queue for later sync
+          return {
+            status: 'queued_offline',
+            ...confirmation
+          }
         } else {
           throw error
         }
@@ -482,3 +523,4 @@ export const useShelvingStore = defineStore('shelving-store', {
     }
   }
 })
+

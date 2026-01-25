@@ -375,12 +375,37 @@ const handlingSearchResultRouting = () => {
       break
     case 'Shelving':
       shelvingJob.value = exactSearchResponseInfo.value
-      router.push({
-        name: searchType.value.toLowerCase(),
-        params: {
-          jobId: searchText.value
-        }
-      })
+      // Route based on job origin type
+      if (exactSearchResponseInfo.value.origin === 'Direct') {
+        // Direct to Shelf jobs use the modernized ShelvingDirectExecute component
+        router.push({
+          name: 'shelving-dts',
+          params: {
+            jobId: searchText.value
+          }
+        })
+      } else if (exactSearchResponseInfo.value.origin === 'List') {
+        // Shelve by List jobs use their dedicated component
+        router.push({
+          name: 'ShelveByListExecute',
+          params: {
+            id: searchText.value
+          }
+        })
+      } else if (exactSearchResponseInfo.value.origin === 'Move') {
+        // Handle Move jobs
+        const moveType = exactSearchResponseInfo.value.mode === 'MoveTrayItem' ? 'tray-item' : 'tray-non-tray'
+        router.push({
+          name: 'shelving-move',
+          params: {
+            type: moveType,
+            jobId: searchText.value
+          }
+        })
+      } else {
+        // Verification-origin jobs are deprecated - redirect to dashboard
+        router.push({ name: 'shelving' })
+      }
       break
     case 'Request':
       requestJob.value = exactSearchResponseInfo.value

@@ -2,7 +2,7 @@
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey
+from sqlalchemy import Integer, Boolean, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey
 
 from enum import Enum
 from typing import Optional, List, TYPE_CHECKING
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from app.models.buildings import Building
     from app.models.users import User
     from app.models.shelving_job_discrepancies import ShelvingJobDiscrepancy
+    from app.models.shelving_job_containers import ShelvingJobContainer
 
 class ShelvingJobStatus(str, Enum):
     Created = "Created"
@@ -31,8 +32,18 @@ class ShelvingJobStatus(str, Enum):
 
 
 class OriginStatus(str, Enum):
-    Verification = "Verification"
+    Verification = "Verification"  # Legacy - kept for existing data
     Direct = "Direct"
+    List = "List"
+    Move = "Move"  # NEW: Move Operations
+
+
+class ShelvingMode(str, Enum):
+    """Mode determines how the shelving job is executed."""
+    Manual = "Manual"        # User scans shelf then container
+    PreAssigned = "PreAssigned"  # System assigns, user follows directions
+    MoveTrayItem = "MoveTrayItem" # Item -> Tray
+    MoveShelf = "MoveShelf" # Tray/Item -> Shelf
 
 
 class ShelvingJob(Base): # <--- Inherit from Base
@@ -62,9 +73,26 @@ class ShelvingJob(Base): # <--- Inherit from Base
             OriginStatus,
             name="shelving_origin",
             nullable=False,
+            create_constraint=False,  # Allow adding new values via migration
         ),
         default=OriginStatus.Verification,
     )
+
+    # NEW: Mode (Enum) - How the job is executed (for List origin jobs)
+    mode: Mapped[Optional[str]] = mapped_column(
+        SQLEnum(
+            ShelvingMode,
+            name="shelving_mode",
+            nullable=True,
+        ),
+        nullable=True,
+        default=None,
+    )
+
+    # NEW: Pre-assignment configuration flags (for List origin jobs)
+    allow_unassigned_size: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    allow_unassigned_owner: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    allow_tiered_owner: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Foreign Keys
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=False)
@@ -105,5 +133,11 @@ class ShelvingJob(Base): # <--- Inherit from Base
     shelving_job_discrepancies: Mapped[List["ShelvingJobDiscrepancy"]] = relationship(
         back_populates="shelving_job",
         primaryjoin="ShelvingJobDiscrepancy.shelving_job_id==ShelvingJob.id",
+        lazy="selectin"
+    )
+    
+    # NEW: Relationship to ShelvingJobContainer (for List origin jobs)
+    shelving_job_containers: Mapped[List["ShelvingJobContainer"]] = relationship(
+        back_populates="shelving_job",
         lazy="selectin"
     )

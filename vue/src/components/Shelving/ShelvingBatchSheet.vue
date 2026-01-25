@@ -28,10 +28,10 @@
 
         <section>
           <p class="text-h5 text-bold q-mb-sm">
-            Total Trays: {{ shelvingJobDetails.trays ? shelvingJobDetails.trays.length : 0 }}
+            Total Trays: {{ trayCount }}
           </p>
           <p class="text-h5 text-bold q-mb-sm">
-            Total Non-Trays: {{ shelvingJobDetails.non_tray_items ? shelvingJobDetails.non_tray_items.length : 0 }}
+            Total Non-Trays: {{ nonTrayCount }}
           </p>
           <p class="text-h5 text-bold">
             Building: {{ shelvingJobDetails.building?.name }}
@@ -60,28 +60,16 @@
             </thead>
             <tbody>
               <tr
-                v-for="containers in shelvingJobDetails.trays"
-                :key="containers.id"
+                v-for="container in allContainers"
+                :key="container.id"
               >
-                <td>{{ renderItemBarcodeDisplay(containers) }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[1] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[2] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[3] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[4] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[5] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[6] }}</td>
-              </tr>
-              <tr
-                v-for="containers in shelvingJobDetails.non_tray_items"
-                :key="containers.id"
-              >
-                <td>{{ renderItemBarcodeDisplay(containers) }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[1] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[2] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[3] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[4] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[5] }}</td>
-                <td>{{ containers.shelf_position?.location?.split('-')[6] }}</td>
+                <td>{{ renderItemBarcodeDisplay(container) }}</td>
+                <td>{{ getLocation(container, 1) }}</td>
+                <td>{{ getLocation(container, 2) }}</td>
+                <td>{{ getLocation(container, 3) }}</td>
+                <td>{{ getLocation(container, 4) }}</td>
+                <td>{{ getLocation(container, 5) }}</td>
+                <td>{{ getLocation(container, 6) }}</td>
               </tr>
             </tbody>
           </table>
@@ -92,13 +80,18 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, inject, computed } from 'vue'
 import PrintTemplate from '@/components/PrintTemplate.vue'
 // Props
-defineProps({
+const props = defineProps({
   shelvingJobDetails: {
     type: Object,
     required: true
+  },
+  // For Shelve by List jobs, containers are tracked separately
+  containers: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -108,6 +101,53 @@ const printTemplate = ref(null)
 // Logic
 const formatDateTime = inject('format-date-time')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
+
+// Computed: Support both data structures
+// Direct to Shelf: uses shelvingJobDetails.trays and shelvingJobDetails.non_tray_items
+// Shelve by List: uses containers prop
+const allContainers = computed(() => {
+  // If containers prop is provided and has data, use it (Shelve by List)
+  if (props.containers && props.containers.length > 0) {
+    return props.containers
+  }
+  // Otherwise fall back to trays + non_tray_items (Direct to Shelf)
+  const trays = props.shelvingJobDetails?.trays || []
+  const nonTrayItems = props.shelvingJobDetails?.non_tray_items || []
+  return [
+    ...trays,
+    ...nonTrayItems
+  ]
+})
+
+const trayCount = computed(() => {
+  if (props.containers && props.containers.length > 0) {
+    return props.containers.filter(c => c.container_type === 'Tray').length
+  }
+  return props.shelvingJobDetails?.trays?.length || 0
+})
+
+const nonTrayCount = computed(() => {
+  if (props.containers && props.containers.length > 0) {
+    return props.containers.filter(c => c.container_type === 'NonTrayItem').length
+  }
+  return props.shelvingJobDetails?.non_tray_items?.length || 0
+})
+
+// Helper function to get location parts from different data structures
+const getLocation = (container, index) => {
+  // Shelve by List style - uses actual_location or proposed_location
+  if (container.actual_location) {
+    return container.actual_location.split('-')[index] || ''
+  }
+  if (container.proposed_location) {
+    return container.proposed_location.split('-')[index] || ''
+  }
+  // Direct to Shelf style - uses shelf_position.location
+  if (container.shelf_position?.location) {
+    return container.shelf_position.location.split('-')[index] || ''
+  }
+  return ''
+}
 
 const printBatchReport = () => {
   printTemplate.value.print()

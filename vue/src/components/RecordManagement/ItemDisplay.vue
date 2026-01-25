@@ -425,10 +425,22 @@ const routeToVerificationJob = (jobId) => {
 }
 
 const routeToShelvingJob = (jobId) => {
-  router.push({
-    name: 'shelving',
-    params: { jobId }
-  })
+  // Get origin from tray's shelving job (for tray items) or item's shelving job (for non-tray items)
+  const origin = itemDetails.value.tray?.shelving_job?.origin || itemDetails.value.shelving_job?.origin
+  if (origin === 'Direct') {
+    router.push({
+      name: 'shelving-dts',
+      params: { jobId }
+    })
+  } else if (origin === 'List') {
+    router.push({
+      name: 'ShelveByListExecute',
+      params: { jobId }
+    })
+  } else {
+    // Verification origin jobs are deprecated - redirect to dashboard
+    router.push({ name: 'shelving' })
+  }
 }
 
 const routeToRefileJob = (jobId) => {

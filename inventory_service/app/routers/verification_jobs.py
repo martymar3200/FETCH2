@@ -69,9 +69,32 @@ def get_verification_job_list(
     )
 
     if unshelved:
-        # retrieve completed verification jobs that haven't been shelved
-        query = query.where(VerificationJob.shelving_job_id == None).where(
+        # Retrieve completed verification jobs that have at least one unshelved container
+        # A verification job is shelv-able if:
+        # 1. It's Completed
+        # 2. It has at least one tray or non-tray item without a shelf_position_id
+        
+        # Subquery for trays with no shelf position
+        unshelved_trays = (
+            select(Tray.verification_job_id)
+            .where(Tray.shelf_position_id == None)
+            .where(Tray.verification_job_id != None)
+            .distinct()
+        )
+        
+        # Subquery for non-tray items with no shelf position
+        unshelved_non_trays = (
+            select(NonTrayItem.verification_job_id)
+            .where(NonTrayItem.shelf_position_id == None)
+            .where(NonTrayItem.verification_job_id != None)
+            .distinct()
+        )
+        
+        query = query.where(
             VerificationJob.status == "Completed"
+        ).where(
+            (VerificationJob.id.in_(unshelved_trays)) | 
+            (VerificationJob.id.in_(unshelved_non_trays))
         )
     if params.queue:
         # filter out completed.  maybe someday hide cancelled.

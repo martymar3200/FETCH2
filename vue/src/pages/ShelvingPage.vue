@@ -8,9 +8,8 @@
 
     <template v-if="!pageInitLoading">
       <ShelvingDashboard v-if="route.name == 'shelving' && !route.params.jobId" />
-      <ShelvingJobDetails v-else-if="route.name == 'shelving' && route.params.jobId" />
-      <ShelvingJobDirectToShelf v-else-if="route.name == 'shelving-dts' && route.params.jobId" />
-      <ShelvingMove v-else-if="route.name == 'shelving-move' && route.params.type" />
+      <ShelvingDirectExecute v-else-if="route.name == 'shelving-dts' && route.params.jobId" />
+
     </template>
   </q-page>
 </template>
@@ -24,14 +23,13 @@ import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import ShelvingDashboard from '@/components/Shelving/ShelvingDashboard.vue'
-import ShelvingJobDetails from '@/components/Shelving/ShelvingJobDetails.vue'
-import ShelvingJobDirectToShelf from '@/components/Shelving/ShelvingJobDirectToShelf.vue'
-import ShelvingMove from '@/components/Shelving/ShelvingMove.vue'
+import ShelvingDirectExecute from '@/components/Shelving/ShelvingDirectExecute.vue'
+
 
 const route = useRoute()
 
 // Store Data
-const { getShelvingJob, getDirectShelvingJob } = useShelvingStore()
+const { getShelvingJob } = useShelvingStore()
 const { pageInitLoading } = storeToRefs(useGlobalStore())
 const { getOptions } = useOptionStore()
 
@@ -49,11 +47,9 @@ onMounted( async () => {
   }
 
   // if there is an id in the url we need to load that shelving job
-  if (route.name == 'shelving' && route.params.jobId) {
-    await getShelvingJob(route.params.jobId)
-  } else if (route.name == 'shelving-dts' && route.params.jobId) {
+  if (route.name == 'shelving-dts' && route.params.jobId) {
     // only load the direct shelving job page after dts data is retrieved since the store data is slightly different from whats returned from api
-    await getDirectShelvingJob(route.params.jobId)
+    await getShelvingJob(route.params.jobId)
   }
   pageInitLoading.value = false
 })

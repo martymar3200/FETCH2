@@ -297,11 +297,29 @@ const routes = [
       },
       {
         name: 'shelving-move',
-        path: 'shelving/move/:type',
-        component: () => import('@/pages/ShelvingPage.vue'),
+        path: 'shelving/move/:type/:jobId?',
+        component: () => import('@/components/Shelving/ShelvingMoveExecute.vue'),
         meta: {
           requiresAuth: true,
           requiresPerm: 'can_move_trays_and_items_shelving_locations'
+        }
+      },
+      {
+        name: 'ShelveByListCreate',
+        path: 'shelving/list/create',
+        component: () => import('@/components/Shelving/ShelvingListCreate.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_create_and_execute_shelving_job'
+        }
+      },
+      {
+        name: 'ShelveByListExecute',
+        path: 'shelving/list/:id',
+        component: () => import('@/components/Shelving/ShelvingListExecute.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_create_and_execute_shelving_job'
         }
       },
       {

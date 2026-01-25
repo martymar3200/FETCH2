@@ -5,50 +5,60 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 from app.schemas.users import UserDetailReadOutput
-from app.models.shelving_jobs import ShelvingJobStatus, OriginStatus
+from app.models.shelving_jobs import ShelvingJobStatus, OriginStatus, ShelvingMode
 from app.schemas.barcodes import BarcodeDetailReadOutput
 from app.schemas.container_types import ContainerTypeDetailReadOutput
 
 
 class ShelvingJobInput(BaseModel):
-    status: Optional[str]
-    origin: Optional[str]
-    user_id: Optional[int] = None
+    """
+    Unified input schema for creating shelving jobs.
+    
+    - origin='Direct': Creates a Direct to Shelf job
+    - origin='List': Creates a Shelve by List job (optionally with verification_job_ids)
+    """
+    origin: str  # Required: "Direct" or "List"
+    mode: Optional[str] = "Manual"  # ShelvingMode: "Manual" or "PreAssigned"
+    building_id: int  # Required for all job types
     created_by_id: Optional[int] = None
-    building_id: Optional[int] = None
-    verification_jobs: Optional[List[int]] = []
-
-    @field_validator("status", mode="before", check_fields=True)
-    @classmethod
-    def validate_status(cls, value):
-        if value is not None and value not in ShelvingJobStatus._member_names_:
-            raise ValueError(
-                f"Invalid status: {value}. Must be one of {list(ShelvingJobStatus._member_names_)}"
-            )
-        return value
+    user_id: Optional[int] = None  # For job assignment
+    # Verification jobs to populate container list (for List origin)
+    verification_job_ids: Optional[List[int]] = None
+    # Pre-assignment configuration flags
+    allow_unassigned_size: Optional[bool] = False
+    allow_unassigned_owner: Optional[bool] = False
+    allow_tiered_owner: Optional[bool] = False
 
     @field_validator("origin", mode="before", check_fields=True)
     @classmethod
-    def validate_origin_status(cls, value):
-        if value is not None and value not in OriginStatus._member_names_:
+    def validate_origin(cls, value):
+        allowed_origins = ["Direct", "List", "Move"]
+        if value not in allowed_origins:
             raise ValueError(
-                f"Invalid status: {value}. Must be one of {list(OriginStatus._member_names_)}"
+                f"Invalid origin: {value}. Must be one of {allowed_origins}"
+            )
+        return value
+
+    @field_validator("mode", mode="before", check_fields=True)
+    @classmethod
+    def validate_mode(cls, value):
+        if value is not None and value not in ShelvingMode._member_names_:
+            raise ValueError(
+                f"Invalid mode: {value}. Must be one of {list(ShelvingMode._member_names_)}"
             )
         return value
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "status": "Created",
-                "origin": "Verification",
-                "user_id": 1,
-                "created_by_id": 2,
+                "origin": "Direct",
+                "mode": "Manual",
                 "building_id": 1,
-                "verification_jobs": [
-                    1,
-                    27,
-                    73
-                ]
+                "created_by_id": 2,
+                "allow_unassigned_size": False,
+                "allow_unassigned_owner": False,
+                "allow_tiered_owner": False,
+                "verification_job_ids": None
             }
         }
     )
@@ -85,11 +95,16 @@ class ShelvingJobBaseOutput(BaseModel):
     id: int
     status: Optional[str]
     origin: Optional[str]
+    mode: Optional[str] = None  # NEW: ShelvingMode
     building_id: Optional[int] = None
     last_transition: Optional[datetime] = None
     run_time: Optional[timedelta] = None
     user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
+    # NEW: Pre-assignment configuration flags
+    allow_unassigned_size: Optional[bool] = None
+    allow_unassigned_owner: Optional[bool] = None
+    allow_tiered_owner: Optional[bool] = None
     create_dt: datetime
     update_dt: datetime
 
@@ -198,7 +213,17 @@ class TrayNestedForShelvingJob(BaseModel):
     scanned_for_shelving: Optional[bool] = None
 
 
+class ItemNestedForShelvingJob(BaseModel):
+    id: int
+    barcode: Optional[BarcodeDetailReadOutput] = None
+    tray: Optional[TrayNestedForShelvingJob] = None
+    scanned_for_accession: bool
+    scanned_for_verification: bool
+    status: str
+
+
 class NonTrayNestedForShelvingJob(BaseModel):
+
     id: int
     owner: Optional[NestedOwnerForShelvingJob] = None
     size_class: Optional[NestedSizeClassForShelvingJob] = None
@@ -211,6 +236,41 @@ class NonTrayNestedForShelvingJob(BaseModel):
     scanned_for_shelving: Optional[bool] = None
 
 
+
+class ShelvingJobContainerDetailOutput(BaseModel):
+    id: int
+    shelving_job_id: int
+    tray: Optional[TrayNestedForShelvingJob] = None
+    non_tray_item: Optional[NonTrayNestedForShelvingJob] = None
+    item: Optional[ItemNestedForShelvingJob] = None
+    destination_tray: Optional[TrayNestedForShelvingJob] = None
+
+    proposed_shelf_position: Optional[ShelfPositionNestedForShelvingJob] = None
+    actual_shelf_position: Optional[ShelfPositionNestedForShelvingJob] = None
+    shelved_dt: Optional[datetime] = None
+    status: str
+    was_overridden: bool = False
+    
+    @computed_field(title='Container Barcode')
+    @property
+    def container_barcode(self) -> Optional[str]:
+        if self.tray:
+            return self.tray.barcode.value if self.tray.barcode else f"TRAY-{self.tray.id}"
+        if self.non_tray_item:
+            return self.non_tray_item.barcode.value if self.non_tray_item.barcode else f"NTI-{self.non_tray_item.id}"
+        if self.item:
+            return self.item.barcode.value if self.item.barcode else f"ITEM-{self.item.id}"
+        return None
+
+    @computed_field(title='Shelf Position Number')
+    @property
+    def shelf_position_number(self) -> Optional[int]:
+        if self.actual_shelf_position:
+            return self.actual_shelf_position.shelf_position_number.number
+        if self.proposed_shelf_position:
+            return self.proposed_shelf_position.shelf_position_number.number
+        return None
+
 class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
     user_id: Optional[int] = None
     created_by_id: Optional[int] = None
@@ -218,6 +278,8 @@ class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
     trays: List[TrayNestedForShelvingJob]
     non_tray_items: List[NonTrayNestedForShelvingJob]
     building: Optional[NestedBuildingForShelvingJob] = None
+    shelving_job_containers: List[ShelvingJobContainerDetailOutput] = []
+
 
     @field_validator("run_time", mode="before")
     @classmethod
@@ -387,7 +449,9 @@ class ReAssignmentInput(BaseModel):
     container_id: Optional[int] = None
     container_barcode_value: Optional[str] = None
     trayed: Optional[bool] = None
-    shelf_position_number: int
+    destination_tray_id: Optional[int] = None
+    destination_tray_barcode_value: Optional[str] = None
+    shelf_position_number: Optional[int] = None
     shelf_id: Optional[int] = None
     shelf_barcode_value: Optional[str] = None
     shelved_dt: Optional[datetime] = None
@@ -423,6 +487,7 @@ class ReAssignmentOutput(BaseModel):
     shelf_position: Optional[ShelfPositionNestedForShelvingJob] = None
     container_type: Optional[ContainerTypeDetailReadOutput] = None
     next_available_position: Optional[int] = None
+    shelving_container_id: Optional[int] = None  # Unified container tracking ID
 
     model_config = ConfigDict(
         json_schema_extra={

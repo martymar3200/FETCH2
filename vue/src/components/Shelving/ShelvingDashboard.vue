@@ -90,13 +90,13 @@
                       v-if="checkUserPermission('can_create_and_execute_shelving_job')"
                       clickable
                       v-close-popup
-                      @click="showShelvingJobModal = 'Verification'"
+                      @click="$router.push({ name: 'ShelveByListCreate' })"
                       role="menuitem"
                     >
                       <q-item-section>
                         <q-item-label>
                           <span>
-                            From Verification Job
+                            Shelve by List
                           </span>
                         </q-item-label>
                       </q-item-section>
@@ -186,6 +186,20 @@
                   @update:model-value="applyColumnFilters"
                   @click.stop
                 />
+
+                <!-- Origin filter -->
+                <q-select
+                  v-else-if="col.name === 'origin'"
+                  v-model="columnFilters.origin"
+                  dense
+                  outlined
+                  clearable
+                  :options="['Direct', 'List', 'Verification', 'Move']"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
               </q-th>
             </q-tr>
           </template>
@@ -203,6 +217,12 @@
               {{ value }}
             </span>
             <span
+              v-else-if="colName == 'origin'"
+              class="text-weight-medium"
+            >
+              {{ value }}
+            </span>
+            <span
               v-else-if="colName == 'container_count'"
               class="outline text-nowrap"
             >
@@ -215,6 +235,7 @@
               {{ formatDateTime(value).date }}
             </span>
           </template>
+
         </EssentialTable>
       </div>
     </div>
@@ -561,17 +582,15 @@ const { sides } = storeToRefs(useBuildingStore())
 const {
   shelvingJobList,
   shelvingJob,
-  directToShelfJob,
   shelvingJobListTotal
 } = storeToRefs(useShelvingStore())
 const {
   resetShelvingStore,
   resetShelvingJob,
   getShelvingJobList,
-  getShelvingJob,
   postShelvingJob,
-  getDirectShelvingJob,
-  postDirectShelvingJob
+  getShelvingJob,
+  createShelvingJob
 } = useShelvingStore()
 const { userData } = storeToRefs(useUserStore())
 
@@ -643,6 +662,7 @@ const getStatusBadgeClass = (status) => {
 
 const shelfTableVisibleColumns = ref([
   'id',
+  'origin',
   'container_count',
   'status',
   'user_id',
@@ -659,12 +679,20 @@ const shelfTableColumns = ref([
     order: 0
   },
   {
+    name: 'origin',
+    field: 'origin',
+    label: 'Job Type',
+    align: 'left',
+    sortable: true,
+    order: 1
+  },
+  {
     name: 'container_count',
     field: row => (row.tray_count + row.non_tray_item_count),
     label: '# of Containers in Job',
     align: 'left',
     sortable: true,
-    order: 1
+    order: 2
   },
   {
     name: 'status',
@@ -672,7 +700,7 @@ const shelfTableColumns = ref([
     label: 'Status',
     align: 'left',
     sortable: true,
-    order: 2
+    order: 3
   },
   {
     name: 'user_id',
@@ -680,7 +708,7 @@ const shelfTableColumns = ref([
     label: 'Assigned User',
     align: 'left',
     sortable: true,
-    order: 3
+    order: 4
   },
   {
     name: 'create_dt',
@@ -688,7 +716,7 @@ const shelfTableColumns = ref([
     label: 'Date Added',
     align: 'left',
     sortable: true,
-    order: 4
+    order: 5
   },
   {
     name: 'last_transition',
@@ -696,7 +724,7 @@ const shelfTableColumns = ref([
     label: 'Last Updated',
     align: 'left',
     sortable: true,
-    order: 5
+    order: 6
   }
 ])
 const shelvingJobMenuState = ref(false)
@@ -794,6 +822,11 @@ const loadShelvingJobs = async (qParams) => {
       filterParams.status = columnFilters.value.status
     }
 
+    // Add origin filter
+    if (columnFilters.value.origin) {
+      filterParams.origin = columnFilters.value.origin
+    }
+
     // Add user filter based on permission
     filterParams.user_id = checkUserPermission('can_view_all_shelving_jobs') ? null : userData.value.user_id
 
@@ -826,26 +859,50 @@ const clearColumnFilters = () => {
       'Created',
       'Paused',
       'Running'
-    ]  // Reset to default active statuses
+    ], // Reset to default active statuses
+    origin: null
   }
   applyColumnFilters()
 }
 const loadShelvingJob = async (jobId, type) => {
   try {
     appIsLoadingData.value = true
+    await getShelvingJob(jobId)
 
-    if (type == 'Verification') {
-      await getShelvingJob(jobId)
+    // Route based on job origin/type
+    // Note: 'type' param comes from table row 'origin' field
+    const origin = type || shelvingJob.value.origin
+
+    if (origin === 'Direct') {
       router.push({
-        name: 'shelving',
+        name: 'shelving-dts',
         params: {
           jobId
         }
       })
-    } else if (type == 'Direct') {
-      await getDirectShelvingJob(jobId)
+    } else if (origin === 'List') {
       router.push({
-        name: 'shelving-dts',
+        name: 'ShelveByListExecute',
+        params: {
+          id: jobId
+        }
+      })
+    } else if (origin === 'Move') {
+      let moveType = 'tray-item'
+      if (shelvingJob.value.mode === 'MoveShelf') {
+        moveType = 'tray-non-tray'
+      }
+      router.push({
+        name: 'shelving-move',
+        params: {
+          type: moveType,
+          jobId
+        }
+      })
+    } else {
+      // Default / Verification
+      router.push({
+        name: 'shelving',
         params: {
           jobId
         }
@@ -913,11 +970,11 @@ const submitDirectToShelfJob = async () => {
       origin: 'Direct',
       created_by_id: userData.value.user_id
     }
-    await postDirectShelvingJob(payload)
+    await createShelvingJob(payload)
     router.push({
       name: 'shelving-dts',
       params: {
-        jobId: directToShelfJob.value.id
+        jobId: shelvingJob.value.id
       }
     })
 
@@ -938,12 +995,34 @@ const submitDirectToShelfJob = async () => {
   }
 }
 const submitShelvingMove = async (moveType) => {
-  router.push({
-    name: 'shelving-move',
-    params: {
-      type: moveType
+  try {
+    appIsLoadingData.value = true
+    const mode = moveType === 'tray-item' ? 'MoveTrayItem' : 'MoveShelf'
+    const payload = {
+      status: 'Created',
+      origin: 'Move',
+      mode,
+      building_id: userData.value.building_id || 1,
+      created_by_id: userData.value.user_id,
+      user_id: userData.value.user_id
     }
-  })
+    const res = await createShelvingJob(payload)
+    router.push({
+      name: 'shelving-move',
+      params: {
+        type: moveType,
+        jobId: res.id
+      }
+    })
+  } catch (e) {
+    handleAlert({
+      type: 'error',
+      text: e,
+      autoClose: true
+    })
+  } finally {
+    appIsLoadingData.value = false
+  }
 }
 
 </script>

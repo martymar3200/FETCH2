@@ -693,12 +693,21 @@ const handleResultSelection = (rowData) => {
       })
       break
     case 'Shelving':
-      router.push({
-        name: 'shelving',
-        params: {
-          jobId: rowData.id
-        }
-      })
+      // Route to appropriate shelving page based on origin
+      if (rowData.origin === 'Direct') {
+        router.push({
+          name: 'shelving-dts',
+          params: { jobId: rowData.id }
+        })
+      } else if (rowData.origin === 'List') {
+        router.push({
+          name: 'ShelveByListExecute',
+          params: { jobId: rowData.id }
+        })
+      } else {
+        // Verification origin jobs are deprecated - redirect to dashboard
+        router.push({ name: 'shelving' })
+      }
       break
     case 'Request':
       router.push({
