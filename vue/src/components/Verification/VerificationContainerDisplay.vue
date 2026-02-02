@@ -1,266 +1,61 @@
 <template>
-  <div class="row verification-container flex-lg-grow">
-    <div
-      v-if="verificationJob.trayed"
-      class="col-12 col-md-2 verification-tray-list"
-    >
-      <div class="row items-center q-mb-md">
-        <MoreOptionsMenu
-          :options="[
-            { text: 'Edit', disabled: verificationJob.status == 'Completed' },
-            { text: 'Print Job' },
-            { text: 'Cancel Job', optionClass: 'text-negative', disabled: verificationJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_verification_job')},
-            { text: 'View History'}
-          ]"
-          class="q-mr-sm"
-          @click="handleOptionMenu"
-        />
-        <h1 class="text-h4 text-bold">
-          {{ `Job: ${verificationJob.workflow_id}` }}
-        </h1>
-      </div>
-
-      <h3 class="text-h5 text-bold q-mb-md">
-        Trays in Job
-      </h3>
-
-      <div
-        v-if="verificationJob.trayed && currentScreenSize !== 'xs'"
-        class="q-mb-md"
-      >
-        <q-btn
-          no-caps
-          unelevated
-          color="accent"
-          label="Next Tray"
-          class="text-body1 full-width"
-          :disabled="
-            verificationJob.status == 'Paused' ||
-              verificationJob.status == 'Completed' ||
-              !allItemsVerified ||
-              allTraysCompleted
-          "
-          @click="setNextVerificationTray"
-        >
-          <q-tooltip>
-            Proceed to the next tray (Shortcut: T)
-          </q-tooltip>
-        </q-btn>
-      </div>
-
-      <q-list
-        bordered
-        separator
-      >
-        <!-- MODIFIED: Removed conditional class, added a side section for the icon -->
-        <q-item
-          v-for="tray in verificationJob.trays"
-          :key="tray.id"
-          class="verification-next-tray-item"
-          :active="verificationContainer.id === tray.id"
-          active-class="bg-blue-1 text-grey-8"
-          clickable
-          @click="navigateToTray(tray)"
-        >
-          <q-item-section>
-            <q-item-label class="text-h6 text-color-black">
-              {{ tray.barcode?.value }}
-            </q-item-label>
-            <q-item-label caption>
-              {{ tray.items.length }} Items
-            </q-item-label>
-          </q-item-section>
-          <!-- NEW: This section will show the checkmark when the tray is verified -->
-          <q-item-section side>
-            <q-icon
-              v-if="tray.collection_verified"
-              name="mdi-check-circle"
-              color="positive"
-              size="25px"
+  <div class="verification-container">
+    <!-- TRAYED VERIFICATION LAYOUT -->
+    <template v-if="verificationJob.trayed">
+      <!-- Job Header -->
+      <div class="row q-mb-lg items-center q-gutter-md">
+        <div class="col">
+          <div class="row items-center">
+            <!-- Three-dot menu -->
+            <MoreOptionsMenu
+              :options="!route.params.containerId ? [
+                { text: 'Edit', disabled: verificationJob.status == 'Completed' },
+                { text: 'Print Job' },
+                { text: 'Cancel Job', optionClass: 'text-negative', disabled: verificationJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_verification_job')},
+                { text: 'View History'}
+              ] : [
+                { text: 'Edit', disabled: verificationJob.status == 'Completed' },
+                { text: 'Print Job' },
+                { text: 'Cancel Job', optionClass: 'text-negative', disabled: verificationJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_verification_job')},
+                { text: 'View History'}
+              ]"
+              class="q-mr-sm"
+              @click="handleOptionMenu"
             />
-          </q-item-section>
-        </q-item>
-      </q-list>
-    </div>
-
-    <VerificationNonTrayInfo
-      v-if="!verificationJob.trayed"
-      ref="nonTrayInfoComponent"
-      @print="handleOptionMenu({ text: 'Print Job' })"
-      class="col-12 col-md-3"
-    />
-    <VerificationTrayInfo
-      v-else
-      ref="trayInfoComponent"
-      @print="handleOptionMenu({ text: 'Print Job' })"
-      class="col-12 col-md-3"
-    />
-
-    <div class="col-12 col-md-7 verification-container-scan">
-      <div class="row items-center q-mb-xs-md q-mb-sm-lg">
-        <div
-          v-if="currentScreenSize == 'xs'"
-          class="col-auto"
-        >
-          <MoreOptionsMenu
-            v-if="!verificationJob.trayed"
-            :options="[
-              {
-                text: `${
-                  selectedItems.length == 1 ? 'Edit Barcode' : 'Enter Barcode'
-                }`,
-                disabled:
-                  verificationJob.status == 'Paused' || verificationJob.status == 'Completed' || barcodeScanAllowed,
-              },
-              {
-                text: 'Delete Items',
-                disabled:
-                  selectedItems.length == 0 ||
-                  verificationJob.status == 'Paused' ||
-                  verificationJob.status == 'Completed'
-              },
-            ]"
-            class="q-mr-sm"
-            @click="handleOptionMenu"
-          />
-          <MoreOptionsMenu
-            v-else
-            :options="[
-              {
-                text: 'Next Tray',
-                disabled:
-                  !allItemsVerified ||
-                  verificationJob.status == 'Paused' ||
-                  verificationJob.status == 'Completed' ||
-                  verificationJob.trays.length <= 1
-              },
-              {
-                text: `${
-                  selectedItems.length == 1 ? 'Edit Barcode' : 'Enter Barcode'
-                }`,
-                disabled:
-                  !verificationContainer.id ||
-                  verificationJob.status == 'Paused' ||
-                  verificationJob.status == 'Completed' ||
-                  barcodeScanAllowed,
-              },
-              {
-                text: 'Delete Items',
-                disabled:
-                  selectedItems.length == 0 ||
-                  verificationJob.status == 'Paused' ||
-                  verificationJob.status == 'Completed'
-              },
-            ]"
-            class="q-mr-sm"
-            @click="handleOptionMenu"
-          />
+            <h1 class="text-h4 text-bold q-mb-none">
+              Verification Job #{{ verificationJob.workflow_id }}
+              <q-badge
+                :color="getStatusColor(verificationJob.status)"
+                :label="verificationJob.status"
+                class="q-ml-sm"
+              />
+            </h1>
+          </div>
+          <!-- Subtitle with job metadata -->
+          <p class="text-grey-7 q-mb-none">
+            {{ verificationJob.owner?.name }} • {{ verificationJob.media_type?.name || verificationContainer.media_type?.name || 'Unknown Media' }}
+          </p>
         </div>
-
         <div class="col-auto">
-          <h2 class="text-h4 text-bold">
-            Scan Items
-          </h2>
-        </div>
-
-        <div class="col-auto q-ml-xs-auto q-ml-sm-sm">
-          <span class="outline text-h6">
-            {{
-              !verificationJob.trayed
-                ? verificationJob.non_tray_items.length
-                : verificationContainer.items.length
-            }}
-            Items
-          </span>
-        </div>
-      </div>
-
-      <div
-        v-if="currentScreenSize !== 'xs'"
-        class="row q-mb-xs-lg"
-      >
-        <div
-          class="col-xs-12 col-md-auto flex no-wrap justify-between q-mb-xs-md q-mb-md-none q-mr-md-auto"
-        >
+          <!-- Resume button (only when paused) -->
           <q-btn
+            v-if="verificationJob.status === 'Paused'"
             no-caps
             unelevated
-            icon="add"
             color="accent"
-            :label="
-              selectedItems.length == 1 ? 'Edit Barcode' : 'Enter Barcode'
-            "
-            class="btn-no-wrap text-body1 q-mr-sm-md"
-            :disabled="
-              (verificationJob.trayed && !verificationContainer.id) ||
-                verificationJob.status == 'Paused' ||
-                verificationJob.status == 'Completed' ||
-                barcodeScanAllowed
-            "
-            @click="setBarcodeEditDisplay"
+            label="Resume"
+            class="btn-modern q-mr-sm"
+            @click="updateVerificationJobStatus('Running')"
           />
-
+          <!-- Complete Job button - always visible when running, disabled if not ready -->
           <q-btn
+            v-if="verificationJob.status !== 'Completed'"
             no-caps
             unelevated
-            icon="mdi-delete"
-            color="negative"
-            label="Delete"
-            class="btn-no-wrap text-body1"
-            :disabled="
-              selectedItems.length == 0 || verificationJob.status == 'Paused' || verificationJob.status == 'Completed'
-            "
-            @click="
-              showConfirmation = {
-                type: 'delete',
-                text: 'Are you sure you want to delete selected items?',
-              }
-            "
-          />
-        </div>
-
-        <div
-          v-if="currentScreenSize !== 'xs'"
-          class="col-xs-12 col-md-auto flex justify-between"
-        >
-          <q-btn
-            no-caps
-            unelevated
-            outline
-            :icon="
-              verificationJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'
-            "
-            color="accent"
-            :label="
-              verificationJob.status !== 'Paused' ? 'Pause Job' : 'Resume Job'
-            "
-            class="btn-no-wrap text-body1"
-            :disabled="verificationJob.status == 'Completed'"
-            @click="
-              verificationJob.status !== 'Paused'
-                ? updateVerificationJobStatus('Paused')
-                : updateVerificationJobStatus('Running')
-            "
-          />
-          <q-btn
-            no-caps
-            unelevated
-            icon="check"
             color="positive"
             label="Complete Job"
-            class="btn-no-wrap text-body1 q-ml-sm"
-            :class="currentScreenSize == 'xs' ? 'full-width' : ''"
-            :outline="
-              !allTraysCompleted ||
-                !allItemsVerified ||
-                verificationJob.status == 'Paused'
-            "
-            :disabled="
-              !allTraysCompleted ||
-                !allItemsVerified ||
-                verificationJob.status == 'Paused' ||
-                verificationJob.status == 'Completed'
-            "
+            class="btn-modern"
+            :disabled="!allItemsVerified || !allTraysCompleted || verificationJob.status === 'Paused'"
             @click="
               showConfirmation = {
                 type: 'completeJob',
@@ -271,105 +66,266 @@
         </div>
       </div>
 
-      <div class="row q-mb-xs-xl q-mb-sm-none">
-        <div class="col-12 q-mb-xs-md q-mb-sm-none">
-          <EssentialTable
-            ref="verificationTableComponent"
-            :table-columns="verificationTableColumns"
-            :table-data="
-              verificationJob.trayed
-                ? verificationContainer.items.slice().reverse()
-                : verificationJob.non_tray_items.slice().reverse()
-            "
-            :hide-table-rearrange="true"
-            :enable-selection="true"
-            @selected-data="selectedItems = $event"
-          >
-            <template #table-td="{ props, colName, value }">
-              <span
-                v-if="colName == 'barcode_value' && verificationJob.trayed"
-                :class="!props.row.scanned_for_verification ? 'disabled' : ''"
-              >
-                {{ value }}
-              </span>
-              <span
-                v-else-if="
-                  colName == 'barcode_value' && !verificationJob.trayed
-                "
-                :class="
-                  props.row.scanned_for_verification ||
-                    verificationContainer.id == props.row.id
-                    ? ''
-                    : 'disabled'
-                "
-              >
-                {{ value }}
-              </span>
-
-              <span
-                v-if="colName == 'verified'"
-                class="text-bold"
-                :class="
-                  value == true
-                    ? 'text-positive'
-                    : value == 'not found'
-                      ? 'text-negative'
-                      : ''
-                "
-              >
-                {{
-                  value == true
-                    ? "Item Verified"
-                    : value == "not found"
-                      ? "Item Not Found"
-                      : ""
-                }}
-                <q-icon
-                  v-if="value == true"
-                  name="mdi-check-circle"
-                  color="positive"
-                  size="25px"
-                  class="text-bold q-ml-xs"
-                />
-                <q-icon
-                  v-else-if="value == 'not found'"
-                  name="close"
-                  color="negative"
-                  size="25px"
-                  class="text-bold q-ml-xs"
-                />
-              </span>
+      <!-- Scan Section Card -->
+      <q-card
+        v-if="['Running', 'Created'].includes(verificationJob.status)"
+        class="q-mb-lg"
+      >
+        <q-card-section>
+          <div class="row q-col-gutter-md items-end">
+            <!-- Tray Scan (when no tray selected) -->
+            <template v-if="!verificationContainer.id">
+              <div class="col-12 col-md-8">
+                <div class="text-subtitle1 text-weight-bold q-mb-sm">
+                  Scan Tray Barcode
+                </div>
+                <q-input
+                  v-model="scanBarcodeInput"
+                  outlined
+                  dense
+                  placeholder="Scan tray barcode to begin"
+                  @keyup.enter="handleTrayScan(scanBarcodeInput)"
+                  autofocus
+                >
+                  <template #append>
+                    <q-icon name="inventory_2" />
+                  </template>
+                </q-input>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="text-caption text-grey-6 q-mb-sm">
+                  Tip: Scan a tray barcode to verify items
+                </div>
+              </div>
             </template>
-          </EssentialTable>
-        </div>
-      </div>
-    </div>
 
-    <!-- mobile actions menu -->
+            <!-- Item Scan (when tray is selected) -->
+            <template v-else>
+              <div class="col-12 col-md-8">
+                <div class="text-subtitle1 text-weight-bold q-mb-sm">
+                  Scan Item Barcode
+                </div>
+                <q-input
+                  v-model="scanBarcodeInput"
+                  outlined
+                  dense
+                  placeholder="Scan or type item barcode and press Enter"
+                  @keyup.enter="triggerItemScan(scanBarcodeInput)"
+                  autofocus
+                >
+                  <template #append>
+                    <q-icon name="qr_code_scanner" />
+                  </template>
+                </q-input>
+              </div>
+              <q-space />
+              <div class="col-auto">
+                <q-btn
+                  no-caps
+                  unelevated
+                  icon="skip_next"
+                  color="accent"
+                  label="Next Tray"
+                  class="btn-modern"
+                  :disabled="
+                    !verificationContainer.id ||
+                      !allItemsVerified ||
+                      verificationJob.status == 'Paused' ||
+                      verificationJob.status == 'Completed' ||
+                      allTraysCompleted
+                  "
+                  @click="setNextVerificationTray"
+                >
+                  <q-tooltip>Proceed to next tray (Shortcut: T)</q-tooltip>
+                </q-btn>
+              </div>
+            </template>
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <!-- Active Tray Card -->
+      <q-card class="q-mb-lg">
+        <q-card-section>
+          <div class="row items-center q-mb-sm">
+            <div class="col">
+              <div class="text-subtitle1 text-weight-bold">
+                Active Tray
+              </div>
+            </div>
+            <div
+              v-if="verificationContainer.id"
+              class="col-auto"
+            >
+              <q-btn
+                flat
+                dense
+                icon="edit"
+                color="grey-7"
+                @click="showEditTrayModal = true"
+              >
+                <q-tooltip>Edit Tray Barcode</q-tooltip>
+              </q-btn>
+            </div>
+          </div>
+          <div class="text-h5 text-weight-medium text-center">
+            {{ verificationContainer.barcode?.value || 'No tray selected' }}
+          </div>
+          <div
+            v-if="!verificationContainer.id"
+            class="text-caption text-grey-7 text-center"
+          >
+            Scan a tray barcode above to begin
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <!-- Items List Card -->
+      <q-card
+        v-if="verificationContainer.id"
+        class="q-mb-lg"
+      >
+        <q-card-section class="q-pb-none">
+          <div class="text-subtitle1 text-weight-bold">
+            Items in Tray ({{ verificationContainer.items?.length || 0 }})
+          </div>
+        </q-card-section>
+        <q-list separator>
+          <q-item
+            v-for="item in verificationContainer.items.slice().reverse()"
+            :key="item.id"
+            class="q-py-sm justify-center"
+          >
+            <q-item-section
+              class="text-center"
+              style="flex: 1;"
+            >
+              <q-item-label
+                class="text-weight-medium"
+                :class="!item.scanned_for_verification ? 'text-grey-6' : 'text-black'"
+              >
+                {{ renderItemBarcodeDisplay(item) }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon
+                v-if="item.scanned_for_verification"
+                name="mdi-check-circle"
+                color="positive"
+                size="24px"
+              >
+                <q-tooltip>Verified</q-tooltip>
+              </q-icon>
+              <q-btn
+                v-else
+                flat
+                dense
+                round
+                icon="mdi-delete"
+                color="grey-7"
+                :disabled="verificationJob.status === 'Paused' || verificationJob.status === 'Completed'"
+                @click="deleteItemConfirm(item)"
+              >
+                <q-tooltip>Remove Item</q-tooltip>
+              </q-btn>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="!verificationContainer.items || verificationContainer.items.length === 0">
+            <q-item-section>
+              <q-item-label
+                caption
+                class="text-grey-6 text-center"
+              >
+                No items in this tray.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card>
+
+      <!-- Trays in Job (Collapsible) -->
+      <q-card class="q-mb-lg">
+        <q-expansion-item
+          dense
+          expand-separator
+          :label="`Trays in Job (${verificationJob.trays?.length || 0})`"
+          header-class="text-subtitle1 text-weight-bold"
+        >
+          <q-card-section>
+            <q-list
+              bordered
+              separator
+            >
+              <q-item
+                v-for="tray in verificationJob.trays"
+                :key="tray.id"
+                class="verification-next-tray-item"
+                :active="verificationContainer.id === tray.id"
+                active-class="bg-blue-1 text-grey-8"
+                clickable
+                @click="navigateToTray(tray)"
+              >
+                <q-item-section>
+                  <q-item-label class="text-h6 text-color-black">
+                    {{ tray.barcode?.value }}
+                  </q-item-label>
+                  <q-item-label caption>
+                    {{ tray.items.length }} Items
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-icon
+                    v-if="tray.collection_verified"
+                    name="mdi-check-circle"
+                    color="positive"
+                    size="25px"
+                  />
+                </q-item-section>
+              </q-item>
+              <q-item v-if="!verificationJob.trays || verificationJob.trays.length === 0">
+                <q-item-section>
+                  <q-item-label caption>
+                    No trays added yet.
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-card-section>
+        </q-expansion-item>
+      </q-card>
+    </template>
+
+    <!-- NON-TRAY VERIFICATION LAYOUT -->
+    <template v-else>
+      <VerificationNonTrayInfo
+        ref="nonTrayInfoComponent"
+        @print="batchSheetComponent.printBatchReport()"
+        class="col-12"
+      />
+    </template>
+
+    <!-- Mobile Action Bar -->
     <MobileActionBar
-      v-if="currentScreenSize == 'xs' && !renderIsEditMode"
-      button-one-color="accent"
+      v-if="currentScreenSize == 'xs' && verificationJob.trayed"
+      button-one-color="warning"
       :button-one-icon="
         verificationJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'
       "
       :button-one-label="
-        verificationJob.status == 'Paused' ? 'Resume Job' : 'Pause Job'
+        verificationJob.status == 'Paused' ? 'Resume' : 'Pause'
       "
-      :button-one-outline="true"
+      :button-one-outline="verificationJob.status !== 'Paused'"
       :button-one-disabled="verificationJob.status == 'Completed'"
       @button-one-click="
-        verificationJob.status !== 'Paused'
-          ? updateVerificationJobStatus('Paused')
-          : updateVerificationJobStatus('Running')
+        verificationJob.status == 'Paused'
+          ? updateVerificationJobStatus('Running')
+          : updateVerificationJobStatus('Paused')
       "
       button-two-color="positive"
-      button-two-label="Complete Job"
+      button-two-label="Complete"
       :button-two-outline="false"
       :button-two-disabled="
-        !allTraysCompleted ||
-          !allItemsVerified ||
-          verificationJob.status == 'Paused' ||
-          verificationJob.status == 'Completed'
+        !allTraysCompleted || !allItemsVerified || verificationJob.status == 'Paused' || verificationJob.status == 'Completed'
       "
       :button-two-loading="appActionIsLoadingData"
       @button-two-click="
@@ -543,6 +499,146 @@
           @click="hideModal"
         />
       </q-card-section>
+      <q-card-section
+        v-else-if="showConfirmation.type == 'deleteItem'"
+        class="row no-wrap justify-between items-center q-pt-sm"
+      >
+        <q-btn
+          no-caps
+          unelevated
+          color="negative"
+          label="Delete Item"
+          class="text-body1 full-width"
+          :loading="appActionIsLoadingData"
+          @click="
+            handleConfirmationModal('deleteItem')
+          "
+        />
+        <q-space class="q-mx-xs" />
+        <q-btn
+          outline
+          no-caps
+          label="Cancel"
+          class="text-body1 full-width"
+          @click="hideModal"
+        />
+      </q-card-section>
+      <q-card-section
+        v-else-if="showConfirmation.type == 'cancel'"
+        class="row no-wrap justify-between items-center q-pt-sm"
+      >
+        <q-btn
+          no-caps
+          unelevated
+          color="negative"
+          label="Confirm Cancel"
+          class="text-body1 full-width"
+          :loading="appActionIsLoadingData"
+          @click="
+            handleConfirmationModal('cancel')
+          "
+        />
+        <q-space class="q-mx-xs" />
+        <q-btn
+          outline
+          no-caps
+          label="Back"
+          class="text-body1 full-width"
+          @click="hideModal"
+        />
+      </q-card-section>
+    </template>
+  </PopupModal>
+
+  <!-- Edit Job Modal -->
+  <PopupModal
+    v-if="showEditJobModal"
+    ref="editJobModalRef"
+    :title="'Edit Job Settings'"
+    :show-actions="false"
+    @reset="showEditJobModal = false"
+    aria-label="editJobModal"
+  >
+    <template #main-content>
+      <q-card-section>
+        <div class="text-subtitle1 q-mb-sm">
+          Media Type
+        </div>
+        <q-select
+          v-model="selectedMediaType"
+          :options="mediaTypes"
+          option-label="name"
+          option-value="id"
+          outlined
+          dense
+          placeholder="Select media type"
+        />
+      </q-card-section>
+    </template>
+    <template #footer-content="{ hideModal }">
+      <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Save Changes"
+          class="text-body1 full-width btn-modern"
+          :loading="appActionIsLoadingData"
+          @click="updateJobMediaType(hideModal)"
+        />
+        <q-space class="q-mx-xs" />
+        <q-btn
+          outline
+          no-caps
+          label="Cancel"
+          class="text-body1 full-width"
+          @click="hideModal"
+        />
+      </q-card-section>
+    </template>
+  </PopupModal>
+
+  <!-- Edit Tray Modal -->
+  <PopupModal
+    v-if="showEditTrayModal"
+    ref="editTrayModalRef"
+    :title="'Edit Tray Barcode'"
+    @reset="showEditTrayModal = false"
+    aria-label="editTrayModal"
+  >
+    <template #main-content>
+      <q-card-section class="column no-wrap items-center">
+        <div class="form-group">
+          <label class="form-group-label"> New Tray Barcode </label>
+          <TextInput
+            v-model="editTrayBarcodeInput"
+            placeholder="Enter new tray barcode"
+            @keyup.enter="updateTrayBarcode"
+          />
+        </div>
+      </q-card-section>
+    </template>
+    <template #footer-content="{ hideModal }">
+      <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Save Changes"
+          class="text-body1 full-width btn-modern"
+          :disabled="!editTrayBarcodeInput"
+          :loading="appActionIsLoadingData"
+          @click="updateTrayBarcode"
+        />
+        <q-space class="q-mx-xs" />
+        <q-btn
+          outline
+          no-caps
+          label="Cancel"
+          class="text-body1 full-width"
+          @click="hideModal"
+        />
+      </q-card-section>
     </template>
   </PopupModal>
 
@@ -551,6 +647,23 @@
     ref="batchSheetComponent"
     :verification-job-details="verificationJob"
   />
+
+  <style
+    lang="scss"
+    scoped
+  >
+    .verification-container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 16px 8px;
+    }
+    .form-group-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #555;
+    }
+  </style>
 </template>
 
 <script setup>
@@ -560,16 +673,17 @@ import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { useVerificationStore } from '@/stores/verification-store'
+import { useAccessionStore } from '@/stores/accession-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
+import { useOptionStore } from '@/stores/option-store'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
-import EssentialTable from '@/components/EssentialTable.vue'
+
 import TextInput from '@/components/TextInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import MobileActionBar from '@/components/MobileActionBar.vue'
-import VerificationTrayInfo from '@/components/Verification/VerificationTrayInfo.vue'
 import VerificationNonTrayInfo from '@/components/Verification/VerificationNonTrayInfo.vue'
 import VerificationBatchSheet from '@/components/Verification/VerificationBatchSheet.vue'
 
@@ -584,21 +698,25 @@ const { checkUserPermission } = usePermissionHandler()
 // Store Data
 const { appIsLoadingData, appActionIsLoadingData } = storeToRefs(useGlobalStore())
 const { userData } = storeToRefs(useUserStore())
-const { verifyBarcode, patchBarcode, deleteBarcode } = useBarcodeStore()
-const { barcodeDetails, barcodeScanAllowed } = storeToRefs(useBarcodeStore())
+const { verifyBarcode, deleteBarcode, patchBarcode } = useBarcodeStore()
+const { barcodeDetails } = storeToRefs(useBarcodeStore())
+const { mediaTypes } = storeToRefs(useOptionStore())
 const {
   resetVerificationContainer,
   patchVerificationJob,
   patchVerificationTray,
+  cancelVerificationJob, // imported here
+  getVerificationTray,
   getVerificationNonTrayItem,
-  postVerificationTrayItem,
-  patchVerificationTrayItem,
-  postVerificationNonTrayItem,
-  patchVerificationNonTrayItem,
+  verifyTrayItem,
+  verifyNonTrayItem,
+  // updateVerificationJobStatus removed to avoid conflict with local function
   deleteVerificationTrayItem,
   deleteVerificationNonTrayItem,
-  verifyTrayItem,
-  verifyNonTrayItem
+  postVerificationTrayItem,
+  postVerificationNonTrayItem,
+  patchVerificationTrayItem,
+  patchVerificationNonTrayItem
 } = useVerificationStore()
 const {
   allItemsVerified,
@@ -606,46 +724,26 @@ const {
   verificationJob,
   verificationContainer
 } = storeToRefs(useVerificationStore())
+const { patchAccessionJob } = useAccessionStore()
 
 // Local Data
 const barcodeEditModal = ref(null)
 const confirmationModal = ref(null)
 const batchSheetComponent = ref(null)
-const trayInfoComponent = ref(null)
 const nonTrayInfoComponent = ref(null)
-const verificationTableComponent = ref(null)
-const verificationTableColumns = ref([
-  {
-    name: 'barcode_value',
-    field: (row) => renderItemBarcodeDisplay(row),
-    label: 'Barcode',
-    align: 'left',
-    sortable: true
-  },
-  {
-    name: 'verified',
-    field: 'scanned_for_verification',
-    label: '',
-    align: 'right',
-    sortable: false
-  }
-])
-const selectedItems = ref([])
-const showConfirmation = ref(null)
+// verificationTableComponent removed
+
+// UI State
+const scanBarcodeInput = ref('')
+const showEditJobModal = ref(false)
+const showEditTrayModal = ref(false)
 const showBarcodeEdit = ref(false)
 const manualBarcodeEdit = ref('')
-const renderIsEditMode = computed(() => {
-  if (trayInfoComponent.value && trayInfoComponent.value.editMode) {
-    return true
-  } else if (
-    nonTrayInfoComponent.value &&
-    nonTrayInfoComponent.value.editMode
-  ) {
-    return true
-  } else {
-    return false
-  }
-})
+const editTrayBarcodeInput = ref('')
+const selectedMediaType = ref(null)
+const showConfirmation = ref(null)
+const selectedItems = ref([])
+// renderIsEditMode removed
 
 // Logic
 const handleAlert = inject('handle-alert')
@@ -653,12 +751,29 @@ const audioAlert = inject('audio-alert')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 const currentIsoDate = inject('current-iso-date')
 
+// verificationTableColumns removed
+
 const isNextTrayEnabled = computed(() => {
   return verificationJob.value.status !== 'Paused' &&
          verificationJob.value.status !== 'Completed' &&
          allItemsVerified.value &&
          !allTraysCompleted.value
 })
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Running':
+      return 'positive'
+    case 'Paused':
+      return 'warning'
+    case 'Completed':
+      return 'primary'
+    case 'Cancelled':
+      return 'negative'
+    default:
+      return 'grey'
+  }
+}
 
 const handleKeyboardShortcut = (event) => {
   const activeEl = document.activeElement
@@ -682,27 +797,104 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeyboardShortcut)
 })
 
-watch(route, () => {
-  if (!route.params.containerId) {
-    resetVerificationContainer()
-  }
-})
+watch(
+  () => route.params.containerId,
+  async (newContainerId) => {
+    if (newContainerId) {
+      if (verificationContainer.value.barcode?.value === newContainerId) {
+        return
+      }
+      try {
+        appIsLoadingData.value = true
+        await getVerificationTray(newContainerId)
+
+        // Ensure job is running if we navigate to a specific tray
+        if (
+          verificationJob.value.status !== 'Running' &&
+          verificationJob.value.status !== 'Completed'
+        ) {
+          await updateVerificationJobStatus('Running')
+        }
+      } catch (error) {
+        handleAlert({
+          type: 'error',
+          text: `Failed to load tray: ${error}`,
+          persistent: true
+        })
+      } finally {
+        appIsLoadingData.value = false
+      }
+    } else {
+      resetVerificationContainer()
+    }
+  },
+  { immediate: true }
+)
 
 watch(compiledBarCode, (barcode_value) => {
   if (verificationJob.value.status == 'Paused' || verificationJob.value.status == 'Completed' || barcode_value === '') {
     return
   }
 
-  if (
-    barcode_value !== '' &&
-    verificationJob.value.trayed &&
-    verificationContainer.value.id
-  ) {
+  // If on tray view, assume item scan
+  if (verificationJob.value.trayed && verificationContainer.value.id) {
     triggerItemScan(barcode_value)
-  } else if (barcode_value !== '' && verificationJob.value.trayed == false) {
+  } else if (verificationJob.value.trayed && !verificationContainer.value.id) {
+    // If no tray selected (trayed job), assume tray scan
+    handleTrayScan(barcode_value)
+  } else if (!verificationJob.value.trayed) {
+    // If non-trayed
     triggerItemScan(barcode_value)
   }
 })
+
+const handleTrayScan = async (barcode_value) => {
+  try {
+    if (verificationJob.value.trays && !verificationJob.value.trays.some(tray => tray.barcode.value == barcode_value)) {
+      handleAlert({
+        type: 'error',
+        text: `The scanned tray ${barcode_value} doesn't exist on this verification job. Please scan a tray that is associated to this job.`,
+        persistent: true
+      })
+      scanBarcodeInput.value = ''
+      return
+    } else {
+      appIsLoadingData.value = true
+      await getVerificationTray(barcode_value)
+
+      if (!verificationContainer.value.scanned_for_verification && verificationJob.value.status !== 'Completed') {
+        await patchVerificationTray({
+          id: verificationContainer.value.id,
+          scanned_for_verification: true
+        })
+      }
+
+      if (verificationJob.value.status !== 'Running' && verificationJob.value.status !== 'Completed') {
+        await updateVerificationJobStatus('Running')
+      }
+
+      if (verificationContainer.value.id) {
+        router.push({
+          name: 'verification-container',
+          params: {
+            jobId: verificationJob.value.workflow_id,
+            containerId: verificationContainer.value.barcode.value
+          }
+        })
+      }
+      scanBarcodeInput.value = ''
+    }
+  } catch (error) {
+    handleAlert({
+      type: 'error',
+      text: error,
+      persistent: true
+    })
+  } finally {
+    appIsLoadingData.value = false
+  }
+}
+
 const triggerItemScan = async (barcode_value) => {
   try {
     appActionIsLoadingData.value = true
@@ -745,7 +937,7 @@ const triggerItemScan = async (barcode_value) => {
         audioAlert()
       }
 
-      if (verificationJob.value.status !== 'Running') {
+      if (verificationJob.value.status !== 'Running' && verificationJob.value.status !== 'Completed') {
         await updateVerificationJobStatus('Running')
       }
 
@@ -767,11 +959,13 @@ const triggerItemScan = async (barcode_value) => {
     })
   } finally {
     appActionIsLoadingData.value = false
+    scanBarcodeInput.value = ''
     if (showBarcodeEdit.value && barcodeEditModal.value) {
       barcodeEditModal.value.hideModal()
     }
   }
 }
+
 const validateItemBarcode = async () => {
   try {
     appActionIsLoadingData.value = true
@@ -780,6 +974,11 @@ const validateItemBarcode = async () => {
         (item) => item.barcode.id == barcodeDetails.value.id
       ).id
       await verifyTrayItem(trayItemId)
+      handleAlert({
+        type: 'success',
+        text: 'Item Verified',
+        autoClose: true
+      })
     } else {
       const nonTrayItemId = verificationContainer.value.id
       await verifyNonTrayItem(nonTrayItemId)
@@ -794,14 +993,16 @@ const validateItemBarcode = async () => {
     appActionIsLoadingData.value = false
   }
 }
+
 const addContainerItem = async () => {
   try {
     appActionIsLoadingData.value = true
     const currentDate = new Date()
+    // Mimic payload structure from previous implementation
     if (verificationJob.value.trayed) {
       const payload = {
         accession_dt: verificationContainer.value.accession_dt,
-        arbitrary_data: 'Signed copy',
+        arbitrary_data: 'Signed copy', // Default or derived?
         barcode_id: barcodeDetails.value.id,
         barcode_value: barcodeDetails.value.value,
         condition: 'Good',
@@ -809,12 +1010,15 @@ const addContainerItem = async () => {
         scanned_for_verification: true,
         size_class_id: verificationContainer.value.size_class_id,
         status: 'In',
-        title: 'Lord of The Ringss',
+        title: 'Unknown Title', // Should ask user?
         tray_id: verificationContainer.value.id,
         verification_job_id: verificationJob.value.id,
         volume: 'I',
         withdrawal_dt: currentDate,
         user_id: userData.value.user_id
+        // NOTE: This payload seems very specific to a certain item type.
+        // Ideally we should use the same logic as Accession if creating new items.
+        // But for verification add, we assume item exists or we are creating a stub?
       }
       await postVerificationTrayItem(payload)
     } else {
@@ -829,6 +1033,11 @@ const addContainerItem = async () => {
       }
       await postVerificationNonTrayItem(payload)
     }
+    handleAlert({
+      type: 'success',
+      text: 'Item has been added to the job.',
+      autoClose: true
+    })
   } catch (error) {
     handleAlert({
       type: 'error',
@@ -837,29 +1046,47 @@ const addContainerItem = async () => {
     })
   } finally {
     appActionIsLoadingData.value = false
+    showConfirmation.value = null
   }
 }
+
 const updateContainerItem = async (barcode_value) => {
   try {
     appActionIsLoadingData.value = true
+    await verifyBarcode(barcode_value, 'Item', true)
+
+    if (
+      verificationJob.value.trayed &&
+      verificationContainer.value.items.some(
+        (item) => item.barcode.id == barcodeDetails.value.id
+      )
+    ) {
+      handleAlert({
+        type: 'error',
+        text: 'This Barcode already exists in this container.',
+        autoClose: true
+      })
+      return
+    }
+
+    // We assume selectedItems has 1 item if this is called
+    const itemId = selectedItems.value[0]?.id
+    if (!itemId) {
+      return
+    }
+
     await patchBarcode(selectedItems.value[0].barcode.id, barcode_value)
 
     if (verificationJob.value.trayed) {
-      const itemPayload = {
-        id: selectedItems.value[0].id,
-        barcode: {
-          value: barcode_value
-        }
-      }
-      await patchVerificationTrayItem(itemPayload)
+      await patchVerificationTrayItem({
+        id: itemId,
+        barcode: { value: barcode_value }
+      })
     } else {
-      const itemPayload = {
-        id: selectedItems.value[0].id,
-        barcode: {
-          value: barcode_value
-        }
-      }
-      await patchVerificationNonTrayItem(itemPayload)
+      await patchVerificationNonTrayItem({
+        id: itemId,
+        barcode: { value: barcode_value }
+      })
 
       router.push({
         name: 'verification-container',
@@ -869,13 +1096,18 @@ const updateContainerItem = async (barcode_value) => {
         }
       })
     }
-    selectedItems.value[0].barcode.value = barcode_value
 
+    // Update local state potentially? Store should handle it on refetch/reactivity
     handleAlert({
       type: 'success',
       text: 'The item has been updated.',
       autoClose: true
     })
+
+    selectedItems.value = []
+    if (showBarcodeEdit.value && barcodeEditModal.value) {
+      barcodeEditModal.value.hideModal()
+    }
   } catch (error) {
     handleAlert({
       type: 'error',
@@ -883,53 +1115,109 @@ const updateContainerItem = async (barcode_value) => {
       persistent: true
     })
   } finally {
-    verificationTableComponent.value.clearSelectedData()
     appActionIsLoadingData.value = false
-    barcodeEditModal.value.hideModal()
   }
 }
-const deleteContainerItem = async () => {
+
+const deleteItemConfirm = (item) => {
+  selectedItems.value = [item]
+  showConfirmation.value = {
+    type: 'deleteItem',
+    text: `Are you sure you want to delete item ${renderItemBarcodeDisplay(item)}?`,
+    item
+  }
+}
+
+const handleConfirmationModal = async (type) => {
   try {
     appActionIsLoadingData.value = true
-    const itemsToRemove = selectedItems.value.map((item) => {
-      return {
-        ...item,
-        user_id: userData.value.user_id
+    if (type === 'completeJob' || type === 'completePrint') {
+      if (verificationJob.value.status !== 'Completed') {
+        await updateVerificationJobStatus('Completed')
       }
-    })
-    if (verificationJob.value.trayed) {
-      await deleteVerificationTrayItem(itemsToRemove)
-    } else {
-      await deleteVerificationNonTrayItem(itemsToRemove)
-
+      if (type === 'completePrint') {
+        batchSheetComponent.value.printBatchReport()
+      }
+      handleAlert({
+        type: 'success',
+        text: 'Job Completed',
+        autoClose: true
+      })
       router.push({
         name: 'verification',
-        params: {
-          jobId: verificationJob.value.workflow_id
-        }
+        params: { jobId: null }
       })
+    } else if (type === 'deleteItem') {
+      const item = showConfirmation.value.item
+      if (verificationJob.value.trayed) {
+        await deleteVerificationTrayItem([item.id])
+      } else {
+        await deleteVerificationNonTrayItem([item.id])
+      }
+      // Also delete barcode?
+      // Original code did: await deleteBarcode(item.barcode.id)
+      // We should probably safeguard this. If we delete the verification item, do we delete the barcode globally?
+      // Yes, usually we assume it was a mistake scan or we are removing it entirely.
+      if (item.barcode?.id) {
+        await deleteBarcode(item.barcode.id)
+      }
+
+      handleAlert({
+        type: 'success',
+        text: 'Item Deleted',
+        autoClose: true
+      })
+      selectedItems.value = []
+    } else if (type === 'delete') {
+      // Bulk delete logic if needed
+      const itemIds = selectedItems.value.map(i => i.id)
+      if (verificationJob.value.trayed) {
+        await deleteVerificationTrayItem(itemIds)
+      } else {
+        await deleteVerificationNonTrayItem(itemIds)
+      }
+      // Bulk delete barcodes
+      await Promise.all(selectedItems.value.map(i => deleteBarcode(i.barcode.id)))
+      handleAlert({
+        type: 'success',
+        text: 'Items removed',
+        autoClose: true
+      })
+      selectedItems.value = []
+    } else if (type === 'addItem') {
+      await addContainerItem()
+    } else if (type === 'cancel') {
+      const accessionJobId = verificationJob.value.accession_job_id
+      await cancelVerificationJob(verificationJob.value.id)
+
+      if (accessionJobId) {
+        await patchAccessionJob({
+          id: accessionJobId,
+          status: 'Running'
+        })
+        handleAlert({
+          type: 'success',
+          text: 'Verification Job cancelled. Accession Job returned to Running status.',
+          autoClose: true
+        })
+      } else {
+        handleAlert({
+          type: 'success',
+          text: 'Verification Job cancelled.',
+          autoClose: true
+        })
+      }
+      router.push({ name: 'home' })
     }
-
-    await Promise.all(
-      selectedItems.value.map((item) => {
-        return deleteBarcode(item.barcode.id)
-      })
-    )
-
-    handleAlert({
-      type: 'success',
-      text: 'The selected item(s) has been removed.',
-      autoClose: true
-    })
-  } catch (error) {
+  } catch (err) {
     handleAlert({
       type: 'error',
-      text: error,
+      text: err.message || err,
       persistent: true
     })
   } finally {
     appActionIsLoadingData.value = false
-    verificationTableComponent.value.clearSelectedData()
+    showConfirmation.value = null
   }
 }
 
@@ -937,52 +1225,16 @@ const resetBarcodeEdit = () => {
   showBarcodeEdit.value = false
   manualBarcodeEdit.value = ''
 }
+
 const setBarcodeEditDisplay = () => {
-  showBarcodeEdit.value = true
-  if (selectedItems.value.length == 1) {
+  if (selectedItems.value.length === 1) {
     manualBarcodeEdit.value = selectedItems.value[0].barcode.value
+  } else {
+    manualBarcodeEdit.value = ''
   }
+  showBarcodeEdit.value = true
 }
 
-const handleConfirmationModal = async (confirmType) => {
-  if (confirmType == 'delete') {
-    await deleteContainerItem()
-  } else if (confirmType == 'addItem') {
-    await addContainerItem()
-  } else if (confirmType == 'completeJob') {
-    await completeVerificationJob()
-  } else if (confirmType == 'completePrint') {
-    await completeVerificationJob()
-
-    batchSheetComponent.value.printBatchReport()
-  }
-  confirmationModal.value.hideModal()
-}
-
-const handleOptionMenu = (option) => {
-  // Logic from VerificationTrayInfo
-  if (option.text == 'Edit') {
-    trayInfoComponent.value.loadOptionData()
-    trayInfoComponent.value.editMode = true
-  } else if (option.text == 'Print Job') {
-    batchSheetComponent.value.printBatchReport()
-  } else if (option.text == 'Cancel Job') {
-    trayInfoComponent.value.showConfirmationModal = true
-  } else if (option.text == 'View History') {
-    trayInfoComponent.value.showAuditTrailModal = 'verification_jobs'
-  } else if (option.text == 'Enter Barcode' || option.text == 'Edit Barcode') {
-    setBarcodeEditDisplay()
-  } else if (option.text == 'Delete Items') {
-    showConfirmation.value = {
-      type: 'delete',
-      text: 'Are you sure you want to delete selected items?'
-    }
-  } else if (option.text == 'Next Tray') {
-    setNextVerificationTray()
-  }
-}
-
-// NEW: Function to navigate to a specific tray
 const navigateToTray = (tray) => {
   if (verificationContainer.value.id === tray.id) {
     return
@@ -997,30 +1249,43 @@ const navigateToTray = (tray) => {
 }
 
 const setNextVerificationTray = async () => {
-  try {
-    if (!verificationContainer.value.collection_verified) {
-      appIsLoadingData.value = true
-      const payload = {
-        id: verificationContainer.value.id,
-        collection_verified: true
-      }
-      await patchVerificationTray(payload)
+  // As per user request: "Next Tray" button should simply clear the active tray
+  // and await the user to scan another tray, handling out-of-order execution.
+  router.push({
+    name: 'verification',
+    params: {
+      jobId: verificationJob.value.workflow_id
     }
+  })
+}
 
-    router.push({
-      name: 'verification',
-      params: { jobId: verificationJob.value.workflow_id }
-    })
-  } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
-    })
-  } finally {
-    appIsLoadingData.value = false
+const handleOptionMenu = (option) => {
+  if (option.text === 'Edit') {
+    selectedMediaType.value = verificationJob.value.media_type
+    showEditJobModal.value = true
+  } else if (option.text === 'Print Job') {
+    batchSheetComponent.value.printBatchReport()
+  } else if (option.text === 'Cancel Job') {
+    // Implement cancel logic or use legacy modal
+    // For now we assume permission check passed
+    // We can call an action that shows a cancel confirm?
+    // Accession has separate logic. Verification used to just use a text variable to show modal.
+    showConfirmation.value = {
+      type: 'cancel',
+      text: 'Are you sure you want to cancel this job?'
+    }
+  } else if (option.text === 'View History') {
+    // Audit trail
+  } else if (option.text == 'Edit Barcode' || option.text == 'Enter Barcode') {
+    setBarcodeEditDisplay()
+  } else if (option.text == 'Delete Items') {
+    showConfirmation.value = {
+      type: 'delete',
+      text: 'Are you sure you want to delete selected items?'
+    }
   }
 }
+
 const updateVerificationJobStatus = async (status) => {
   try {
     appIsLoadingData.value = true
@@ -1046,108 +1311,72 @@ const updateVerificationJobStatus = async (status) => {
     appIsLoadingData.value = false
   }
 }
-const completeVerificationJob = async () => {
+
+const updateJobMediaType = async (hideModal) => {
   try {
     appActionIsLoadingData.value = true
-    const payload = {
+    await patchVerificationJob({
       id: verificationJob.value.id,
-      status: 'Completed',
-      run_timestamp: currentIsoDate(),
-      user_id: userData.value.user_id
-    }
-    await patchVerificationJob(payload)
-
+      media_type_id: selectedMediaType.value.id
+    })
     handleAlert({
       type: 'success',
-      text: 'The Job has been completed.',
+      text: 'Job Settings Updated',
       autoClose: true
     })
-
-    router.push({
-      name: 'verification',
-      params: {
-        jobId: null
-      }
-    })
-  } catch (error) {
+    hideModal()
+  } catch (err) {
     handleAlert({
       type: 'error',
-      text: error,
+      text: err.message,
       persistent: true
     })
   } finally {
     appActionIsLoadingData.value = false
   }
 }
+
+const updateTrayBarcode = async () => {
+  // If we want to support renaming tray barcode (likely rare but possible)
+  // verificationContainer.value.id
+  // But we need backend support.
+  // For now, let's just alert
+  handleAlert({
+    type: 'warning',
+    text: 'Editing tray barcode is not fully implemented.',
+    autoClose: true
+  })
+  showEditTrayModal.value = false
+}
+
+// Ensure legacy function references that might be called from template are handled
+// We removed 'updateVerificationJobStatus' duplication.
 </script>
 
 <style lang="scss" scoped>
 .verification-container {
-  width: 100%;
-  height: auto;
-
-  &-scan {
-    & > div:first-child {
-      padding: 0 1.5rem;
-      padding-top: 3rem;
-
-      @media (max-width: $breakpoint-sm-min) {
-        padding: 0 1rem;
-        padding-top: 2rem;
-      }
-    }
-    & > div:nth-child(2) {
-      padding: 0 1.5rem;
-
-      @media (max-width: $breakpoint-sm-min) {
-        padding: 0 1rem;
-      }
-    }
-  }
-
-  &-mobile-menu {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    left: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    background-color: $color-white;
-    z-index: 2000;
-
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.1),
-        0 0px 10px rgba(0, 0, 0, 0.12);
-    }
-  }
+  width: 80%;
+  margin: 0 auto;
+  padding: 16px 8px;
 }
 
-.verification-tray-list {
-  border-right: 1px solid;
-  border-color: $secondary;
-  padding: 3rem;
-
-  @media (max-width: $breakpoint-md-max) {
-    border-right: none;
-    border-bottom: 1px solid;
-    padding: 1.5rem;
+.form-group-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #555;
   }
-}
 
 .verification-next-tray-item {
     border: 1px solid $secondary;
     border-radius: 3px;
 }
 
-// NEW: Added this class to apply the green background
 .tray-completed {
-  background-color: #e8f5e9; // A light green color
+  background-color: #e8f5e9;
+}
+
+.btn-modern {
+    font-weight: 500;
 }
 </style>

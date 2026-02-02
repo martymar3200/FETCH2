@@ -1,109 +1,25 @@
 <template>
-  <InfoDisplayLayout class="withdrawal-job">
-    <template #number-box-content>
-      <div class="flex q-mb-xs no-wrap">
-        <MoreOptionsMenu
-          :options="[
-            { text: 'Edit', disabled: editJob || withdrawJob.status == 'Completed' },
-            { text: 'Delete Job', optionClass: 'text-negative', disabled: editJob || withdrawJob.status == 'Completed' || withdrawJobItems.some(itm => itm.status == 'Withdrawn')},
-            { text: 'Print Job' },
-            { text: 'View History' }
-          ]"
-          class="q-mr-xs"
-          @click="handleOptionMenu"
-        />
-        <h1
-          id="withdrawJobId"
-          class="info-display-details-label text-h4"
-        >
-          Withdraw Job:
-        </h1>
-      </div>
-      <p class="info-display-number-box text-h4">
-        {{ withdrawJob.id }}
-      </p>
-    </template>
-
-    <template #details-content>
-      <div class="col-xs-6 col-sm-6 col-md-grow col-lg-2 q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Assigned User:
-          </label>
-          <p
-            v-if="!editJob"
-            class="text-body1"
-          >
-            {{ withdrawJob.assigned_user?.name }}
-          </p>
-          <SelectInput
-            v-else
-            v-model="withdrawJob.assigned_user_id"
-            :options="users"
-            option-type="users"
-            option-value="id"
-            option-label="name"
-            aria-label="userSelect"
-            class="q-pr-xs-sm q-pr-md-none"
-          />
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow col-lg-auto q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            # of Items:
-          </label>
-          <p class="text-body1">
-            {{ withdrawJobItems.length }}
-          </p>
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow col-lg-auto q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Date Created
-          </label>
-          <p class="text-body1">
-            {{ formatDateTime(withdrawJob.create_dt).date }}
-          </p>
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-auto col-md-auto q-mb-xs-none q-mb-sm-md q-mb-md-none q-mr-sm-auto">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Status
-          </label>
-          <p
-            class="text-body1 text-center outline"
-            :class="withdrawJob.status == 'Completed' || withdrawJob.status == 'Created' ? 'text-highlight' : null "
-          >
-            {{ withdrawJob.status }}
-          </p>
-        </div>
-      </div>
-
-      <div
-        v-if="currentScreenSize !== 'xs'"
-        class="col-sm-12 col-md-12 col-lg-grow q-ml-auto"
-      >
+  <div class="withdrawal-job-detail q-pa-md">
+    <!-- Header using shared component -->
+    <JobPageHeader
+      title="Withdraw Job"
+      :job-id="withdrawJob.id"
+      :status="withdrawJob.status"
+      :status-color="getStatusColor(withdrawJob.status)"
+      :subtitle="headerSubtitle"
+      :menu-options="headerMenuOptions"
+    >
+      <template #actions>
         <div
           v-if="editJob"
-          class="info-display-details-action q-mt-sm-sm q-mt-md-md"
+          class="row q-gutter-x-sm"
         >
           <q-btn
             no-caps
             unelevated
             color="accent"
             label="Save Edits"
-            class="btn-no-wrap text-body1 q-mr-sm"
+            class="btn-modern"
             :loading="appActionIsLoadingData"
             @click="updateWithdrawJob"
           />
@@ -113,13 +29,13 @@
             outline
             color="accent"
             label="Cancel"
-            class="btn-no-wrap text-body1"
+            class="btn-modern-outline"
             @click="cancelWithdrawJobEdits"
           />
         </div>
         <div
           v-else-if="withdrawJob.status !== 'Completed'"
-          class="info-display-details-action q-mt-sm-sm q-mt-md-md"
+          class="row q-gutter-x-sm"
         >
           <q-btn
             v-if="withdrawJobItems.some(itm => itm.status !== 'Out')"
@@ -127,7 +43,7 @@
             unelevated
             color="accent"
             :label="withdrawJob.pick_list_id ? 'Add To Pick List Job' : 'Create Pick List Job'"
-            class="btn-no-wrap text-body1 q-mr-sm"
+            class="btn-modern"
             :disabled="withdrawJob.pick_list_id && !withdrawJobItems.some(itm => itm.status == 'In')"
             @click="withdrawJob.pick_list_id ? addToPicklistJob() : createPicklistJob()"
           />
@@ -135,274 +51,349 @@
             no-caps
             unelevated
             color="positive"
-            :label="'Withdraw Items'"
-            class="btn-no-wrap text-body1"
+            label="Withdraw Items"
+            class="btn-modern"
             :disabled="withdrawJobItems.length == 0 || withdrawJobItems.some(itm => itm.status !== 'Out')"
             :loading="appActionIsLoadingData"
             @click="showConfirmationModal = 'CompleteJob'"
           />
         </div>
-      </div>
-      <MobileActionBar
-        v-else-if="currentScreenSize == 'xs' && editJob"
-        button-one-color="accent"
-        :button-one-label="'Save Edits'"
-        :button-one-outline="false"
-        :button-one-loading="appActionIsLoadingData"
-        @button-one-click="updateWithdrawJob"
-        button-two-color="accent"
-        :button-two-label="'Cancel'"
-        :button-two-outline="true"
-        @button-two-click="cancelWithdrawJobEdits"
-      />
-      <MobileActionBar
-        v-else-if="withdrawJob.status !== 'Completed'"
-        button-one-color="accent"
-        :button-one-label="withdrawJob.pick_list_id ? 'Add To Pick List Job' : 'Create Pick List Job'"
-        :button-one-outline="false"
-        :button-one-disabled="!withdrawJobItems.some(itm => itm.status == 'In') || (withdrawJob.pick_list_id && !withdrawJobItems.some(itm => itm.status == 'In'))"
-        @button-one-click="withdrawJob.pick_list_id ? addToPicklistJob() : createPicklistJob()"
-        button-two-color="positive"
-        :button-two-label="'Withdraw Items'"
-        :button-two-outline="false"
-        :button-two-disabled="withdrawJobItems.length == 0 || withdrawJobItems.some(itm => itm.status !== 'Out')"
-        :button-two-loading="appActionIsLoadingData"
-        @button-two-click="showConfirmationModal = 'CompleteJob'"
-      />
-    </template>
+      </template>
+    </JobPageHeader>
 
-    <template #table-content>
-      <EssentialTable
-        v-if="withdrawJob.trays.length > 0"
-        :table-columns="trayTableColumns"
-        :table-visible-columns="trayTableVisibleColumns"
-        :filter-options="trayTableFilters"
-        :table-data="withdrawJob.trays"
-        :row-key="'id'"
-        :enable-table-reorder="false"
-        :enable-selection="false"
-        :heading-row-class="'q-mb-lg q-px-xs-sm q-px-sm-md'"
-        :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
-        class="q-mb-lg"
-      >
-        <template #heading-row>
-          <div class="col-xs-7 col-sm-5 col-md-auto">
-            <label class="text-h4 text-bold">
-              Trays in Job:
-            </label>
+    <!-- Quick Edit Card (Only when editing user) -->
+    <q-card
+      v-if="editJob"
+      flat
+      bordered
+      class="details-card q-mb-lg"
+    >
+      <q-card-section class="q-pa-md">
+        <div class="row q-col-gutter-md items-center">
+          <div class="col-12 col-sm-6">
+            <div class="detail-item">
+              <label class="detail-label">Assigned User</label>
+              <SelectInput
+                v-model="withdrawJob.assigned_user_id"
+                :options="users"
+                option-type="users"
+                option-value="id"
+                option-label="name"
+                class="q-mt-xs"
+              />
+            </div>
           </div>
-        </template>
-
-        <template #table-td="{ colName, props }">
-          <span
-            v-if="colName == 'actions'"
-          >
-            <MoreOptionsMenu
-              :options="[{ text: 'Remove Item', disabled: withdrawJob.status == 'Completed' }]"
-              class=""
-              @click="handleOptionMenu($event, props.row)"
-            />
-          </span>
-        </template>
-      </EssentialTable>
-
-      <EssentialTable
-        :table-columns="itemTableColumns"
-        :table-visible-columns="itemTableVisibleColumns"
-        :filter-options="itemTableFilters"
-        :table-data="withdrawJobItems"
-        :row-key="'id'"
-        :enable-table-reorder="false"
-        :enable-selection="false"
-        :heading-row-class="'justify-end q-mb-lg q-px-xs-sm q-px-sm-md'"
-        :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
-        :highlight-row-class="'bg-color-green-light'"
-        :highlight-row-key="'status'"
-        :highlight-row-value="'Withdrawn'"
-      >
-        <template #heading-row>
-          <div class="col-xs-7 col-sm-5 col-md-auto q-mb-md-sm q-mr-auto">
-            <h2 class="text-h4 text-bold">
-              Items in Job:
-            </h2>
+          <div class="col-12 col-sm-6">
+            <div class="detail-item">
+              <label class="detail-label">Date Created</label>
+              <div class="detail-value">
+                {{ formatDateTime(withdrawJob.create_dt).date }}
+              </div>
+            </div>
           </div>
-
-          <div
-            class="col-xs-grow col-sm-7 col-md-auto flex"
-            :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : 'order-1'"
-          >
-            <q-btn
-              no-caps
-              unelevated
-              icon-right="arrow_drop_down"
-              color="accent"
-              label="Add Items"
-              class="text-body1 q-ml-xs-none q-ml-sm-sm"
-              :disabled="withdrawJob.status == 'Completed'"
-              aria-label="addWithdrawItemsMenu"
-              aria-haspopup="menu"
-              :aria-expanded="withdrawItemsMenuState"
-            >
-              <q-menu
-                @show="withdrawItemsMenuState = true"
-                @hide="withdrawItemsMenuState = false"
-                aria-label="withdrawItemsMenuList"
-              >
-                <q-list>
-                  <q-item
-                    clickable
-                    v-close-popup
-                    @click="showAddItemModal = 'Manual'"
-                    role="menuitem"
-                  >
-                    <q-item-section>
-                      <q-item-label>
-                        <span class="text-no-wrap">
-                          Manually Enter Barcode
-                        </span>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    v-close-popup
-                    @click="showAddItemModal = 'Scan'"
-                    role="menuitem"
-                  >
-                    <q-item-section>
-                      <q-item-label>
-                        <span>
-                          Scan Item(s)
-                        </span>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    v-close-popup
-                    @click="showAddItemModal = 'Bulk'"
-                    role="menuitem"
-                  >
-                    <q-item-section>
-                      <q-item-label>
-                        <span>
-                          Bulk Upload Items
-                        </span>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
-          </div>
-        </template>
-
-        <template #table-td="{ colName, props, value }">
-          <span
-            v-if="colName == 'actions'"
-          >
-            <MoreOptionsMenu
-              :options="[{ text: 'Remove Item', disabled: props.row.status == 'Withdrawn' || withdrawJob.status == 'Completed' }]"
-              class=""
-              @click="handleOptionMenu($event, props.row)"
-            />
-          </span>
-          <span
-            v-else-if="colName == 'status'"
-            class="text-nowrap"
-            :class="value == 'Withdrawn' ? 'text-positive' : 'text-highlight-negative outline'"
-          >
-            {{ value == 'Withdrawn' ? 'Withdrawn' : value }}
-            <q-icon
-              v-if="value == 'Withdrawn'"
-              name="mdi-check-circle"
-              color="positive"
-              size="25px"
-              class="text-bold q-ml-xs"
-            />
-          </span>
-        </template>
-      </EssentialTable>
-    </template>
-  </InfoDisplayLayout>
-
-  <!-- confirmation modal -->
-  <PopupModal
-    v-if="showConfirmationModal"
-    :title="showConfirmationModal == 'CompleteJob' ? 'Confirm' : 'Delete'"
-    :text="showConfirmationModal == 'CompleteJob' ? 'Are you sure you want to withdraw these items from the system?' : 'Are you sure you want to delete the job?'"
-    :show-actions="false"
-    @reset="showConfirmationModal = null"
-    aria-label="confirmationModal"
-  >
-    <template #footer-content="{ hideModal }">
-      <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
-          v-if="showConfirmationModal == 'CompleteJob'"
-          no-caps
-          unelevated
-          color="accent"
-          label="Withdraw & Print"
-          class="btn-no-wrap text-body1 full-width"
-          :loading="appActionIsLoadingData"
-          @click="completeWithdrawJob('withdrawAndPrint'); hideModal();"
-        />
-
-        <q-space class="q-mx-xs" />
-
-        <q-btn
-          v-if="showConfirmationModal == 'CompleteJob'"
-          no-caps
-          unelevated
-          color="accent"
-          label="Withdraw Items"
-          class="btn-no-wrap text-body1 full-width"
-          :loading="appActionIsLoadingData"
-          @click="completeWithdrawJob('withdraw'); hideModal();"
-        />
-        <q-btn
-          v-else
-          no-caps
-          unelevated
-          color="negative"
-          label="Delete Job"
-          class="text-body1 full-width"
-          :loading="appActionIsLoadingData"
-          @click="cancelWithdrawJob(); hideModal();"
-        />
-        <q-space class="q-mx-xs" />
-        <q-btn
-          outline
-          no-caps
-          label="Cancel"
-          class="text-body1 full-width"
-          @click="hideModal"
-        />
+        </div>
       </q-card-section>
-    </template>
-  </PopupModal>
+    </q-card>
 
-  <!-- add item modal -->
-  <WithdrawalJobAddItemModal
-    v-if="showAddItemModal"
-    :entry-type="showAddItemModal"
-    @hide="showAddItemModal = null"
-  />
+    <!-- Trays Table (if any) -->
+    <q-card
+      v-if="withdrawJob.trays && withdrawJob.trays.length > 0"
+      flat
+      bordered
+      class="table-card q-mb-lg"
+    >
+      <q-card-section class="q-pa-none">
+        <EssentialTable
+          :table-columns="trayTableColumns"
+          :table-visible-columns="trayTableVisibleColumns"
+          :table-data="withdrawJob.trays"
+          :row-key="'id'"
+          :enable-table-reorder="false"
+          :enable-selection="false"
+          :hide-table-rearrange="true"
+          :heading-row-class="'q-mb-md q-px-md q-pt-md'"
+        >
+          <template #heading-row>
+            <div class="col">
+              <h2 class="text-h6 text-bold q-ma-none">
+                Trays in Job
+              </h2>
+            </div>
+          </template>
 
-  <!-- Print detail -->
-  <WithdrawalBatchSheet
-    ref="batchSheetComponent"
-    :withdrawal-job-details="withdrawJob"
-  />
+          <template #table-td="{ colName, props }">
+            <span v-if="colName == 'actions'">
+              <q-btn
+                flat
+                round
+                dense
+                icon="undo"
+                color="grey-7"
+                :disable="withdrawJob.status == 'Completed'"
+                @click="handleRemoveItem(props.row)"
+              >
+                <q-tooltip>Remove</q-tooltip>
+              </q-btn>
+            </span>
+          </template>
+        </EssentialTable>
+      </q-card-section>
+    </q-card>
 
-  <!-- audit trail modal -->
-  <AuditTrail
-    v-if="showAuditTrailModal"
-    ref="historyModal"
-    @reset="showAuditTrailModal = null"
-    :job-type="showAuditTrailModal"
-    :job-id="withdrawJob.id"
-  />
+    <!-- Items Table -->
+    <q-card
+      flat
+      bordered
+      class="table-card"
+    >
+      <q-card-section class="q-pa-none">
+        <EssentialTable
+          :table-columns="itemTableColumns"
+          :table-visible-columns="itemTableVisibleColumns"
+          :table-data="filteredWithdrawJobItems"
+          :row-key="'id'"
+          :enable-table-reorder="false"
+          :enable-selection="false"
+          :hide-table-rearrange="true"
+          :heading-row-class="'q-mb-md q-px-md q-pt-md'"
+          :highlight-row-class="'bg-color-green-light'"
+          :highlight-row-key="'status'"
+          :highlight-row-value="'Withdrawn'"
+        >
+          <template #heading-row>
+            <div class="col">
+              <h2 class="text-h6 text-bold q-ma-none">
+                Items in Job
+              </h2>
+            </div>
+            <div class="col-auto flex items-center">
+              <q-btn
+                flat
+                dense
+                no-caps
+                :color="showFilterRow ? 'accent' : 'grey-7'"
+                :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
+                :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
+                class="q-mr-sm"
+                @click="showFilterRow = !showFilterRow"
+              />
+              <q-btn
+                v-if="showFilterRow"
+                flat
+                dense
+                no-caps
+                color="grey-7"
+                label="Clear"
+                icon="clear_all"
+                class="q-mr-md"
+                @click="clearColumnFilters"
+              />
+              <q-input
+                ref="scanInputRef"
+                v-model="scanInput"
+                dense
+                outlined
+                placeholder="Scan or enter barcode..."
+                class="scan-input q-mr-sm"
+                style="min-width: 200px;"
+                :disable="withdrawJob.status == 'Completed'"
+                @keydown.enter="handleScanInput"
+              >
+                <template #append>
+                  <q-icon
+                    name="qr_code_scanner"
+                    color="grey-6"
+                  />
+                </template>
+              </q-input>
+              <q-btn
+                no-caps
+                unelevated
+                icon="upload_file"
+                color="accent"
+                label="Bulk Upload"
+                class="text-body1 btn-modern"
+                :disabled="withdrawJob.status == 'Completed'"
+                @click="showAddItemModal = 'Bulk'"
+              />
+            </div>
+          </template>
+
+          <!-- Filter row inside table header -->
+          <template #header-filter-row="{ cols }">
+            <q-tr
+              v-if="showFilterRow"
+              class="filter-row"
+            >
+              <q-th
+                v-for="col in cols"
+                :key="col.name"
+                class="filter-cell"
+              >
+                <!-- Shelf Barcode filter -->
+                <q-input
+                  v-if="col.name === 'shelf_barcode'"
+                  v-model="columnFilters.shelf_barcode"
+                  dense
+                  outlined
+                  placeholder="Filter..."
+                  class="column-filter-input"
+                  @click.stop
+                />
+                <!-- Tray Barcode filter -->
+                <q-input
+                  v-else-if="col.name === 'tray_barcode'"
+                  v-model="columnFilters.tray_barcode"
+                  dense
+                  outlined
+                  placeholder="Filter..."
+                  class="column-filter-input"
+                  @click.stop
+                />
+                <!-- Barcode filter -->
+                <q-input
+                  v-else-if="col.name === 'barcode'"
+                  v-model="columnFilters.barcode"
+                  dense
+                  outlined
+                  placeholder="Filter..."
+                  class="column-filter-input"
+                  @click.stop
+                />
+                <!-- Owner filter -->
+                <q-input
+                  v-else-if="col.name === 'owner'"
+                  v-model="columnFilters.owner"
+                  dense
+                  outlined
+                  placeholder="Filter..."
+                  class="column-filter-input"
+                  @click.stop
+                />
+                <!-- Status filter -->
+                <q-select
+                  v-else-if="col.name === 'status'"
+                  v-model="columnFilters.status"
+                  :options="['Out', 'In', 'Withdrawn']"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="All"
+                  class="column-filter-input"
+                  @click.stop
+                />
+              </q-th>
+            </q-tr>
+          </template>
+
+          <template #table-td="{ colName, props, value }">
+            <span v-if="colName == 'actions'">
+              <q-btn
+                flat
+                round
+                dense
+                icon="undo"
+                color="grey-7"
+                :disable="props.row.status == 'Withdrawn' || withdrawJob.status == 'Completed'"
+                @click="handleRemoveItem(props.row)"
+              >
+                <q-tooltip>Remove</q-tooltip>
+              </q-btn>
+            </span>
+            <span
+              v-else-if="colName == 'status'"
+              class="text-nowrap"
+              :class="value == 'Withdrawn' ? 'text-positive' : 'text-highlight-negative outline'"
+            >
+              {{ value == 'Withdrawn' ? 'Withdrawn' : value }}
+              <q-icon
+                v-if="value == 'Withdrawn'"
+                name="mdi-check-circle"
+                color="positive"
+                size="20px"
+                class="q-ml-xs"
+              />
+            </span>
+          </template>
+        </EssentialTable>
+      </q-card-section>
+    </q-card>
+
+    <!-- confirmation modal -->
+    <PopupModal
+      v-if="showConfirmationModal"
+      :title="showConfirmationModal == 'CompleteJob' ? 'Confirm' : 'Delete'"
+      :text="showConfirmationModal == 'CompleteJob' ? 'Are you sure you want to withdraw these items from the system?' : 'Are you sure you want to delete the job?'"
+      :show-actions="false"
+      @reset="showConfirmationModal = null"
+    >
+      <template #footer-content="{ hideModal }">
+        <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+          <q-btn
+            v-if="showConfirmationModal == 'CompleteJob'"
+            no-caps
+            unelevated
+            color="accent"
+            label="Withdraw & Print"
+            class="btn-modern full-width"
+            :loading="appActionIsLoadingData"
+            @click="completeWithdrawJob('withdrawAndPrint'); hideModal();"
+          />
+          <q-space class="q-mx-xs" />
+          <q-btn
+            v-if="showConfirmationModal == 'CompleteJob'"
+            no-caps
+            unelevated
+            color="accent"
+            label="Withdraw Items"
+            class="btn-modern full-width"
+            :loading="appActionIsLoadingData"
+            @click="completeWithdrawJob('withdraw'); hideModal();"
+          />
+          <q-btn
+            v-else
+            no-caps
+            unelevated
+            color="negative"
+            label="Delete Job"
+            class="btn-modern full-width"
+            :loading="appActionIsLoadingData"
+            @click="cancelWithdrawJob(); hideModal();"
+          />
+          <q-space class="q-mx-xs" />
+          <q-btn
+            outline
+            no-caps
+            label="Cancel"
+            class="btn-modern-outline full-width"
+            @click="hideModal"
+          />
+        </q-card-section>
+      </template>
+    </PopupModal>
+
+    <!-- add item modal -->
+    <WithdrawalJobAddItemModal
+      v-if="showAddItemModal"
+      :entry-type="showAddItemModal"
+      @hide="showAddItemModal = null"
+    />
+
+    <!-- Print detail -->
+    <WithdrawalBatchSheet
+      ref="batchSheetComponent"
+      :withdrawal-job-details="withdrawJob"
+    />
+
+    <!-- audit trail modal -->
+    <AuditTrail
+      v-if="showAuditTrailModal"
+      ref="historyModal"
+      @reset="showAuditTrailModal = null"
+      :job-type="showAuditTrailModal"
+      :job-id="withdrawJob.id"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -414,10 +405,8 @@ import { useUserStore } from '@/stores/user-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
 import { storeToRefs } from 'pinia'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
-import InfoDisplayLayout from '@/components/InfoDisplayLayout.vue'
+import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
-import MobileActionBar from '@/components/MobileActionBar.vue'
-import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import SelectInput from '@/components/SelectInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import WithdrawalJobAddItemModal from '@/components/Withdrawal/WithdrawalJobAddItemModal.vue'
@@ -439,7 +428,8 @@ const { users } = storeToRefs(useOptionStore())
 const {
   patchWithdrawJob,
   deleteWithdrawJob,
-  deleteWithdrawJobItems
+  deleteWithdrawJobItems,
+  postWithdrawJobItem
 } = useWithdrawalStore()
 const {
   withdrawJob,
@@ -449,26 +439,149 @@ const {
 
 // Local Data
 const batchSheetComponent = ref(null)
-const withdrawItemsMenuState = ref(false)
+const scanInputRef = ref(null)
+const scanInput = ref('')
 const editJob = ref(false)
+const showFilterRow = ref(false)
+const showConfirmationModal = ref(null)
+const showAddItemModal = ref(null)
+const showAuditTrailModal = ref(false)
+
+// Column filters
+const columnFilters = ref({
+  shelf_barcode: '',
+  tray_barcode: '',
+  barcode: '',
+  owner: '',
+  status: null
+})
+
+const clearColumnFilters = () => {
+  columnFilters.value = {
+    shelf_barcode: '',
+    tray_barcode: '',
+    barcode: '',
+    owner: '',
+    status: null
+  }
+}
+
+// Logic - injections
+const handleAlert = inject('handle-alert')
+const currentIsoDate = inject('current-iso-date')
+const formatDateTime = inject('format-date-time')
+const renderItemBarcodeDisplay = inject('render-item-barcode-display')
+const renderWithdrawnTrayBarcode = inject('render-withdrawn-tray-barcode')
+const renderWithdrawnShelfBarcode = inject('render-withdrawn-shelf-barcode')
+const renderWithdrawnItemLocation = inject('render-withdrawn-item-location')
+
+// Computed
+const headerSubtitle = computed(() => {
+  const withdrawn = withdrawJobItems.value.filter(i => i.status === 'Withdrawn').length
+  const total = withdrawJobItems.value.length
+  const user = withdrawJob.value.assigned_user?.name || 'Unassigned'
+  return `${withdrawn} of ${total} withdrawn • ${user}`
+})
+
+const headerMenuOptions = computed(() => [
+  {
+    label: 'Assign User',
+    icon: 'person',
+    disabled: editJob.value || withdrawJob.value.status === 'Completed',
+    action: () => {
+      editJob.value = true
+    }
+  },
+  {
+    label: 'Print Job',
+    icon: 'print',
+    action: () => batchSheetComponent.value?.printBatchReport()
+  },
+  {
+    label: 'View History',
+    icon: 'history',
+    action: () => {
+      showAuditTrailModal.value = 'withdraw_jobs'
+    }
+  },
+  {
+    label: 'Delete Job',
+    icon: 'delete',
+    color: 'negative',
+    disabled: editJob.value || withdrawJob.value.status === 'Completed' || withdrawJobItems.value.some(itm => itm.status === 'Withdrawn'),
+    action: () => {
+      showConfirmationModal.value = 'DeleteJob'
+    }
+  }
+])
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Completed': return 'positive'
+    case 'Running': return 'info'
+    case 'Paused': return 'warning'
+    case 'Created': return 'grey'
+    default: return 'grey'
+  }
+}
+
+// Filtered items with column filters applied
+const filteredWithdrawJobItems = computed(() => {
+  let items = withdrawJobItems.value
+
+  // Apply column filters
+  if (columnFilters.value.shelf_barcode) {
+    const filter = columnFilters.value.shelf_barcode.toLowerCase()
+    items = items.filter(item => {
+      const shelfBarcode = item.status === 'Withdrawn'
+        ? renderWithdrawnShelfBarcode(item)
+        : (item.tray ? item.tray?.shelf_position?.shelf?.barcode?.value : item.shelf_position?.shelf?.barcode?.value)
+      return shelfBarcode?.toLowerCase().includes(filter)
+    })
+  }
+
+  if (columnFilters.value.tray_barcode) {
+    const filter = columnFilters.value.tray_barcode.toLowerCase()
+    items = items.filter(item => {
+      const trayBarcode = item.status === 'Withdrawn'
+        ? renderWithdrawnTrayBarcode(item)
+        : renderItemBarcodeDisplay(item.tray)
+      return trayBarcode?.toLowerCase().includes(filter)
+    })
+  }
+
+  if (columnFilters.value.barcode) {
+    const filter = columnFilters.value.barcode.toLowerCase()
+    items = items.filter(item => {
+      const barcode = renderItemBarcodeDisplay(item)
+      return barcode?.toLowerCase().includes(filter)
+    })
+  }
+
+  if (columnFilters.value.owner) {
+    const filter = columnFilters.value.owner.toLowerCase()
+    items = items.filter(item => item.owner?.name?.toLowerCase().includes(filter))
+  }
+
+  if (columnFilters.value.status) {
+    items = items.filter(item => item.status === columnFilters.value.status)
+  }
+
+  return items
+})
+
+// Table columns - actions moved to last position
 const itemTableVisibleColumns = ref([
-  'actions',
   'shelf_barcode',
   'tray_barcode',
   'barcode',
   'owner',
   'status',
-  'withdrawn_location'
+  'withdrawn_location',
+  'actions'
 ])
+
 const itemTableColumns = ref([
-  {
-    name: 'actions',
-    field: 'actions',
-    label: '',
-    align: 'center',
-    sortable: false,
-    required: true
-  },
   {
     name: 'shelf_barcode',
     field: row => row.status === 'Withdrawn' ? renderWithdrawnShelfBarcode(row) : (row.tray ? row.tray?.shelf_position?.shelf?.barcode?.value : row.shelf_position?.shelf?.barcode?.value),
@@ -510,43 +623,25 @@ const itemTableColumns = ref([
     label: 'Location',
     align: 'left',
     sortable: true
-  }
-])
-const itemTableFilters = computed(() => {
-  let tablesFilters = []
-  if (withdrawJobItems.value.length > 0) {
-    tablesFilters = [
-      {
-        field: row => row.owner?.name,
-        label: 'Owner',
-        // render options based on the passed in table data
-        // loop through all containers and return customized data set for table filtering and remove the duplicates
-        options: getUniqueListByKey(withdrawJobItems.value.map(tableEntry => {
-          return {
-            text: tableEntry.owner?.name,
-            value: false
-          }
-        }), 'text')
-      }
-    ]
-  }
-  return tablesFilters
-})
-const trayTableVisibleColumns = ref([
-  'actions',
-  'shelf_barcode',
-  'tray_barcode',
-  'owner'
-])
-const trayTableColumns = ref([
+  },
   {
     name: 'actions',
     field: 'actions',
     label: '',
-    align: 'center',
-    sortable: false,
-    required: true
-  },
+    align: 'right',
+    sortable: false
+  }
+])
+
+// Tray table columns - actions moved to last position
+const trayTableVisibleColumns = ref([
+  'shelf_barcode',
+  'tray_barcode',
+  'owner',
+  'actions'
+])
+
+const trayTableColumns = ref([
   {
     name: 'shelf_barcode',
     field: row => row.status === 'Withdrawn' ? renderWithdrawnShelfBarcode(row) : row.shelf_position?.shelf?.barcode?.value,
@@ -567,70 +662,72 @@ const trayTableColumns = ref([
     label: 'Owner',
     align: 'left',
     sortable: true
+  },
+  {
+    name: 'actions',
+    field: 'actions',
+    label: '',
+    align: 'right',
+    sortable: false
   }
 ])
-const trayTableFilters = computed(() => {
-  let tablesFilters = []
-  if (withdrawJob.value.trays.length > 0) {
-    tablesFilters = [
-      {
-        field: row => row.owner?.name,
-        label: 'Owner',
-        options: getUniqueListByKey(withdrawJob.value.trays.map(tableEntry => {
-          return {
-            text: tableEntry.owner?.name,
-            value: false
-          }
-        }), 'text')
-      }
-    ]
-  }
-  return tablesFilters
-})
-const showConfirmationModal = ref(null)
-const showAddItemModal = ref(null)
-const historyModal = ref(null)
-const showAuditTrailModal = ref(false)
 
-// Logic
-const handleAlert = inject('handle-alert')
-const currentIsoDate = inject('current-iso-date')
-const formatDateTime = inject('format-date-time')
-const renderItemBarcodeDisplay = inject('render-item-barcode-display')
-const renderWithdrawnTrayBarcode = inject('render-withdrawn-tray-barcode')
-const renderWithdrawnShelfBarcode = inject('render-withdrawn-shelf-barcode')
-const renderWithdrawnItemLocation = inject('render-withdrawn-item-location')
-const getUniqueListByKey = inject('get-uniqure-list-by-key')
-
+// Lifecycle
 onBeforeMount(() => {
   if (currentScreenSize.value == 'xs') {
     itemTableVisibleColumns.value = [
-      'actions',
       'shelf_barcode',
       'tray_barcode',
       'barcode',
-      'status'
+      'status',
+      'actions'
     ]
   }
 })
 
-const handleOptionMenu = async (action, rowData) => {
-  switch (action.text) {
-    case 'Edit':
-      editJob.value = true
-      return
-    case 'Delete Job':
-      showConfirmationModal.value = 'DeleteJob'
-      return
-    case 'Remove Item':
-      removeWithdrawItems([rowData.barcode.value])
-      return
-    case 'Print Job':
-      batchSheetComponent.value.printBatchReport()
-      return
-    case 'View History':
-      showAuditTrailModal.value = 'withdraw_jobs'
-      return
+// Methods
+const handleRemoveItem = (row) => {
+  removeWithdrawItems([row.barcode.value])
+}
+
+const handleScanInput = async () => {
+  if (!scanInput.value.trim()) {
+    return
+  }
+
+  const barcode = scanInput.value.trim()
+  scanInput.value = ''
+
+  try {
+    appIsLoadingData.value = true
+    const payload = {
+      barcode_value: barcode
+    }
+    const errors = await postWithdrawJobItem(payload)
+
+    if (errors && errors.length > 0) {
+      handleAlert({
+        type: 'error',
+        text: errors.join(', '),
+        autoClose: true
+      })
+    } else {
+      handleAlert({
+        type: 'success',
+        text: `Item ${barcode} added to job.`,
+        autoClose: true
+      })
+    }
+  } catch (error) {
+    handleAlert({
+      type: 'error',
+      text: error,
+      autoClose: true
+    })
+  } finally {
+    appIsLoadingData.value = false
+    // Keep focus on input for continuous scanning
+    scanInputRef.value?.focus()
   }
 }
 
@@ -638,6 +735,7 @@ const cancelWithdrawJobEdits = () => {
   withdrawJob.value = { ...toRaw(originalWithdrawJob.value) }
   editJob.value = false
 }
+
 const updateWithdrawJob = async () => {
   try {
     appActionIsLoadingData.value = true
@@ -664,6 +762,7 @@ const updateWithdrawJob = async () => {
     editJob.value = false
   }
 }
+
 const cancelWithdrawJob = async () => {
   try {
     appIsLoadingData.value = true
@@ -691,13 +790,14 @@ const cancelWithdrawJob = async () => {
     appIsLoadingData.value = false
   }
 }
+
 const completeWithdrawJob = async (withdrawType) => {
   try {
     // check if an associated picklist exists and make sure it is completed
     if (withdrawJob.value.pick_list && withdrawJob.value.pick_list.status !== 'Completed') {
       handleAlert({
         type: 'error',
-        text: `A Pick list job # <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a> was generated  for withdrawal but not completed yet, please complete the picklist job inorder to complete withdrawal process.`,
+        text: `A Pick list job # <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a> was generated for withdrawal but not completed yet, please complete the picklist job inorder to complete withdrawal process.`,
         autoClose: false
       })
       return
@@ -722,7 +822,6 @@ const completeWithdrawJob = async (withdrawType) => {
     if (withdrawType && withdrawType === 'withdrawAndPrint') {
       batchSheetComponent.value.printBatchReport()
     }
-
   } catch (error) {
     handleAlert({
       type: 'error',
@@ -733,13 +832,10 @@ const completeWithdrawJob = async (withdrawType) => {
     appActionIsLoadingData.value = false
   }
 }
+
 const removeWithdrawItems = async (barcode_values) => {
   try {
     appIsLoadingData.value = true
-    // const payload = {
-    //   barcode_values
-    // }
-    // TEMP singular barcode delete until multidelete is implemented
     const payload = {
       barcode_value: barcode_values[0]
     }
@@ -770,7 +866,6 @@ const createPicklistJob = async () => {
     }
     await patchWithdrawJob(payload)
 
-    // display an alert with the created picklist job id so you can click that and link directly to the job if needed
     handleAlert({
       type: 'success',
       text: `Successfully created Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a>`,
@@ -786,6 +881,7 @@ const createPicklistJob = async () => {
     appActionIsLoadingData.value = false
   }
 }
+
 const addToPicklistJob = async () => {
   try {
     appActionIsLoadingData.value = true
@@ -795,7 +891,6 @@ const addToPicklistJob = async () => {
     }
     await patchWithdrawJob(payload)
 
-    // display an alert with the updated picklist job id so you can click that and link directly to the job if needed
     handleAlert({
       type: 'success',
       text: `Successfully updated Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a>`,
@@ -814,4 +909,24 @@ const addToPicklistJob = async () => {
 </script>
 
 <style lang="scss" scoped>
+.withdrawal-job-detail {
+  .details-card {
+    .detail-item {
+      .detail-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--q-grey-7);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+
+      .detail-value {
+        font-size: 1rem;
+        color: var(--q-dark);
+      }
+    }
+  }
+}
 </style>

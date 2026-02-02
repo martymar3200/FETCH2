@@ -273,7 +273,6 @@ def create_request(
         if item.status == "PickList":
             raise BadRequest(detail="Item is in pick list and cannot be requested")
 
-        # V2 FIX: session.exec().first() -> session.execute(select(...)).scalars().first()
         existing_request = session.execute(
             select(Request)
             .where(Request.item_id == item.id)
@@ -283,20 +282,17 @@ def create_request(
         if existing_request:
             raise BadRequest(detail="Item is already requested")
 
-        request_input.item_id = item.id
-        tray_id = item.tray_id
-
-        # V2 FIX: session.exec().first() -> session.execute(select(...)).scalars().first()
-        shelf_position = session.execute(
-            select(ShelfPosition).join(Tray).where(Tray.id == tray_id)
-        ).scalars().first()
-
+        # Verify shelving status directly via the item and its tray
         if (
-            not shelf_position.tray.scanned_for_shelving
-            or not shelf_position.tray.shelf_position_id
+            not item.tray 
+            or not item.tray.scanned_for_shelving 
+            or not item.tray.shelf_position_id
             or not item.status == "In"
         ):
             raise BadRequest(detail="Item is not shelved")
+
+        request_input.item_id = item.id
+        shelf_position = session.get(ShelfPosition, item.tray.shelf_position_id)
 
         # V2 UPDATE FIX
         session.execute(

@@ -29,35 +29,30 @@
               </h1>
             </div>
 
-            <!-- View toggle - left justified after title -->
+            <!-- View toggle - centered on desktop -->
             <div
-              class="col-auto q-ml-md self-center"
+              class="col-grow flex justify-center"
               :class="currentScreenSize == 'xs' ? 'col-12 q-mb-md' : ''"
             >
-              <ToggleButtonInput
+              <q-btn-toggle
                 v-model="refileDisplayType"
-                :options="[
-                  {label: 'Refile Job', value: 'refile_job'},
-                  {label: ``, value: 'refile_queue', slot: 'right'}
-                ]"
+                no-caps
+                rounded
+                unelevated
+                toggle-color="accent"
+                color="white"
+                text-color="grey-7"
+                class="toggle-modern-rounded"
+                :options="dashboardToggleOptions"
                 @update:model-value="clearTableSelection(); refileTableComponent.resetTablePagination(); loadRefileJobs();"
-                class="refile-table-toggle toggle-modern"
-              >
-                <template #right>
-                  <div class="items-center no-wrap">
-                    <div class="text-center">
-                      Refile Queue <span class="refile-table-toggle-count">{{ formattedRefileQueueCount }}</span>
-                    </div>
-                  </div>
-                </template>
-              </ToggleButtonInput>
+              />
             </div>
 
             <div class="col-grow" />
 
             <!-- Filter buttons and Create - right justified -->
             <div
-              class="col-auto flex items-center"
+              class="col-auto flex items-center q-gutter-x-sm"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
               <q-btn
@@ -67,7 +62,7 @@
                 :color="showFilterRow ? 'accent' : 'grey-7'"
                 :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
                 :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
-                class="q-mr-sm"
+                class="btn-modern-flat"
                 @click="showFilterRow = !showFilterRow"
               />
               <q-btn
@@ -78,7 +73,7 @@
                 color="grey-7"
                 label="Clear"
                 icon="clear_all"
-                class="q-mr-md"
+                class="btn-modern-flat"
                 @click="clearColumnFilters"
               />
               <q-btn
@@ -87,7 +82,7 @@
                 icon-right="arrow_drop_down"
                 color="accent"
                 label="Create"
-                class="text-body1 btn-modern"
+                class="text-body1 btn-modern q-ml-sm"
                 aria-label="CreateRefileJobMenu"
                 aria-haspopup="menu"
                 :aria-expanded="refileJobMenuState"
@@ -517,7 +512,6 @@ import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import RefileAddQueueItem from '@/components/Refile/RefileAddQueueItem.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
-import ToggleButtonInput from '@/components/ToggleButtonInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import SelectInput from '@/components/SelectInput.vue'
 import MobileActionBar from '@/components/MobileActionBar.vue'
@@ -861,6 +855,17 @@ const formattedRefileQueueCount = computed(() => {
   return refileQueueListTotal.value.toLocaleString()
 })
 
+const dashboardToggleOptions = computed(() => [
+  {
+    label: 'Refile Jobs',
+    value: 'refile_job'
+  },
+  {
+    label: `Refile Queue (${formattedRefileQueueCount.value})`,
+    value: 'refile_queue'
+  }
+])
+
 // Logic
 const handleAlert = inject('handle-alert')
 const formatDateTime = inject('format-date-time')
@@ -1109,49 +1114,28 @@ const updateRefileJob = async () => {
 </script>
 
 <style lang="scss" scoped>
-.toggle-modern {
-  :deep(.q-btn-group) {
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow:
-      0 2px 4px rgba(0, 0, 0, 0.1),
-      0 4px 8px rgba(0, 0, 0, 0.08);
-  }
+.toggle-modern-rounded {
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 
   :deep(.q-btn) {
-    border-radius: 0;
+    padding: 0 24px;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    transition: all 0.2s ease-in-out;
+    font-size: 0.9rem;
+    min-height: 40px;
 
-    &:first-child {
-      border-top-left-radius: 10px;
-      border-bottom-left-radius: 10px;
-    }
-
-    &:last-child {
-      border-top-right-radius: 10px;
-      border-bottom-right-radius: 10px;
+    &.q-btn--active {
+      box-shadow: 0 4px 12px rgba(var(--q-accent), 0.3);
     }
   }
 }
 
-.refile-table-toggle {
-  :deep(.q-btn) {
-    flex: auto;
-    .refile-table-toggle-count {
-      display: inline-block;
-      padding: 0px 6px;
-      margin-top: -2px;
-      border: 1px solid $primary;
-      border-radius: 6px;
-      background-color: $color-white;
-      color: $color-black;
-    }
-    /* When the parent button is active (Refile Queue is selected) */
-    &[aria-pressed="true"] .refile-table-toggle-count {
-      border-color: $color-white;
-    }
+.btn-modern-flat {
+  padding: 4px 12px;
+  border-radius: 8px;
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
   }
 }
 

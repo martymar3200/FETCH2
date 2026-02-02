@@ -91,7 +91,7 @@
               unelevated
               color="accent"
               label="Save Edits"
-              class="full-width text-body1"
+              class="full-width text-body1 btn-modern"
               :loading="appActionIsLoadingData"
               @click="!accessionContainer.id ? updateTrayJob() : updateTrayContainer()"
               :disabled="accessionJob.status == 'Paused'"
@@ -104,7 +104,7 @@
               outline
               color="accent"
               label="Cancel"
-              class="full-width text-body1"
+              class="full-width text-body1 btn-modern-outline"
               @click="cancelTrayEdits"
             />
           </div>

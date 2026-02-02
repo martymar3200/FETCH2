@@ -1,57 +1,65 @@
 <template>
-  <InfoDisplayLayout class="picklist-job">
-    <template #number-box-content>
-      <div class="flex q-mb-xs">
-        <MoreOptionsMenu
-          :options="[
-            { text: 'Edit', hidden: !checkUserPermission('can_assign_and_reassign_picklist_job'), disabled: appIsOffline || editJob || picklistJob.status == 'Paused' || picklistJob.status == 'Completed' },
-            { text: 'Delete Job', hidden: !checkUserPermission('can_delete_picklist_job'), optionClass: 'text-negative', disabled: appIsOffline || editJob || picklistJob.status == 'Completed' || picklistItems.some(itm => itm.status !== 'PickList')},
-            { text: 'Print Job' },
-            { text: 'View History' }
-          ]"
-          class="q-mr-xs"
-          @click="handleOptionMenu"
-        />
-        <h1
-          id="picklistJobId"
-          class="info-display-details-label text-h4"
-        >
-          Pick List #:
-        </h1>
-      </div>
-      <p class="info-display-number-box text-h4">
-        {{ picklistJob.id }}
-      </p>
-    </template>
-
-    <template #details-content>
-      <div class="col-xs-6 col-sm-6 col-md-grow">
-        <div class="info-display-details q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Building:
-          </label>
-          <p class="text-body1">
-            {{ picklistJob.building?.name }}
-          </p>
+  <div class="picklist-details">
+    <JobPageHeader
+      title="Pick List"
+      :job-id="picklistJob.id"
+      :status="picklistJob.status"
+      :status-color="getStatusColor(picklistJob.status)"
+      :subtitle="headerSubtitle"
+      :menu-options="headerMenuOptions"
+    >
+      <template #actions>
+        <div v-if="picklistJob.status !== 'Completed'">
+          <q-btn
+            v-if="picklistJob.status !== 'Created'"
+            no-caps
+            unelevated
+            outline
+            color="accent"
+            :icon="picklistJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'"
+            :label="picklistJob.status == 'Paused' ? 'Resume Job' : 'Pause Job'"
+            class="q-mr-sm"
+            :disabled="appPendingSync || !checkUserPermission('can_edit_picklist_job')"
+            @click="picklistJob.status == 'Paused' ? updatePicklistJobStatus('Running') : updatePicklistJobStatus('Paused')"
+          />
+          <q-btn
+            no-caps
+            unelevated
+            color="positive"
+            :label="picklistJob.status == 'Created' ? 'Retrieve Pick List' : 'Complete Job'"
+            :disabled="appIsOffline || appPendingSync || picklistJob.status == 'Paused' || !allItemsRetrieved || !checkUserPermission('can_edit_picklist_job')"
+            :loading="appActionIsLoadingData"
+            @click="picklistJob.status == 'Created' ? executePicklistJob() : showConfirmationModal = 'CompleteJob'"
+          />
         </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow">
-        <div class="info-display-details q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Assigned User:
-          </label>
-          <p
-            v-if="!editJob"
-            class="text-body1"
-          >
-            {{ picklistJob.user?.name }}
-          </p>
+      </template>
+    </JobPageHeader>
+
+    <!-- Quick User Assign Card -->
+    <q-card
+      v-if="editJob"
+      flat
+      bordered
+      class="q-mb-lg user-assign-card"
+    >
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6 text-bold">
+          Assign User
+        </div>
+        <q-space />
+        <q-btn
+          flat
+          round
+          dense
+          icon="close"
+          @click="cancelPicklistJobEdits"
+        />
+      </q-card-section>
+
+      <q-card-section class="row q-col-gutter-md items-end">
+        <div class="col-12 col-md-4">
+          <label class="form-group-label">Select User</label>
           <SelectInput
-            v-else
             v-model="picklistJob.user_id"
             :options="users"
             option-type="users"
@@ -68,132 +76,26 @@
             </template>
           </SelectInput>
         </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow">
-        <div class="info-display-details q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            # of Items:
-          </label>
-          <p class="text-body1">
-            {{ picklistJob.request_count }}
-          </p>
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow">
-        <div class="info-display-details q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Date Created:
-          </label>
-          <p class="text-body1">
-            {{ formatDateTime(picklistJob.create_dt).date }}
-          </p>
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-auto col-md-auto q-mr-auto">
-        <div class="info-display-details q-mb-xs-none q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-sm">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Status:
-          </label>
-          <p
-            class="text-body1 outline"
-            :class="picklistJob.status == 'Completed' || picklistJob.status == 'Created' ? 'text-highlight' : picklistJob.status == 'Paused' || picklistJob.status == 'Running' ? 'text-highlight-warning' : picklistJob.status == 'New' ? 'text-highlight-accent' : null "
-          >
-            {{ picklistJob.status }}
-          </p>
-        </div>
-      </div>
-
-      <div
-        v-if="currentScreenSize !== 'xs'"
-        class="col-sm-12 col-md-12 col-lg-3 q-ml-auto"
-      >
-        <div
-          v-if="editJob"
-          class="info-display-details-action q-mt-sm-sm q-mt-md-md"
-        >
+        <div class="col-auto">
           <q-btn
             no-caps
             unelevated
             color="accent"
-            label="Save Edits"
-            class="btn-no-wrap text-body1 q-mr-sm"
+            label="Save Assignment"
+            class="btn-modern"
             :loading="appActionIsLoadingData"
             @click="updatePicklistJob"
           />
-          <q-btn
-            no-caps
-            unelevated
-            outline
-            color="accent"
-            label="Cancel"
-            class="btn-no-wrap text-body1"
-            @click="cancelPicklistJobEdits"
-          />
         </div>
-        <div
-          v-else-if="picklistJob.status !== 'Completed'"
-          class="info-display-details-action q-mt-sm-sm q-mt-md-md"
-        >
-          <q-btn
-            v-if="picklistJob.status !== 'Created'"
-            no-caps
-            unelevated
-            outline
-            color="accent"
-            :icon="picklistJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'"
-            :label="picklistJob.status == 'Paused' ? 'Resume Job' : 'Pause Job'"
-            class="btn-no-wrap text-body1 q-mr-sm"
-            :disabled="appPendingSync || !checkUserPermission('can_edit_picklist_job')"
-            @click="picklistJob.status == 'Paused' ? updatePicklistJobStatus('Running') : updatePicklistJobStatus('Paused')"
-          />
-          <q-btn
-            no-caps
-            unelevated
-            color="positive"
-            :label="picklistJob.status == 'Created' ? 'Retrieve Pick List' : 'Complete Job'"
-            class="btn-no-wrap text-body1"
-            :disabled="appIsOffline || appPendingSync || picklistJob.status == 'Paused' || !allItemsRetrieved || !checkUserPermission('can_edit_picklist_job')"
-            :loading="appActionIsLoadingData"
-            @click="picklistJob.status == 'Created' ? executePicklistJob() : showConfirmationModal = 'CompleteJob'"
-          />
-        </div>
-      </div>
-      <MobileActionBar
-        v-else-if="currentScreenSize == 'xs' && editJob"
-        button-one-color="accent"
-        :button-one-label="'Save Edits'"
-        :button-one-outline="false"
-        :button-one-loading="appActionIsLoadingData"
-        @button-one-click="updatePicklistJob"
-        button-two-color="accent"
-        :button-two-label="'Cancel'"
-        :button-two-outline="true"
-        @button-two-click="cancelPicklistJobEdits"
-      />
-      <MobileActionBar
-        v-else-if="picklistJob.status !== 'Completed'"
-        button-one-color="accent"
-        :button-one-icon="picklistJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'"
-        :button-one-label="picklistJob.status == 'Paused' ? 'Resume Job' : 'Pause Job'"
-        :button-one-outline="true"
-        :button-one-disabled="appPendingSync || picklistJob.status == 'Created' || !checkUserPermission('can_edit_picklist_job')"
-        @button-one-click="picklistJob.status == 'Paused' ? updatePicklistJobStatus('Running') : updatePicklistJobStatus('Paused')"
-        button-two-color="positive"
-        :button-two-label="picklistJob.status == 'Created' ? 'Retrieve Pick List' : 'Complete Job'"
-        :button-two-outline="false"
-        :button-two-disabled="appIsOffline || appPendingSync || picklistJob.status == 'Paused' || !allItemsRetrieved || !checkUserPermission('can_edit_picklist_job')"
-        :button-two-loading="appActionIsLoadingData"
-        @button-two-click="picklistJob.status == 'Created' ? executePicklistJob() : showConfirmationModal = 'CompleteJob'"
-      />
-    </template>
+      </q-card-section>
+    </q-card>
 
-    <template #table-content>
+    <!-- Items Table -->
+    <q-card
+      flat
+      bordered
+      class="table-card"
+    >
       <EssentialTable
         :table-columns="itemTableColumns"
         :table-visible-columns="itemTableVisibleColumns"
@@ -201,7 +103,7 @@
         :table-data="picklistItems"
         :enable-table-reorder="false"
         :enable-selection="false"
-        :heading-row-class="'q-mb-lg q-px-xs-sm q-px-sm-md'"
+        :heading-row-class="'q-mb-md q-px-md q-pt-md'"
         :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
         :highlight-row-class="'justify-end bg-color-green-light'"
         :highlight-row-key="'status'"
@@ -216,15 +118,20 @@
           </div>
         </template>
 
-        <template #table-td="{ colName, props, value }">
-          <span
-            v-if="colName == 'actions'"
-          >
-            <MoreOptionsMenu
-              :options="[{ text: 'Revert Item to Queue', disabled: props.row.status !== 'PickList' || picklistJob.status == 'Paused' || picklistJob.status == 'Completed' || !checkUserPermission('can_edit_picklist_job')}]"
-              class=""
-              @click="handleOptionMenu($event, props.row)"
-            />
+        <template #table-td="{ colName, props: cellProps, value }">
+          <span v-if="colName == 'actions'">
+            <q-btn
+              v-if="cellProps.row.status === 'PickList' && picklistJob.status !== 'Paused' && picklistJob.status !== 'Completed' && checkUserPermission('can_edit_picklist_job')"
+              flat
+              round
+              dense
+              size="sm"
+              icon="undo"
+              color="negative"
+              @click="handleOptionMenu({text: 'Revert Item to Queue'}, cellProps.row)"
+            >
+              <q-tooltip>Revert Item to Queue</q-tooltip>
+            </q-btn>
           </span>
           <span
             v-else-if="colName == 'status'"
@@ -242,89 +149,89 @@
           </span>
         </template>
       </EssentialTable>
-    </template>
-  </InfoDisplayLayout>
+    </q-card>
 
-  <!-- confirmation modal -->
-  <PopupModal
-    v-if="showConfirmationModal"
-    ref="confirmationModal"
-    :title="showConfirmationModal == 'CompleteJob' ? 'Confirm' : 'Delete'"
-    :text="showConfirmationModal == 'CompleteJob' ? 'Are you sure you want to complete the job?' : 'Are you sure you want to delete the job?'"
-    :show-actions="false"
-    @reset="showConfirmationModal = null"
-    aria-label="confirmationModal"
-  >
-    <template #footer-content="{ hideModal }">
-      <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <template v-if="showConfirmationModal == 'CompleteJob'">
+    <!-- confirmation modal -->
+    <PopupModal
+      v-if="showConfirmationModal"
+      ref="confirmationModal"
+      :title="showConfirmationModal == 'CompleteJob' ? 'Confirm' : 'Delete'"
+      :text="showConfirmationModal == 'CompleteJob' ? 'Are you sure you want to complete the job?' : 'Are you sure you want to delete the job?'"
+      :show-actions="false"
+      @reset="showConfirmationModal = null"
+      aria-label="confirmationModal"
+    >
+      <template #footer-content="{ hideModal }">
+        <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+          <template v-if="showConfirmationModal == 'CompleteJob'">
+            <q-btn
+              no-caps
+              unelevated
+              color="accent"
+              label="Complete & Print"
+              class="btn-no-wrap text-body1 full-width"
+              :loading="appActionIsLoadingData"
+              @click="completePicklistJob(true)"
+            />
+            <q-space class="q-mx-xs" />
+            <q-btn
+              no-caps
+              unelevated
+              color="accent"
+              label="Complete"
+              class="text-body1 full-width"
+              :loading="appActionIsLoadingData"
+              @click="completePicklistJob(false)"
+            />
+          </template>
           <q-btn
+            v-else
             no-caps
             unelevated
-            color="accent"
-            label="Complete & Print"
-            class="btn-no-wrap text-body1 full-width"
-            :loading="appActionIsLoadingData"
-            @click="completePicklistJob(true)"
-          />
-          <q-space class="q-mx-xs" />
-          <q-btn
-            no-caps
-            unelevated
-            color="accent"
-            label="Complete"
+            color="negative"
+            label="Delete Job"
             class="text-body1 full-width"
             :loading="appActionIsLoadingData"
-            @click="completePicklistJob(false)"
+            @click="cancelPicklistJob(); hideModal();"
           />
-        </template>
-        <q-btn
-          v-else
-          no-caps
-          unelevated
-          color="negative"
-          label="Delete Job"
-          class="text-body1 full-width"
-          :loading="appActionIsLoadingData"
-          @click="cancelPicklistJob(); hideModal();"
-        />
-        <q-space
-          v-if="currentScreenSize !== 'xs'"
-          class="q-mx-xs"
-        />
-        <q-btn
-          v-if="currentScreenSize !== 'xs'"
-          outline
-          no-caps
-          label="Cancel"
-          class="text-body1 full-width"
-          @click="hideModal"
-        />
-      </q-card-section>
-    </template>
-  </PopupModal>
+          <q-space
+            v-if="currentScreenSize !== 'xs'"
+            class="q-mx-xs"
+          />
+          <q-btn
+            v-if="currentScreenSize !== 'xs'"
+            outline
+            no-caps
+            label="Cancel"
+            class="text-body1 full-width"
+            @click="hideModal"
+          />
+        </q-card-section>
+      </template>
+    </PopupModal>
 
-  <!-- picklist item detail modal -->
-  <PicklistItemDetailModal
-    v-if="showPicklistItemDetailModal"
-    @hide="showPicklistItemDetailModal = false"
-  />
+    <!-- picklist item detail modal -->
+    <PicklistItemDetailModal
+      v-if="showPicklistItemDetailModal"
+      @hide="showPicklistItemDetailModal = false"
+    />
 
-  <!-- print component: picklist job report -->
-  <PicklistBatchSheet
-    ref="batchSheetComponent"
-    :picklist-job-details="picklistJob"
-    :picklist-job-items="picklistItems"
-  />
+    <!-- print component: picklist job report -->
+    <PicklistBatchSheet
+      ref="batchSheetComponent"
+      :picklist-job-details="picklistJob"
+      :picklist-job-items="picklistItems"
+    />
 
-  <!-- audit trail modal -->
-  <AuditTrail
-    v-if="showAuditTrailModal"
-    ref="historyModal"
-    @reset="showAuditTrailModal = null"
-    :job-type="showAuditTrailModal"
-    :job-id="picklistJob.id"
-  />
+    <!-- audit trail modal -->
+    <AuditTrail
+      v-if="showAuditTrailModal"
+      ref="historyModal"
+      @reset="showAuditTrailModal = null"
+      :job-type="showAuditTrailModal"
+      :job-id="picklistJob.id"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -339,10 +246,8 @@ import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
-import InfoDisplayLayout from '@/components/InfoDisplayLayout.vue'
+import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
-import MobileActionBar from '@/components/MobileActionBar.vue'
-import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import SelectInput from '@/components/SelectInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import PicklistBatchSheet from '@/components/Picklist/PicklistBatchSheet.vue'
@@ -389,23 +294,15 @@ const confirmationModal = ref(null)
 const batchSheetComponent = ref(null)
 const editJob = ref(false)
 const itemTableVisibleColumns = ref([
-  'actions',
   'barcode',
   'tray_barcode',
   'owner',
   'size_class',
   'item_location',
-  'status'
+  'status',
+  'actions'
 ])
 const itemTableColumns = ref([
-  {
-    name: 'actions',
-    field: 'actions',
-    label: '',
-    align: 'center',
-    sortable: false,
-    required: true
-  },
   {
     name: 'barcode',
     field: row => row.item ? renderItemBarcodeDisplay(row.item) : renderItemBarcodeDisplay(row.non_tray_item),
@@ -449,6 +346,14 @@ const itemTableColumns = ref([
     sortable: false,
     required: true,
     headerStyle: 'max-width: 200px'
+  },
+  {
+    name: 'actions',
+    field: 'actions',
+    label: '',
+    align: 'center',
+    sortable: false,
+    required: true
   }
 ])
 const itemTableFilters = computed(() => {
@@ -494,14 +399,64 @@ const getItemLocation = inject('get-item-location')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 const getUniqueListByKey = inject('get-uniqure-list-by-key')
 
+const headerSubtitle = computed(() => {
+  const building = picklistJob.value.building?.name || '-'
+  const items = `${picklistJob.value.request_count || 0} items`
+  const user = picklistJob.value.user?.name || 'Unassigned'
+  const date = picklistJob.value.create_dt ? formatDateTime(picklistJob.value.create_dt).date : '-'
+  return `${building} • ${items} • ${user} • ${date}`
+})
+
+const headerMenuOptions = computed(() => [
+  {
+    label: 'Assign User',
+    hidden: !checkUserPermission('can_assign_and_reassign_picklist_job'),
+    disabled: appIsOffline.value || editJob.value || picklistJob.value.status == 'Paused' || picklistJob.value.status == 'Completed',
+    action: () => {
+      editJob.value = true
+    }
+  },
+  {
+    label: 'Delete Job',
+    hidden: !checkUserPermission('can_delete_picklist_job'),
+    color: 'negative',
+    disabled: appIsOffline.value || editJob.value || picklistJob.value.status == 'Completed' || picklistItems.value.some(itm => itm.status !== 'PickList'),
+    action: () => {
+      showConfirmationModal.value = 'DeleteJob'
+    }
+  },
+  {
+    label: 'Print Job',
+    action: () => {
+      batchSheetComponent.value.printBatchReport()
+    }
+  },
+  {
+    label: 'View History',
+    action: () => {
+      showAuditTrailModal.value = 'pick_lists'
+    }
+  }
+])
+
+const getStatusColor = (status) => {
+  const colors = {
+    Created: 'grey',
+    Running: 'info',
+    Paused: 'warning',
+    Completed: 'positive'
+  }
+  return colors[status] || 'grey'
+}
+
 onBeforeMount(() => {
   if (currentScreenSize.value == 'xs') {
     itemTableVisibleColumns.value = [
-      'actions',
       'barcode',
       'tray_barcode',
       'item_location',
-      'status'
+      'status',
+      'actions'
     ]
   }
 })
@@ -549,7 +504,7 @@ const triggerItemScan = (barcode_value) => {
 
 const handleOptionMenu = async (action, rowData) => {
   switch (action.text) {
-    case 'Edit':
+    case 'Assign User':
       editJob.value = true
       return
     case 'Delete Job':
@@ -798,11 +753,42 @@ const updatePicklistItem = async (barcode_value) => {
   }
 }
 const loadPicklistItem = (barcode_value) => {
-  // since we already have all the items data we just need to set the refileItem from the refileJob items directly
+  // since we already have all the items data we just need to set the refileItem from the picklistJob items directly
   getPicklistJobItem(barcode_value)
   showPicklistItemDetailModal.value = true
 }
 </script>
 
 <style lang="scss" scoped>
+.picklist-details {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.user-assign-card {
+  border-radius: 12px;
+  background: white;
+}
+
+.table-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.form-group-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #a0aec0;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.btn-modern {
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-weight: 600;
+}
 </style>

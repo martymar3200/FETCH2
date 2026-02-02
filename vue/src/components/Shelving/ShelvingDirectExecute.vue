@@ -7,7 +7,7 @@
       :status="job?.status"
       :status-color="getStatusColor(job?.status)"
       :subtitle="subtitle"
-      :menu-options="menuOptions"
+      :menu-options="headerMenuOptions"
     >
       <template #actions>
         <JobActionButtons
@@ -26,6 +26,53 @@
       :completed="shelvedCount"
       :total="totalCount"
     />
+
+    <!-- Quick User Assign Card -->
+    <q-card
+      v-if="editJob"
+      flat
+      bordered
+      class="q-mb-lg user-assign-card"
+    >
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6 text-bold">
+          Assign User
+        </div>
+        <q-space />
+        <q-btn
+          flat
+          round
+          dense
+          icon="close"
+          @click="editJob = false"
+        />
+      </q-card-section>
+
+      <q-card-section class="row q-col-gutter-md items-end">
+        <div class="col-12 col-md-4">
+          <label class="form-group-label">Select User</label>
+          <SelectInput
+            v-model="job.assigned_user_id"
+            :options="users"
+            option-type="users"
+            option-value="id"
+            option-label="name"
+            placeholder="Select a user"
+          />
+        </div>
+        <div class="col-auto">
+          <q-btn
+            no-caps
+            unelevated
+            color="accent"
+            label="Save Assignment"
+            class="btn-modern"
+            :loading="actionLoading"
+            @click="updateUserAssignment"
+          />
+        </div>
+      </q-card-section>
+    </q-card>
 
     <!-- Not Started Message -->
     <q-card
@@ -263,6 +310,7 @@ import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
 import { useGlobalStore } from '@/stores/global-store'
+import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
 import { useQuasar } from 'quasar'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
@@ -275,6 +323,7 @@ import JobProgressBar from '@/components/Job/JobProgressBar.vue'
 import JobActionButtons from '@/components/Job/JobActionButtons.vue'
 import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
+import SelectInput from '@/components/SelectInput.vue'
 import ShelvingBatchSheet from '@/components/Shelving/ShelvingBatchSheet.vue'
 
 const router = useRouter()
@@ -288,6 +337,7 @@ const { addDataToIndexDb, getDataInIndexDb, deleteDataInIndexDb } = useIndexDbHa
 
 // Store refs
 const { appIsLoadingData, appIsOffline, appPendingSync } = storeToRefs(useGlobalStore())
+const { users } = storeToRefs(useOptionStore())
 const { shelvingJob, shelvingJobContainers, allContainersShelved } = storeToRefs(shelvingStore)
 const { getShelfByBarcode, patchShelvingJob, postShelvingJobContainer, resetShelvingJobContainer } = shelvingStore
 
@@ -311,6 +361,7 @@ const showCompleteDialog = ref(false)
 const showCancelDialog = ref(false)
 const showAuditTrailModal = ref(false)
 const batchSheetComponent = ref(null)
+const editJob = ref(false)
 
 // Input refs
 const shelfInput = ref(null)
@@ -330,11 +381,24 @@ const subtitle = computed(() => {
     parts.push(job.value.size_class.name)
   }
   parts.push(`${shelvedCount.value}/${totalCount.value} shelved`)
+  const user = job.value?.assigned_user?.name || 'Unassigned'
+  parts.push(user)
   return parts.join(' • ')
 })
 
-const menuOptions = computed(() => {
+const headerMenuOptions = computed(() => {
   const options = []
+
+  // Assign User
+  options.push({
+    label: 'Assign User',
+    icon: 'person_add',
+    hidden: !checkUserPermission('can_assign_and_reassign_shelving_job'),
+    disabled: editJob.value || job.value?.status === 'Completed',
+    action: () => {
+      editJob.value = true
+    }
+  })
 
   // View History - always available
   options.push({
@@ -366,6 +430,28 @@ const menuOptions = computed(() => {
 
   return options
 })
+
+const updateUserAssignment = async () => {
+  actionLoading.value = true
+  try {
+    await patchShelvingJob({
+      id: job.value.id,
+      assigned_user_id: job.value.assigned_user_id
+    })
+    $q.notify({
+      type: 'positive',
+      message: 'User assignment updated'
+    })
+    editJob.value = false
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to update user assignment'
+    })
+  } finally {
+    actionLoading.value = false
+  }
+}
 
 const containerColumns = [
   {
@@ -664,5 +750,16 @@ onMounted(async () => {
 
 .bg-accent-1 {
   background: linear-gradient(135deg, rgba(var(--q-accent), 0.1) 0%, rgba(var(--q-accent), 0.05) 100%);
+}
+
+.user-assign-card {
+  border-radius: 12px;
+  background: white;
+}
+
+.btn-modern {
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-weight: 600;
 }
 </style>

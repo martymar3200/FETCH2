@@ -8,7 +8,7 @@
 
     <template v-if="!pageInitLoading">
       <PicklistDashboard v-if="!route.params.jobId" />
-      <PicklistDetails v-else-if="route.params.jobId" />
+      <PicklistExecute v-else-if="route.params.jobId" />
     </template>
   </q-page>
 </template>
@@ -22,7 +22,7 @@ import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import PicklistDashboard from '@/components/Picklist/PicklistDashboard.vue'
-import PicklistDetails from '@/components/Picklist/PicklistDetails.vue'
+import PicklistExecute from '@/components/Picklist/PicklistExecute.vue'
 
 const route = useRoute()
 

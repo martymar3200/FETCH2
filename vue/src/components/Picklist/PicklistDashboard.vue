@@ -19,7 +19,7 @@
         >
           <template #heading-row>
             <div
-              class="col-sm-5 col-md-auto q-mb-md-sm"
+              class="col-sm-5 col-md-12 col-lg-auto"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? '' : 'self-center'"
             >
               <h1 class="text-h4 text-bold">
@@ -29,7 +29,6 @@
 
             <div class="col-grow" />
 
-            <!-- Filter buttons - right justified -->
             <div
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
@@ -52,6 +51,7 @@
                 color="grey-7"
                 label="Clear"
                 icon="clear_all"
+                class="q-mr-md"
                 @click="clearColumnFilters"
               />
             </div>
@@ -77,7 +77,8 @@
                   clearable
                   placeholder="Search..."
                   class="column-filter-input"
-                  @keyup.enter="applyColumnFilters"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
                   @click.stop
                 >
                   <template #prepend>

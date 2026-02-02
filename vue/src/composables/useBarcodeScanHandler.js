@@ -36,6 +36,12 @@ export function useBarcodeScanHandler (options = {}) {
 
   // MODIFIED: This function now contains the logic for BOTH modes.
   function barcodeScanEntry (event) {
+    // Ignore keypresses if the user is typing in an input or textarea
+    // This prevents double-entry where the input handles the key AND this global handler handles it.
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return
+    }
+
     if (waitForEnterKey) {
       // --- NEW 'Enter Key' Mode Logic ---
       if (event.key === 'Enter') {

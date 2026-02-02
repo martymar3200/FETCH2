@@ -671,11 +671,9 @@ def update_item_in_refile_job(
         raise NotFound(detail=f"Item ID {item_id} not found")
 
     # Update the item record with the mutated data
-    mutated_data = refile_job_item_input.model_dump(exclude_unset=True)
     update_dt = datetime.now(timezone.utc)
-    for key, value in mutated_data.items():
-        setattr(existing_item, key, value)
     setattr(existing_item, "update_dt", update_dt)
+    setattr(existing_item, "status", "In")
     setattr(existing_item, "scanned_for_refile", True)
     setattr(existing_item, "scanned_for_refile_dt", update_dt)
     # Commit the changes to the database
@@ -719,12 +717,10 @@ def update_non_tray_item_in_refile_job(
         raise NotFound(detail=f"Non Tray Item ID {non_tray_item_id} not found")
 
     # Update the item record with the mutated data
-    mutated_data = refile_job_non_tray_item_input.model_dump(exclude_unset=True)
     update_dt = datetime.now(timezone.utc)
 
-    for key, value in mutated_data.items():
-        setattr(existing_item, key, value)
     setattr(existing_item, "update_dt", update_dt)
+    setattr(existing_item, "status", "In")
     setattr(existing_item, "scanned_for_refile", True)
     setattr(existing_item, "scanned_for_refile_dt", update_dt)
 

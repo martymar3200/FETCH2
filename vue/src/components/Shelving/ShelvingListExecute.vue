@@ -1,125 +1,108 @@
 <template>
   <div class="shelving-list-execute">
-    <!-- Header -->
-    <div class="row q-mb-lg items-center">
-      <div class="col">
-        <div class="row items-center">
-          <!-- Three-dot menu - left of title -->
+    <JobPageHeader
+      title="Shelving List Job"
+      :job-id="job?.id"
+      :status="job?.status"
+      :status-color="getStatusColor(job?.status)"
+      :subtitle="headerSubtitle"
+      :menu-options="headerMenuOptions"
+    >
+      <template #actions>
+        <div v-if="job?.status !== 'Completed'">
           <q-btn
+            v-if="job?.status === 'Created'"
+            no-caps
+            unelevated
+            color="accent"
+            label="Start Job"
+            class="btn-modern q-mr-sm"
+            @click="startJob"
+          />
+          <q-btn
+            v-if="job?.status === 'Running'"
+            no-caps
             flat
-            round
-            dense
-            icon="more_vert"
+            color="warning"
+            label="Pause"
             class="q-mr-sm"
-          >
-            <q-menu>
-              <q-list style="min-width: 150px">
-                <!-- View History -->
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="showAuditTrailModal = true"
-                >
-                  <q-item-section avatar>
-                    <q-icon
-                      name="history"
-                      color="grey"
-                    />
-                  </q-item-section>
-                  <q-item-section>View History</q-item-section>
-                </q-item>
-                <!-- Print Job -->
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="printJob"
-                >
-                  <q-item-section avatar>
-                    <q-icon
-                      name="print"
-                      color="grey"
-                    />
-                  </q-item-section>
-                  <q-item-section>Print Job</q-item-section>
-                </q-item>
-                <!-- Cancel Job -->
-                <q-item
-                  v-if="job?.status === 'Created'"
-                  clickable
-                  v-close-popup
-                  @click="showCancelDialog = true"
-                >
-                  <q-item-section avatar>
-                    <q-icon
-                      name="cancel"
-                      color="negative"
-                    />
-                  </q-item-section>
-                  <q-item-section>Cancel Job</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-          <h1 class="text-h4 text-bold q-mb-none">
-            Shelving Job #{{ jobId }}
-            <q-badge
-              :color="getStatusColor(job?.status)"
-              :label="job?.status"
-              class="q-ml-sm"
-            />
-          </h1>
+            @click="pauseJob"
+          />
+          <q-btn
+            v-if="job?.status === 'Paused'"
+            no-caps
+            unelevated
+            color="accent"
+            label="Resume"
+            class="btn-modern q-mr-sm"
+            @click="resumeJob"
+          />
+          <q-btn
+            v-if="allShelved && job?.status === 'Running'"
+            no-caps
+            unelevated
+            color="positive"
+            label="Complete Job"
+            class="btn-modern"
+            @click="completeJob"
+          />
         </div>
-        <p class="text-grey-7 q-mb-none">
-          {{ job?.mode === 'PreAssigned' ? 'Pre-Assigned Mode' : 'Manual Mode' }} •
-          {{ shelvedCount }}/{{ totalCount }} shelved
-        </p>
-      </div>
-      <div class="col-auto">
-        <q-btn
-          v-if="job?.status === 'Created'"
-          no-caps
-          unelevated
-          color="accent"
-          label="Start Job"
-          class="btn-modern q-mr-sm"
-          @click="startJob"
-        />
-        <q-btn
-          v-if="job?.status === 'Running'"
-          no-caps
-          flat
-          color="warning"
-          label="Pause"
-          @click="pauseJob"
-        />
-        <q-btn
-          v-if="job?.status === 'Paused'"
-          no-caps
-          unelevated
-          color="accent"
-          label="Resume"
-          class="btn-modern"
-          @click="resumeJob"
-        />
-        <q-btn
-          v-if="allShelved && job?.status === 'Running'"
-          no-caps
-          unelevated
-          color="positive"
-          label="Complete Job"
-          class="btn-modern q-ml-sm"
-          @click="completeJob"
-        />
-      </div>
-    </div>
+      </template>
+    </JobPageHeader>
 
     <!-- Progress Bar -->
-    <q-linear-progress
-      :value="progressValue"
-      color="accent"
-      size="12px"
-      class="q-mb-lg rounded-borders"
+    <JobProgressBar
+      :completed="shelvedCount"
+      :total="totalCount"
+      class="q-mb-lg"
     />
+
+    <!-- Quick User Assign Card -->
+    <q-card
+      v-if="editJob"
+      flat
+      bordered
+      class="q-mb-lg user-assign-card"
+    >
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6 text-bold">
+          Assign User
+        </div>
+        <q-space />
+        <q-btn
+          flat
+          round
+          dense
+          icon="close"
+          @click="editJob = false"
+        />
+      </q-card-section>
+
+      <q-card-section class="row q-col-gutter-md items-end">
+        <div class="col-12 col-md-4">
+          <label class="form-group-label">Select User</label>
+          <SelectInput
+            v-model="job.assigned_user_id"
+            :options="users"
+            option-type="users"
+            option-value="id"
+            option-label="name"
+            placeholder="Select a user"
+          />
+        </div>
+        <div class="col-auto">
+          <q-btn
+            no-caps
+            unelevated
+            color="accent"
+            label="Save Assignment"
+            class="btn-modern"
+            :loading="actionLoading"
+            @click="updateUserAssignment"
+          />
+        </div>
+      </q-card-section>
+    </q-card>
 
     <!-- Scan Section -->
     <q-card
@@ -462,14 +445,22 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
+import { useOptionStore } from '@/stores/option-store'
+import { storeToRefs } from 'pinia'
 import { useQuasar } from 'quasar'
+import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
+import JobPageHeader from '@/components/Job/JobPageHeader.vue'
+import JobProgressBar from '@/components/Job/JobProgressBar.vue'
+import SelectInput from '@/components/SelectInput.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
 import ShelvingBatchSheet from '@/components/Shelving/ShelvingBatchSheet.vue'
 
 const route = useRoute()
 const router = useRouter()
 const shelvingStore = useShelvingStore()
+const { users } = storeToRefs(useOptionStore())
 const $q = useQuasar()
+const { checkUserPermission } = usePermissionHandler()
 
 // Props
 const jobId = computed(() => route.params.id)
@@ -505,6 +496,8 @@ const showCancelDialog = ref(false)
 const cancelling = ref(false)
 const showAuditTrailModal = ref(false)
 const batchSheetComponent = ref(null)
+const editJob = ref(false)
+const actionLoading = ref(false)
 
 // Computed
 const filteredContainers = computed(() => {
@@ -516,8 +509,51 @@ const filteredContainers = computed(() => {
 
 const totalCount = computed(() => containers.value.length)
 const shelvedCount = computed(() => containers.value.filter(c => c.status === 'Shelved').length)
-const progressValue = computed(() => totalCount.value > 0 ? shelvedCount.value / totalCount.value : 0)
 const allShelved = computed(() => totalCount.value > 0 && shelvedCount.value === totalCount.value)
+
+const headerSubtitle = computed(() => {
+  const mode = job.value?.mode === 'PreAssigned' ? 'Pre-Assigned Mode' : 'Manual Mode'
+  const shelved = `${shelvedCount.value}/${totalCount.value} shelved`
+  const user = job.value?.assigned_user?.name || 'Unassigned'
+  return `${mode} • ${shelved} • ${user}`
+})
+
+const headerMenuOptions = computed(() => {
+  const options = [
+    {
+      label: 'Assign User',
+      hidden: !checkUserPermission('can_assign_and_reassign_shelving_job'),
+      disabled: editJob.value || job.value?.status === 'Completed',
+      action: () => {
+        editJob.value = true
+      }
+    },
+    {
+      label: 'View History',
+      action: () => {
+        showAuditTrailModal.value = true
+      }
+    },
+    {
+      label: 'Print Job',
+      action: () => {
+        printJob()
+      }
+    }
+  ]
+
+  if (job.value?.status === 'Created') {
+    options.push({
+      label: 'Cancel Job',
+      color: 'negative',
+      action: () => {
+        showCancelDialog.value = true
+      }
+    })
+  }
+
+  return options
+})
 
 const containerColumns = [
   {
@@ -579,6 +615,29 @@ const getStatusColor = (status) => {
     Error: 'negative'
   }
   return colors[status] || 'grey'
+}
+
+const updateUserAssignment = async () => {
+  actionLoading.value = true
+  try {
+    await shelvingStore.patchShelvingJob({
+      id: jobId.value,
+      assigned_user_id: job.value.assigned_user_id
+    })
+    job.value = shelvingStore.shelvingJob
+    $q.notify({
+      type: 'positive',
+      message: 'User assignment updated'
+    })
+    editJob.value = false
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to update user assignment'
+    })
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const loadJob = async () => {

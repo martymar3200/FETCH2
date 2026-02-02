@@ -1,103 +1,18 @@
 <template>
-  <InfoDisplayLayout class="refile-job">
-    <template #number-box-content>
-      <div class="flex q-mb-xs">
-        <MoreOptionsMenu
-          :options="[
-            { text: 'Edit Job Info', hidden: !checkUserPermission('can_assign_and_reassign_refile_job'), disabled: appIsOffline || editJobInfo || editItems || refileJob.status == 'Paused' || refileJob.status == 'Completed' },
-            { text: 'Edit Items', disabled: appIsOffline || editJobInfo || editItems || refileJob.status == 'Paused' || refileJob.status == 'Completed' },
-            { text: 'Delete Job', hidden: !checkUserPermission('can_delete_refile_job'), optionClass: 'text-negative', disabled: appIsOffline || editJobInfo || editItems || refileJob.status == 'Completed' || (refileJob.refile_job_items && refileJob.refile_job_items.some(itm => itm.status == 'In'))},
-            { text: 'Print Job' },
-            { text: 'View History' }
-          ]"
-          class="q-mr-xs"
-          @click="handleOptionMenu"
-        />
-        <h1
-          id="refileJobId"
-          class="info-display-details-label text-h4"
-        >
-          Refile Job #:
-        </h1>
-      </div>
-      <p class="info-display-number-box text-h4">
-        {{ refileJob.id }}
-      </p>
-    </template>
-
-    <template #details-content>
-      <div class="col-xs-6 col-sm-6 col-md-grow q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Assigned User:
-          </label>
-          <p
-            v-if="!editJobInfo"
-            class="text-body1"
-          >
-            {{ refileJob.assigned_user?.name }}
-          </p>
-          <SelectInput
-            v-else
-            v-model="refileJob.assigned_user_id"
-            :options="users"
-            option-type="users"
-            option-value="id"
-            option-label="name"
-            aria-label="userSelect"
-            class="q-pr-xs-sm q-pr-md-none"
-          />
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            # of Items:
-          </label>
-          <p class="text-body1">
-            {{ refileJob.refile_job_items ? refileJob.refile_job_items.length : 0 }}
-          </p>
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-6 col-md-grow q-mb-xs-md q-mb-sm-md q-mb-md-none q-mr-sm-none q-mr-md-lg">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Date Created
-          </label>
-          <p class="text-body1">
-            {{ formatDateTime(refileJob.create_dt).date }}
-          </p>
-        </div>
-      </div>
-      <div class="col-xs-6 col-sm-auto col-md-auto q-mb-xs-none q-mb-sm-md q-mb-md-none q-mr-sm-auto">
-        <div class="info-display-details">
-          <label
-            class="info-display-details-label-2 text-h6"
-          >
-            Status
-          </label>
-          <p
-            class="text-body1 text-center outline"
-            :class="refileJob.status == 'Completed' || refileJob.status == 'Created' ? 'text-highlight' : refileJob.status == 'Paused' || refileJob.status == 'Running' ? 'text-highlight-warning' : refileJob.status == 'New' ? 'text-highlight-accent' : null "
-          >
-            {{ refileJob.status }}
-          </p>
-        </div>
-      </div>
-
-      <div
-        v-if="currentScreenSize !== 'xs'"
-        class="col-sm-12 col-md-12 col-lg-3 q-ml-auto"
-      >
+  <div class="refile-job-details">
+    <!-- Header using shared component -->
+    <JobPageHeader
+      title="Refile Job"
+      :job-id="refileJob.id"
+      :status="refileJob.status"
+      :status-color="getStatusColor(refileJob.status)"
+      :subtitle="headerSubtitle"
+      :menu-options="headerMenuOptions"
+    >
+      <template #actions>
         <div
           v-if="editJobInfo || editItems"
-          class="info-display-details-action q-mt-sm-sm q-mt-md-md"
+          class="row q-gutter-x-sm"
         >
           <q-btn
             no-caps
@@ -105,7 +20,7 @@
             :color="editJobInfo ? 'accent' : 'negative'"
             :label="editJobInfo ? 'Save Edits' : 'Revert Items to Queue'"
             :disable="editItems && !selectedItems.length"
-            class="btn-no-wrap text-body1 q-mr-sm"
+            class="btn-modern"
             :loading="appActionIsLoadingData"
             @click="editJobInfo ? updateRefileJob() : revertItemsToQueue()"
           />
@@ -115,122 +30,293 @@
             outline
             color="accent"
             label="Cancel"
-            class="btn-no-wrap text-body1"
+            class="btn-modern-outline"
             @click="cancelRefileJobEdits"
           />
         </div>
-        <div
-          v-else-if="refileJob.status !== 'Completed'"
-          class="info-display-details-action q-mt-sm-sm q-mt-md-md"
-        >
-          <q-btn
-            v-if="refileJob.status !== 'Created'"
-            no-caps
-            unelevated
-            outline
-            color="accent"
-            :icon="refileJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'"
-            :label="refileJob.status == 'Paused' ? 'Resume Job' : 'Pause Job'"
-            class="btn-no-wrap text-body1 q-mr-sm"
-            :disabled="appPendingSync || !checkUserPermission('can_edit_refile_job')"
-            @click="refileJob.status == 'Paused' ? updateRefileJobStatus('Running') : updateRefileJobStatus('Paused')"
-          />
-          <q-btn
-            no-caps
-            unelevated
-            color="positive"
-            :label="refileJob.status == 'Created' ? 'Execute Refile Job' : 'Complete Job'"
-            class="btn-no-wrap text-body1"
-            :disabled="appIsOffline || appPendingSync || refileJob.status == 'Paused' || !allItemsRefiled || !checkUserPermission('can_execute_and_complete_refile_job')"
-            :loading="appActionIsLoadingData"
-            @click="refileJob.status == 'Created' ? executeRefileJob() : showConfirmationModal = 'CompleteJob'"
-          />
-        </div>
-      </div>
-      <MobileActionBar
-        v-else-if="currentScreenSize == 'xs' && (editJobInfo || editItems)"
-        :button-one-color="editJobInfo ? 'accent' : 'negative'"
-        :button-one-label="editJobInfo ? 'Save Edits' : 'Revert Items to Queue'"
-        :button-one-outline="false"
-        :button-one-loading="appActionIsLoadingData"
-        :button-one-disabled="editItems && !selectedItems.length"
-        @button-one-click="editJobInfo ? updateRefileJob() : revertItemsToQueue()"
-        button-two-color="accent"
-        :button-two-label="'Cancel'"
-        :button-two-outline="true"
-        @button-two-click="cancelRefileJobEdits"
-      />
-      <MobileActionBar
-        v-else-if="refileJob.status !== 'Completed'"
-        button-one-color="accent"
-        :button-one-icon="refileJob.status !== 'Paused' ? 'mdi-pause' : 'mdi-play'"
-        :button-one-label="refileJob.status == 'Paused' ? 'Resume Job' : 'Pause Job'"
-        :button-one-outline="true"
-        :button-one-disabled="appPendingSync || refileJob.status == 'Created' || !checkUserPermission('can_edit_refile_job')"
-        @button-one-click="refileJob.status == 'Paused' ? updateRefileJobStatus('Running') : updateRefileJobStatus('Paused')"
-        button-two-color="positive"
-        :button-two-label="refileJob.status == 'Created' ? 'Execute Refile Job' : 'Complete Job'"
-        :button-two-outline="false"
-        :button-two-disabled="appIsOffline || appPendingSync || refileJob.status == 'Paused' || !allItemsRefiled || !checkUserPermission('can_execute_and_complete_refile_job')"
-        :button-two-loading="appActionIsLoadingData"
-        @button-two-click="refileJob.status == 'Created' ? executeRefileJob() : showConfirmationModal = 'CompleteJob'"
-      />
-    </template>
+        <q-btn
+          v-else-if="refileJob.status === 'Created'"
+          no-caps
+          unelevated
+          color="accent"
+          label="Start Refile Job"
+          class="btn-modern"
+          :disabled="appIsOffline || appPendingSync || !checkUserPermission('can_execute_and_complete_refile_job')"
+          :loading="appActionIsLoadingData"
+          @click="executeRefileJob"
+        />
+      </template>
+    </JobPageHeader>
 
-    <template #table-content>
-      <EssentialTable
-        ref="refileItemsTableComponent"
-        :table-columns="itemTableColumns"
-        :table-visible-columns="itemTableVisibleColumns"
-        :filter-options="itemTableFilters"
-        :table-data="refileJobItems"
-        :row-key="row => renderItemBarcodeDisplay(row)"
-        :enable-table-reorder="false"
-        :enable-selection="editItems"
-        :heading-row-class="'q-mb-lg q-px-xs-sm q-px-sm-md'"
-        :heading-filter-class="currentScreenSize == 'xs' ? 'col-xs-6 q-mr-auto' : 'q-ml-auto'"
-        :highlight-row-class="'justify-end bg-color-green-light'"
-        :highlight-row-key="'status'"
-        :highlight-row-value="'In'"
-        @selected-table-row="loadRefileItem(renderItemBarcodeDisplay($event))"
-        @selected-data="selectedItems = $event"
-      >
-        <template #heading-row>
-          <div class="col-xs-7 col-sm-5 q-mb-md-sm q-mr-auto">
-            <h2 class="text-h4 text-bold">
-              Items in Job:
-            </h2>
+    <!-- Quick Edit Card (Only when editing user) -->
+    <q-card
+      v-if="editJobInfo"
+      flat
+      bordered
+      class="details-card q-mb-lg"
+    >
+      <q-card-section class="q-pa-md">
+        <div class="row q-col-gutter-md items-center">
+          <div class="col-12 col-sm-6">
+            <div class="detail-item">
+              <label class="detail-label">Building</label>
+              <div class="detail-value">
+                {{ refileJob.building?.name || '-' }}
+              </div>
+            </div>
           </div>
-        </template>
+          <div class="col-12 col-sm-6">
+            <div class="detail-item">
+              <label class="detail-label">Assigned User</label>
+              <SelectInput
+                v-model="refileJob.assigned_user_id"
+                :options="users"
+                option-type="users"
+                option-value="id"
+                option-label="name"
+                class="q-mt-xs"
+              />
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
 
-        <template #table-td="{ colName, props, value }">
-          <span
-            v-if="colName == 'actions'"
-          >
-            <MoreOptionsMenu
-              :options="[{ text: 'Revert Item to Queue', disabled: props.row.status !== 'Out' || refileJob.status == 'Paused' || refileJob.status == 'Completed' || !checkUserPermission('can_edit_refile_job') }]"
-              class=""
-              @click="handleOptionMenu($event, props.row)"
-            />
-          </span>
-          <span
-            v-else-if="colName == 'scanned_for_refile'"
-            class="text-bold text-nowrap"
-            :class="value == 'In' ? 'text-positive' : ''"
-          >
-            {{ value == 'In' ? 'Refiled' : '' }}
-            <q-icon
-              v-if="value == 'In'"
-              name="mdi-check-circle"
-              color="positive"
-              size="25px"
-              class="text-bold q-ml-xs"
-            />
-          </span>
-        </template>
-      </EssentialTable>
-    </template>
-  </InfoDisplayLayout>
+    <!-- Essential Table Section -->
+    <q-card
+      flat
+      bordered
+      class="table-card"
+    >
+      <q-card-section class="q-pa-none">
+        <EssentialTable
+          ref="refileItemsTableComponent"
+          :table-columns="itemTableColumns"
+          :table-visible-columns="itemTableVisibleColumns"
+          :filter-options="itemTableFilters"
+          :table-data="refileJobItems"
+          :row-key="row => renderItemBarcodeDisplay(row)"
+          :enable-table-reorder="false"
+          :hide-table-rearrange="true"
+          :enable-selection="editItems"
+          :heading-row-class="'q-mb-md q-px-md q-pt-md'"
+          :heading-filter-class="'q-ml-auto'"
+          @selected-table-row="loadRefileItem(renderItemBarcodeDisplay($event))"
+          @selected-data="selectedItems = $event"
+        >
+          <template #heading-row>
+            <div class="col">
+              <h2 class="text-h6 text-bold q-ma-none">
+                Items in Job
+              </h2>
+              <div
+                v-if="editItems"
+                class="text-caption text-negative"
+              >
+                Select items to revert to the refile queue
+              </div>
+            </div>
+            <div class="col-auto flex items-center">
+              <q-btn
+                flat
+                dense
+                no-caps
+                :color="showFilterRow ? 'accent' : 'grey-7'"
+                :label="showFilterRow ? 'Hide Filters' : 'Show Filters'"
+                :icon="showFilterRow ? 'filter_alt' : 'filter_alt_off'"
+                class="q-mr-sm"
+                @click="showFilterRow = !showFilterRow"
+              />
+              <q-btn
+                v-if="showFilterRow"
+                flat
+                dense
+                no-caps
+                color="grey-7"
+                label="Clear"
+                icon="clear_all"
+                class="q-mr-md"
+                @click="clearColumnFilters"
+              />
+              <q-btn-toggle
+                v-model="statusFilter"
+                no-caps
+                rounded
+                unelevated
+                toggle-color="accent"
+                color="white"
+                text-color="grey-7"
+                class="toggle-modern-rounded"
+                :options="[
+                  { label: 'All', value: 'all' },
+                  { label: 'Pending', value: 'Out' },
+                  { label: 'Refiled', value: 'In' }
+                ]"
+              />
+            </div>
+          </template>
+
+          <!-- Filter row inside table header -->
+          <template #header-filter-row="{ cols }">
+            <q-tr
+              v-if="showFilterRow"
+              class="filter-row"
+            >
+              <q-th
+                v-for="col in cols"
+                :key="col.name"
+                class="filter-cell"
+              >
+                <!-- Item Location filter -->
+                <q-input
+                  v-if="col.name === 'item_location'"
+                  v-model="columnFilters.item_location"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+
+                <!-- Tray Barcode filter -->
+                <q-input
+                  v-else-if="col.name === 'tray_barcode'"
+                  v-model="columnFilters.tray_barcode"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+
+                <!-- Barcode filter -->
+                <q-input
+                  v-else-if="col.name === 'barcode'"
+                  v-model="columnFilters.barcode"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+
+                <!-- Owner filter -->
+                <q-input
+                  v-else-if="col.name === 'owner'"
+                  v-model="columnFilters.owner"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+
+                <!-- Size Class filter -->
+                <q-input
+                  v-else-if="col.name === 'size_class'"
+                  v-model="columnFilters.size_class"
+                  dense
+                  outlined
+                  clearable
+                  placeholder="Search..."
+                  class="column-filter-input"
+                  debounce="400"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                >
+                  <template #prepend>
+                    <q-icon
+                      name="search"
+                      size="16px"
+                      color="grey-6"
+                    />
+                  </template>
+                </q-input>
+              </q-th>
+            </q-tr>
+          </template>
+
+          <template #table-td="{ colName, props: cellProps, value }">
+            <span v-if="colName == 'actions'">
+              <q-btn
+                v-if="cellProps.row.status === 'Out' && refileJob.status !== 'Paused' && refileJob.status !== 'Completed' && checkUserPermission('can_edit_refile_job')"
+                flat
+                round
+                dense
+                size="sm"
+                icon="undo"
+                color="negative"
+                @click="removeRefileItems([cellProps.row.barcode.value])"
+              >
+                <q-tooltip>Revert Item to Queue</q-tooltip>
+              </q-btn>
+            </span>
+            <span v-else-if="colName == 'scanned_for_refile'">
+              <q-chip
+                v-if="value === 'In'"
+                color="positive"
+                text-color="white"
+                icon="check_circle"
+                label="Refiled"
+                dense
+              />
+              <q-chip
+                v-else
+                color="grey-4"
+                text-color="grey-9"
+                label="Pending"
+                dense
+              />
+            </span>
+          </template>
+        </EssentialTable>
+      </q-card-section>
+    </q-card>
+  </div>
 
   <!-- confirmation modal -->
   <PopupModal
@@ -307,10 +393,8 @@ import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
-import InfoDisplayLayout from '@/components/InfoDisplayLayout.vue'
+import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
-import MobileActionBar from '@/components/MobileActionBar.vue'
-import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import SelectInput from '@/components/SelectInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import RefileItemDetailModal from '@/components/Refile/RefileItemDetailModal.vue'
@@ -347,7 +431,6 @@ const {
 const {
   refileJob,
   originalRefileJob,
-  allItemsRefiled,
   refileItem
 } = storeToRefs(useRefileStore())
 
@@ -358,23 +441,15 @@ const editJobInfo = ref(false)
 const editItems = ref(false)
 const selectedItems = ref([])
 const itemTableVisibleColumns = ref([
-  'actions',
   'item_location',
   'tray_barcode',
   'barcode',
   'owner',
   'size_class',
-  'scanned_for_refile'
+  'scanned_for_refile',
+  'actions'
 ])
 const itemTableColumns = ref([
-  {
-    name: 'actions',
-    field: 'actions',
-    label: '',
-    align: 'center',
-    sortable: false,
-    required: true
-  },
   {
     name: 'item_location',
     field: row => row.tray ? getItemLocation(row.tray) : getItemLocation(row),
@@ -418,65 +493,174 @@ const itemTableColumns = ref([
     sortable: false,
     required: true,
     headerStyle: 'max-width: 200px'
+  },
+  {
+    name: 'actions',
+    field: 'actions',
+    label: '',
+    align: 'center',
+    sortable: false,
+    required: true
   }
 ])
+const totalItemsCount = computed(() => refileJob.value.refile_job_items ? refileJob.value.refile_job_items.length : 0)
+const refiledItemsCount = computed(() => refileJob.value.refile_job_items ? refileJob.value.refile_job_items.filter(i => i.status === 'In').length : 0)
+
+const headerSubtitle = computed(() => {
+  let building = '-'
+  if (refileJob.value.refile_job_items?.[0]) {
+    const firstItem = refileJob.value.refile_job_items[0]
+    const loc = firstItem.tray ? firstItem.tray.shelf_position?.location : firstItem.shelf_position?.location
+    if (loc) {
+      building = loc.split('-')[0]
+    }
+  }
+  const items = `${refiledItemsCount.value} of ${totalItemsCount.value} items`
+  const user = refileJob.value.assigned_user?.name || 'Unassigned'
+  return `${building} • ${items} • ${user}`
+})
+
+const headerMenuOptions = computed(() => [
+  {
+    label: 'Assign User',
+    hidden: !checkUserPermission('can_assign_and_reassign_refile_job'),
+    disabled: appIsOffline.value || editJobInfo.value || editItems.value || refileJob.value.status == 'Paused' || refileJob.value.status == 'Completed',
+    action: () => {
+      editJobInfo.value = true
+    }
+  },
+  {
+    label: 'Edit Items',
+    disabled: appIsOffline.value || editJobInfo.value || editItems.value || refileJob.value.status == 'Paused' || refileJob.value.status == 'Completed',
+    action: () => {
+      editItems.value = true
+    }
+  },
+  {
+    label: 'Delete Job',
+    hidden: !checkUserPermission('can_delete_refile_job'),
+    color: 'negative',
+    disabled: appIsOffline.value || editJobInfo.value || editItems.value || refileJob.value.status == 'Completed' || (refileJob.value.refile_job_items && refileJob.value.refile_job_items.some(itm => itm.status == 'In')),
+    action: () => {
+      showConfirmationModal.value = 'DeleteJob'
+    }
+  },
+  {
+    label: 'Print Job',
+    action: () => batchSheetComponent.value.printBatchReport()
+  },
+  {
+    label: 'View History',
+    action: () => {
+      showAuditTrailModal.value = 'refile_jobs'
+    }
+  }
+])
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Created': return 'blue'
+    case 'Running': return 'accent'
+    case 'Paused': return 'orange'
+    case 'Completed': return 'positive'
+    default: return 'grey'
+  }
+}
+
+// Logic - injections need to be before computeds that use them
+const handleAlert = inject('handle-alert')
+const currentIsoDate = inject('current-iso-date')
+const getItemLocation = inject('get-item-location')
+const renderItemBarcodeDisplay = inject('render-item-barcode-display')
+
+const statusFilter = ref('all')
+const showFilterRow = ref(false)
+const columnFilters = ref({
+  item_location: '',
+  tray_barcode: '',
+  barcode: '',
+  owner: '',
+  size_class: ''
+})
+
+const clearColumnFilters = () => {
+  columnFilters.value = {
+    item_location: '',
+    tray_barcode: '',
+    barcode: '',
+    owner: '',
+    size_class: ''
+  }
+}
+
+const applyColumnFilters = () => {
+  // Filtering is handled reactively in the computed property
+}
+
 const refileJobItems = computed(() => {
   if (!refileJob.value.refile_job_items) {
     return []
   }
-  return editItems.value ? refileJob.value.refile_job_items.filter(item => item.status == 'Out') : refileJob.value.refile_job_items
-})
-const itemTableFilters = computed(() => {
-  let tablesFilters = []
-  if (refileJob.value.refile_job_items && refileJob.value.refile_job_items.length > 0) {
-    tablesFilters = [
-      {
-        field: row => row.owner?.name,
-        label: 'Owner',
-        // render options based on the passed in table data
-        // loop through all containers and return customized data set for table filtering and remove the duplicates
-        options: getUniqueListByKey(refileJob.value.refile_job_items.map(tableEntry => {
-          return {
-            text: tableEntry.owner?.name,
-            value: false
-          }
-        }), 'text')
-      },
-      {
-        field: row => row.size_class?.name,
-        label: 'Size Class',
-        options: getUniqueListByKey(refileJob.value.refile_job_items.map(tableEntry => {
-          return {
-            text: tableEntry.size_class?.name,
-            value: false
-          }
-        }), 'text')
-      }
-    ]
+  let items = refileJob.value.refile_job_items
+
+  // Apply status filter
+  if (editItems.value) {
+    items = items.filter(item => item.status == 'Out')
+  } else if (statusFilter.value !== 'all') {
+    items = items.filter(item => item.status === statusFilter.value)
   }
-  return tablesFilters
+
+  // Apply column filters
+  if (columnFilters.value.item_location) {
+    const search = columnFilters.value.item_location.toLowerCase()
+    items = items.filter(item => {
+      const loc = item.tray ? getItemLocation(item.tray) : getItemLocation(item)
+      return loc && loc.toLowerCase().includes(search)
+    })
+  }
+  if (columnFilters.value.tray_barcode) {
+    const search = columnFilters.value.tray_barcode.toLowerCase()
+    items = items.filter(item => {
+      const trayBc = renderItemBarcodeDisplay(item.tray)
+      return trayBc && trayBc.toLowerCase().includes(search)
+    })
+  }
+  if (columnFilters.value.barcode) {
+    const search = columnFilters.value.barcode.toLowerCase()
+    items = items.filter(item => {
+      const bc = renderItemBarcodeDisplay(item)
+      return bc && bc.toLowerCase().includes(search)
+    })
+  }
+  if (columnFilters.value.owner) {
+    const search = columnFilters.value.owner.toLowerCase()
+    items = items.filter(item => {
+      return item.owner?.name && item.owner.name.toLowerCase().includes(search)
+    })
+  }
+  if (columnFilters.value.size_class) {
+    const search = columnFilters.value.size_class.toLowerCase()
+    items = items.filter(item => {
+      return item.size_class?.name && item.size_class.name.toLowerCase().includes(search)
+    })
+  }
+
+  return items
 })
+const itemTableFilters = []
 const showConfirmationModal = ref(null)
 const showRefileItemDetailModal = ref(false)
 const historyModal = ref(null)
 const showAuditTrailModal = ref(false)
 
-// Logic
-const handleAlert = inject('handle-alert')
-const currentIsoDate = inject('current-iso-date')
-const formatDateTime = inject('format-date-time')
-const getItemLocation = inject('get-item-location')
-const renderItemBarcodeDisplay = inject('render-item-barcode-display')
-const getUniqueListByKey = inject('get-uniqure-list-by-key')
-
 onBeforeMount(() => {
   if (currentScreenSize.value == 'xs') {
     itemTableVisibleColumns.value = [
-      'actions',
       'item_location',
       'tray_barcode',
       'barcode',
-      'scanned_for_refile'
+      'scanned_for_refile',
+      'actions'
     ]
   }
 })
@@ -522,28 +706,6 @@ const triggerItemScan = (barcode_value) => {
   }
 }
 
-const handleOptionMenu = async (action, rowData) => {
-  switch (action.text) {
-    case 'Edit Job Info':
-      editJobInfo.value = true
-      return
-    case 'Edit Items':
-      editItems.value = true
-      return
-    case 'Delete Job':
-      showConfirmationModal.value = 'DeleteJob'
-      return
-    case 'Revert Item to Queue':
-      removeRefileItems([rowData.barcode.value])
-      return
-    case 'Print Job':
-      batchSheetComponent.value.printBatchReport()
-      return
-    case 'View History':
-      showAuditTrailModal.value = 'refile_jobs'
-      return
-  }
-}
 
 const cancelRefileJobEdits = () => {
   // Reset the refile job
@@ -622,41 +784,6 @@ const updateRefileJob = async () => {
   } finally {
     appActionIsLoadingData.value = false
     editJobInfo.value = false
-  }
-}
-const updateRefileJobStatus = async (status) => {
-  try {
-    appIsLoadingData.value = true
-    const payload = {
-      id: refileJob.value.id,
-      status,
-      run_timestamp: currentIsoDate()
-    }
-    await patchRefileJob(payload)
-
-    if (appIsOffline.value) {
-      // when offline we update the status directly
-      refileJob.value.status = payload.status
-      originalRefileJob.value.status = payload.status
-    }
-
-    // store the current refile job data in indexdb for reference offline whenever job is executed
-    addDataToIndexDb('refileStore', 'refileJob', JSON.parse(JSON.stringify(refileJob.value)))
-    addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(originalRefileJob.value)))
-
-    handleAlert({
-      type: 'success',
-      text: `Job Status has been updated to: ${status}`,
-      autoClose: true
-    })
-  } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
-    })
-  } finally {
-    appIsLoadingData.value = false
   }
 }
 const cancelRefileJob = async () => {
@@ -766,4 +893,50 @@ const removeRefileItems = async (barcode_values) => {
 </script>
 
 <style lang="scss" scoped>
+.refile-job-details {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.details-card {
+  border-radius: 12px;
+  background: white;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #a0aec0;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.detail-value {
+  font-size: 1.1rem;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.table-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.btn-modern {
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-weight: 600;
+}
+
+.btn-modern-outline {
+  border-radius: 8px;
+  padding: 8px 24px;
+}
 </style>
