@@ -190,6 +190,7 @@
 
 <script setup>
 import { ref, inject, computed, watch, onMounted } from 'vue'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
@@ -289,7 +290,7 @@ const isRequestjobFormValid = computed(() => {
 const allowItemBarcodeScan = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const handleCSVDownload = inject('handle-csv-download')
 
 onMounted(() => {
@@ -328,10 +329,9 @@ const createRequestJob = async (isNext = false) => {
         requested_by_id: userData.value.user_id
       }
       await postRequestJob(payload)
-      handleAlert({
-        type: 'success',
-        text: 'Successfully created the request.',
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: 'Successfully created the request.'
       })
 
       emit('changeDisplay', 'request_view')
@@ -342,33 +342,29 @@ const createRequestJob = async (isNext = false) => {
       }
       await postRequestBatchJob(payload)
 
-      handleAlert({
-        type: 'success',
-        text: 'Successfully uploaded batch requests.',
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: 'Successfully uploaded batch requests.'
       })
 
       emit('changeDisplay', 'batch_view')
     }
   } catch (error) {
     if (mainProps.type == 'manual') {
-      handleAlert({
-        type: 'error',
-        text: error,
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: error.response?.data?.detail || error.message || 'Failed to create request'
       })
     } else if (error.response.status == 400) {
-      handleAlert({
-        type: 'error',
-        text: 'Batch request upload failed with errors. See downloaded error report.',
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: 'Batch request upload failed with errors. See downloaded error report.'
       })
       handleCSVDownload(error.response.data, 'Bulk_Request_Errors')
     } else {
-      handleAlert({
-        type: 'error',
-        text: error,
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: error.response?.data?.detail || error.message || 'Failed to upload batch requests'
       })
     }
   } finally {
@@ -401,18 +397,16 @@ const editRequestJob = async () => {
       priority_id: manualRequestForm.value.priority_id
     }
     await patchRequestJob(payload)
-    handleAlert({
-      type: 'success',
-      text: 'Successfully updated the request.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Successfully updated the request.'
     })
 
     emit('changeDisplay', 'request_view')
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update request'
     })
   } finally {
     appActionIsLoadingData.value = false

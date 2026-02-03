@@ -47,10 +47,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
+import { Notify } from 'quasar'
 
 // Store Data
 const { appIsLoadingData, appActionIsLoadingData } = storeToRefs(useGlobalStore())
@@ -71,7 +72,7 @@ const directionOptions = [
 ]
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onMounted(async () => {
   await loadCurrentSetting()
@@ -112,17 +113,15 @@ const updateDirection = async (newValue) => {
       settingExists.value = true
     }
 
-    handleAlert({
-      type: 'success',
-      text: 'Shelf position direction updated successfully.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Shelf position direction updated successfully.'
     })
   } catch (error) {
     console.error('Update error:', error)
-    handleAlert({
-      type: 'error',
-      text: 'Failed to update shelf position direction.',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to update shelf position direction.'
     })
     // Revert to previous value
     await loadCurrentSetting()

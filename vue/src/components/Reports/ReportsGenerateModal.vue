@@ -482,7 +482,8 @@
 </template>
 
 <script setup>
-import { ref, inject, onBeforeMount, computed } from 'vue'
+import { ref, onBeforeMount, computed } from 'vue'
+import { Notify } from 'quasar'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -624,7 +625,7 @@ const clearDateRange = () => {
 }
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   generateReportModal()
@@ -1215,10 +1216,9 @@ const generateReport = async () => {
     //emit to main report dashboard and pass query params so we can store them in the route
     emit('submit', queryParams)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to generate report'
     })
   } finally {
     // emit the current form to the parent

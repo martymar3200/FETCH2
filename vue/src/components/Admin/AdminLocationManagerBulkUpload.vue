@@ -156,9 +156,10 @@
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
+import { Notify } from 'quasar'
 import { useOptionStore } from '@/stores/option-store'
 import { useBuildingStore } from '@/stores/building-store'
 import PopupModal from '@/components/PopupModal.vue'
@@ -224,7 +225,7 @@ const isBulkUploadLocationValid = computed(() => {
 })
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 const handleLocationFormChange = async (valueType) => {
   // reset the report form depending on the edited form field type
@@ -274,25 +275,29 @@ const submitBulkUploadLocationForm = async () => {
     }
     await postBulkLocation(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'Successfully Uploaded New Locations!',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Successfully Uploaded New Locations!'
     })
   } catch (error) {
     if (error.response?.data) {
       error.response.data.forEach(err => {
-        handleAlert({
-          type: 'error',
-          text: `Bulk Location upload failed: ${JSON.stringify(err)}`,
-          autoClose: false
+        Notify.create({
+          type: 'negative',
+          message: `Bulk Location upload failed: ${JSON.stringify(err)}`,
+          timeout: 0,
+          actions: [
+            {
+              icon: 'close',
+              color: 'white'
+            }
+          ]
         })
       })
     } else {
-      handleAlert({
-        type: 'error',
-        text: error,
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: error.response?.data?.detail || error.message || 'Failed to upload locations'
       })
     }
   } finally {

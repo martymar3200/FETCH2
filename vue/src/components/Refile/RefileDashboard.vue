@@ -503,6 +503,7 @@
 <script setup>
 import { onBeforeMount, ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useRefileStore } from '@/stores/refile-store'
@@ -867,7 +868,7 @@ const dashboardToggleOptions = computed(() => [
 ])
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 
 onBeforeMount(() => {
@@ -973,10 +974,9 @@ const loadRefileJobs = async (qParams) => {
       await getRefileQueueList(queueFilterParams)
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load refile jobs'
     })
   } finally {
     appIsLoadingData.value = false
@@ -1026,10 +1026,9 @@ const loadRefileQueueByBuilding = async () => {
       showAddRefileJob.value = true
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load refile queue'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1048,10 +1047,9 @@ const loadRefileJob = async (id) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load refile job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -1067,17 +1065,23 @@ const createRefileJob = async () => {
     await postRefileJob(payload)
 
     // display an alert with the created refile job id so you can click that and link directly to the new job if needed
-    handleAlert({
-      type: 'success',
-      text: `Successfully created Refile Job #: <a href='/refile/${refileJob.value.id}' tabindex='0'>${refileJob.value.id}</a>`,
-      autoClose: false
+    Notify.create({
+      type: 'positive',
+      message: `Successfully created Refile Job #: <a href='/refile/${refileJob.value.id}' style='color: white; text-decoration: underline;'>${refileJob.value.id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     loadRefileJobs()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create refile job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1094,17 +1098,23 @@ const updateRefileJob = async () => {
     await postRefileJobItem(payload)
 
     // display an alert with the updated refilet job id so you can click that and link directly to the job if needed
-    handleAlert({
-      type: 'success',
-      text: `Successfully added items to Refile Job #: <a href='/refile/${refileJob.value.id}' tabindex='0'>${refileJob.value.id}</a>`,
-      autoClose: false
+    Notify.create({
+      type: 'positive',
+      message: `Successfully added items to Refile Job #: <a href='/refile/${refileJob.value.id}' style='color: white; text-decoration: underline;'>${refileJob.value.id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     loadRefileJobs()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update refile job'
     })
   } finally {
     appActionIsLoadingData.value = false

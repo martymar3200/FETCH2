@@ -153,6 +153,7 @@
 <script setup>
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
 import { useUserStore } from '@/stores/user-store'
@@ -287,7 +288,7 @@ const getStatusIcon = (status) => {
 }
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 
 onBeforeMount(() => {
@@ -320,10 +321,9 @@ const loadWithdrawJobs = async (qParams) => {
 
     await getWithdrawJobList(filterParams)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load withdraw jobs'
     })
   } finally {
     appIsLoadingData.value = false
@@ -359,10 +359,9 @@ const loadWithdrawJob = async (jobId) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load withdraw job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -384,16 +383,14 @@ const createWithdrawJob = async () => {
       }
     })
 
-    handleAlert({
-      type: 'success',
-      text: 'A Withdraw Job has been successfully created.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'A Withdraw Job has been successfully created.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create withdraw job'
     })
   } finally {
     appIsLoadingData.value = false

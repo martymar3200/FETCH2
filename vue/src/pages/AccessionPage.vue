@@ -16,6 +16,7 @@
 <script setup>
 import { onBeforeMount, onMounted, inject, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useAccessionStore } from 'src/stores/accession-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -39,7 +40,7 @@ const { setMainNavDrawerOpen } = globalStore
 
 // Logic
 const handlePageOffset = inject('handle-page-offset')
-const handleAlert = inject('handle-alert')
+
 
 // NEW: Watch for changes in the jobId to control the drawer state
 watch(() => route.params.jobId, (newJobId) => {
@@ -59,10 +60,9 @@ watch(() => route.params.containerId, async (newId, oldId) => {
   if (newId && newId !== oldId) {
     if (accessionJob.value.trayed) {
       await getAccessionTray(newId).catch(error => {
-        handleAlert({
-          type: 'error',
-          text: error,
-          autoClose: true
+        Notify.create({
+          type: 'negative',
+          message: error.response?.data?.detail || error
         })
         router.push({
           name: 'accession',
@@ -88,10 +88,9 @@ onMounted( async () => {
   if (route.params.containerId) {
     if (accessionJob.value.trayed) {
       await getAccessionTray(route.params.containerId).catch(error => {
-        handleAlert({
-          type: 'error',
-          text: error,
-          autoClose: true
+        Notify.create({
+          type: 'negative',
+          message: error.response?.data?.detail || error
         })
         router.push({
           name: 'accession',
@@ -102,10 +101,9 @@ onMounted( async () => {
       })
     } else {
       await getAccessionNonTrayItem(route.params.containerId).catch(error => {
-        handleAlert({
-          type: 'error',
-          text: error,
-          autoClose: true
+        Notify.create({
+          type: 'negative',
+          message: error.response?.data?.detail || error
         })
         router.push({
           name: 'accession',

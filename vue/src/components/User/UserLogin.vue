@@ -60,7 +60,8 @@
 <script setup>
 import inventoryServiceApi from '@/http/InventoryService.js'
 import { jwtDecode } from 'jwt-decode'
-import { ref, inject, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
@@ -87,7 +88,7 @@ const loginForm = ref({
 })
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onMounted(async () => {
   // when a user is using sso login they will get redirected back to the app in a logged out state with a token in the route
@@ -134,10 +135,9 @@ const internalLogin = async () => {
     }
     await patchLogin(payload, 'Internal')
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Login failed'
     })
   } finally {
     appActionIsLoadingData.value = false

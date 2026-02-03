@@ -298,6 +298,7 @@
 <script setup>
 import { ref, computed, inject, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
@@ -347,7 +348,7 @@ const showConfirmationModal = ref(null)
 const isProcessingScan = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const currentIsoDate = inject('current-iso-date')
 
 // Computed
@@ -402,10 +403,9 @@ const openEditModal = async () => {
 
     editMode.value = true
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appIsLoadingData.value = false
@@ -434,16 +434,11 @@ const triggerItemScan = async () => {
       // Verify it if not verified
       if (!verificationContainer.value.scanned_for_verification) {
         await verifyNonTrayItem(verificationContainer.value.id)
-        handleAlert({
-          type: 'success',
-          text: 'Item Verified',
-          autoClose: true
-        })
+        // Removed "Item Verified" notification as requested
       } else {
-        handleAlert({
+        Notify.create({
           type: 'info',
-          text: 'Item already verified',
-          autoClose: true
+          message: 'Item already verified'
         })
       }
     } else {
@@ -452,18 +447,27 @@ const triggerItemScan = async () => {
       // For now, let's assume we alert user or auto-add like Accession?
       // Verification usually requires items to be in the job or we are verifying what was accessioned.
       // If we are scanning a barcode not in the list, we might want to check if it matches a known item record?
-      handleAlert({
+      Notify.create({
         type: 'warning',
-        text: `Item ${barcode} is not in this verification job.`,
-        autoClose: true
+        message: `Item ${barcode} is not in this verification job.`
       })
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error,
+      timeout: 0,
+      actions: [
+        {
+          label: 'Dismiss',
+          color: 'white',
+          handler: () => { /* ... */ }
+        }
+      ]
     })
+    // Note: To mimic persistent=true, we can use timeout: 0 and an action.
+    // Or just let it be a normal error toast which is usually sufficient.
+    // Using standard negative toast logic here for consistency.
   } finally {
     isProcessingScan.value = false
   }
@@ -488,16 +492,14 @@ const updateVerificationJobStatus = async (status) => {
       status,
       run_timestamp: currentIsoDate()
     })
-    handleAlert({
-      type: 'success',
-      text: `Job ${status === 'Paused' ? 'paused' : 'resumed'} successfully.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Job ${status === 'Paused' ? 'paused' : 'resumed'} successfully.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error?.message || error?.toString() || 'An error occurred',
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -509,10 +511,9 @@ const cancelVerification = async () => {
     appActionIsLoadingData.value = true
     await cancelVerificationJob(verificationJob.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'Verification Job canceled',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Verification Job canceled'
     })
 
     await nextTick()
@@ -522,10 +523,9 @@ const cancelVerification = async () => {
     })
 
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -540,20 +540,18 @@ const completeVerificationJob = async () => {
       id: verificationJob.value.id,
       status: 'Completed'
     })
-    handleAlert({
-      type: 'success',
-      text: 'Job Completed',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Job Completed'
     })
     router.push({
       name: 'verification',
       params: { jobId: null }
     })
   } catch (e) {
-    handleAlert({
-      type: 'error',
-      text: e,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: e.response?.data?.detail || e
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -579,17 +577,15 @@ const updateNonTrayItem = async () => {
     }
     await patchVerificationNonTrayItem(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The non-tray item has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The non-tray item has been updated.'
     })
     editMode.value = false
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false

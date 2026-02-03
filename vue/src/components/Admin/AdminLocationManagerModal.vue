@@ -116,9 +116,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount, inject } from 'vue'
+import { ref, computed, onBeforeMount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
+import { Notify } from 'quasar'
 import { useOptionStore } from '@/stores/option-store'
 import { useBuildingStore } from '@/stores/building-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
@@ -202,7 +203,7 @@ const filteredShelfTypes =  computed(() => {
 })
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   generateLocationModal()
@@ -401,10 +402,9 @@ const addNewLocationType = async () => {
           const res = await verifyBarcode(payload.barcode_value, 'Shelf', true)
           if (res == 'barcode_exists') {
           // if the inputed shelf barcode exists throw an error since shelf barcode has to be new when adding new shelves
-            handleAlert({
-              type: 'error',
-              text: 'The shelf barcode inputed already exists. Please try again.',
-              autoClose: true
+            Notify.create({
+              type: 'negative',
+              message: 'The shelf barcode inputed already exists. Please try again.'
             })
             return
           }
@@ -416,16 +416,14 @@ const addNewLocationType = async () => {
         break
     }
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully Added A New ${titleCaseLocationType.value}`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Successfully Added A New ${titleCaseLocationType.value}`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to add location'
     })
   } finally {
     // emit to parent that we added a new location option
@@ -463,10 +461,9 @@ const updateLocationType = async () => {
           const res = await verifyBarcode(payload.barcode_value, 'Shelf', true)
           if (res == 'barcode_exists') {
             // if the inputed shelf barcode exists throw an error since shelf barcode has to be new when adding new shelves
-            handleAlert({
-              type: 'error',
-              text: 'The shelf barcode inputed already exists. Please try again.',
-              autoClose: true
+            Notify.create({
+              type: 'negative',
+              message: 'The shelf barcode inputed already exists. Please try again.'
             })
             return
           }
@@ -483,16 +480,14 @@ const updateLocationType = async () => {
         break
     }
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully Updated The ${titleCaseLocationType.value}`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Successfully Updated The ${titleCaseLocationType.value}`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update location'
     })
   } finally {
     appActionIsLoadingData.value = false

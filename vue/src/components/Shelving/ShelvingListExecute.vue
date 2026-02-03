@@ -447,7 +447,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
-import { useQuasar } from 'quasar'
+import { Notify } from 'quasar'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import JobProgressBar from '@/components/Job/JobProgressBar.vue'
@@ -459,7 +459,7 @@ const route = useRoute()
 const router = useRouter()
 const shelvingStore = useShelvingStore()
 const { users } = storeToRefs(useOptionStore())
-const $q = useQuasar()
+
 const { checkUserPermission } = usePermissionHandler()
 
 // Props
@@ -625,13 +625,13 @@ const updateUserAssignment = async () => {
       assigned_user_id: job.value.assigned_user_id
     })
     job.value = shelvingStore.shelvingJob
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'User assignment updated'
     })
     editJob.value = false
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to update user assignment'
     })
@@ -646,7 +646,7 @@ const loadJob = async () => {
     job.value = shelvingStore.shelvingJob
     containers.value = await shelvingStore.getShelveByListContainers(jobId.value)
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to load job'
     })
@@ -661,7 +661,7 @@ const startJob = async () => {
     })
     job.value = shelvingStore.shelvingJob
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -676,7 +676,7 @@ const pauseJob = async () => {
     })
     job.value = shelvingStore.shelvingJob
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to pause job'
     })
@@ -691,7 +691,7 @@ const resumeJob = async () => {
     })
     job.value = shelvingStore.shelvingJob
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to resume job'
     })
@@ -707,7 +707,7 @@ const completeJob = async () => {
     })
     success = true
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: error.response?.data?.detail || 'Failed to complete job'
     })
@@ -715,7 +715,7 @@ const completeJob = async () => {
   }
 
   if (success) {
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Job completed!'
     })
@@ -740,7 +740,7 @@ const cancelJob = async () => {
     console.log('Cancel succeeded, navigating...')
     cancelling.value = false
     showCancelDialog.value = false
-    $q.notify({
+    Notify.create({
       type: 'info',
       message: 'Job cancelled. Containers have been released.'
     })
@@ -748,7 +748,7 @@ const cancelJob = async () => {
   } catch (error) {
     console.log('Cancel failed:', error)
     cancelling.value = false
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: error.response?.data?.detail || 'Failed to cancel job'
     })
@@ -798,7 +798,7 @@ const scanAndShelve = async () => {
         containers.value[idx].actual_location = `${shelfBarcode.value}-${positionNumber.value}`
       }
 
-      $q.notify({
+      Notify.create({
         type: 'positive',
         message: 'Container shelved!'
       })
@@ -841,7 +841,7 @@ const confirmShelveWithScan = async () => {
     containerBarcode.value = ''
     confirmShelfBarcode.value = ''
 
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Container shelved!'
     })
@@ -893,12 +893,12 @@ const confirmOverride = async () => {
     }
 
     showOverrideDialog.value = false
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Location updated'
     })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: error.response?.data?.detail || 'Override failed'
     })

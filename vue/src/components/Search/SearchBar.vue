@@ -183,6 +183,7 @@
 
 <script setup>
 import { onMounted, ref, watch, inject, computed } from 'vue'
+import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
@@ -287,7 +288,7 @@ const exactSearchResponseInfo = ref(null)
 const showItemQuickView = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 // ======================================================
 // ============ START: LOCATION DISPLAY CODE ============
 // ======================================================
@@ -321,10 +322,9 @@ const executeExactSearch = async () => {
     }
     showExactSearch.value = true
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to execute search'
     })
   } finally {
     searchIsLoadingData.value = false

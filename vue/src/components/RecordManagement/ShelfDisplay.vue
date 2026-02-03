@@ -127,6 +127,7 @@
 
 <script setup>
 import { inject, onMounted, ref, watch } from 'vue'
+import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useRecordManagementStore } from '@/stores/record-management-store'
@@ -170,7 +171,7 @@ const containerTableColumns = ref([
 
 // Injected Helper Functions
 const formatDateTime = inject('format-date-time')
-const handleAlert = inject('handle-alert')
+
 
 onMounted(() => {
   loadShelfContainers()
@@ -231,10 +232,9 @@ const loadShelfContainers = async (qParams) => {
     appIsLoadingData.value = true
     await getShelfContainers({ ...qParams })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load shelf containers'
     })
   } finally {
     appIsLoadingData.value = false

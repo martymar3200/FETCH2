@@ -31,7 +31,8 @@ module.exports = configure(function (ctx) {
     boot: [
       'axios',
       'htmlToPaper',
-      'vueJsonExcel'
+      'vueJsonExcel',
+      'notify-defaults'
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css

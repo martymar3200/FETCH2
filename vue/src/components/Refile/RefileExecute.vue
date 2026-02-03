@@ -233,7 +233,7 @@ import { useRefileStore } from '@/stores/refile-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { storeToRefs } from 'pinia'
-import { useQuasar } from 'quasar'
+import { Notify } from 'quasar'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler'
 
@@ -255,7 +255,7 @@ const props = defineProps({
   }
 })
 
-const $q = useQuasar()
+
 const router = useRouter()
 const refileStore = useRefileStore()
 const globalStore = useGlobalStore()
@@ -420,7 +420,7 @@ const handleBarcodeScanned = async (barcode) => {
   const item = jobItems.value.find(i => i.barcode?.value === barcode)
 
   if (!item) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Item not found in this job'
     })
@@ -429,7 +429,7 @@ const handleBarcodeScanned = async (barcode) => {
   }
 
   if (item.status === 'In') {
-    $q.notify({
+    Notify.create({
       type: 'warning',
       message: 'Item already refiled'
     })
@@ -467,14 +467,14 @@ const completeItemRefile = async (item) => {
     }
 
     saveState()
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Item refiled',
       timeout: 500
     })
     closeVerifyModal()
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to update item'
     })
@@ -495,7 +495,7 @@ const startJob = async () => {
     await refileStore.patchRefileJob(payload)
     saveState()
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -514,7 +514,7 @@ const pauseJob = async () => {
     })
     saveState()
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to pause job'
     })
@@ -533,7 +533,7 @@ const resumeJob = async () => {
     })
     saveState()
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to resume job'
     })
@@ -553,7 +553,7 @@ const completeJob = async () => {
     deleteDataInIndexDb('refileStore', 'refileJob')
     router.push({ name: 'refile' })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to complete job'
     })
@@ -579,12 +579,12 @@ const revertItem = async () => {
     }
     await refileStore.deleteRefileJobItems(payload)
     saveState()
-    $q.notify({
+    Notify.create({
       type: 'info',
       message: 'Item reverted to queue'
     })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to revert item'
     })

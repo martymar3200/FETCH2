@@ -181,7 +181,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch, inject } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
+import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
@@ -296,7 +297,7 @@ const showOfflineBanner = ref(false)
 const refreshWhenOnline = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onMounted(() => {
   window.addEventListener('offline', () => {
@@ -326,10 +327,9 @@ onMounted(() => {
         // handle any non breaking errors passed back from bgSync
         if (event.data.error && event.data.error.length > 0) {
           event.data.error.forEach(err => {
-            handleAlert({
-              type: 'error',
-              text: err,
-              autoClose: true
+            Notify.create({
+              type: 'negative',
+              message: err
             })
           })
 
@@ -348,10 +348,10 @@ onMounted(() => {
         }
       } else if (event.data.message == 'sync error') {
         syncInProgress.value = ''
-        handleAlert({
-          type: 'error',
-          text: event.data.error,
-          autoClose: true
+        syncInProgress.value = ''
+        Notify.create({
+          type: 'negative',
+          message: event.data.error
         })
       }
     })
@@ -407,10 +407,10 @@ const handleRouteSyncGuard = async (pathName) => {
   })
 }
 const displayRouteGuardAlert = (pathName) => {
-  handleAlert({
-    type: 'error',
-    text: `Sorry, you do not have permission to view the <b>${pathName.replaceAll('-', ' ')}</b> page!`,
-    autoClose: true
+  Notify.create({
+    type: 'negative',
+    message: `Sorry, you do not have permission to view the <b>${pathName.replaceAll('-', ' ')}</b> page!`,
+    html: true
   })
   // reset the route guard in our store
   appRouteGuard.value = null

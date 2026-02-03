@@ -246,6 +246,7 @@
 
 <script setup>
 import { inject, onMounted, ref, watch, computed } from 'vue'
+import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useRecordManagementStore } from '@/stores/record-management-store'
@@ -290,10 +291,9 @@ const openEditModal = () => {
 
 const handleEditSuccess = () => {
   isEditModalVisible.value = false
-  handleAlert({
-    type: 'success',
-    text: 'Non-Tray Item updated successfully.',
-    autoClose: true
+  Notify.create({
+    type: 'positive',
+    message: 'Non-Tray Item updated successfully.'
   })
 }
 
@@ -335,7 +335,7 @@ const itemTableColumns = ref([
 
 const formatDateTime = inject('format-date-time')
 const getItemLocation = inject('get-item-location')
-const handleAlert = inject('handle-alert')
+
 
 onMounted(() => {
   loadRequestHistory()
@@ -472,10 +472,9 @@ const loadRequestHistory = async (qParams) => {
       })
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load request history'
     })
   } finally {
     appIsLoadingData.value = false

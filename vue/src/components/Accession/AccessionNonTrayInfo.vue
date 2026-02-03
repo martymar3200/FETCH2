@@ -322,8 +322,9 @@
 </template>
 
 <script setup>
-import { ref, computed, inject, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
@@ -369,7 +370,7 @@ const selectedMediaType = ref(null)
 const isProcessingScan = ref(false) // Guard against double scans
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 // Computed
 const canComplete = computed(() => {
@@ -451,16 +452,14 @@ const saveItemEdits = async (hideModal) => {
       await patchAccessionNonTrayItem(payload)
 
       if (addVerifiedAlert) {
-        handleAlert({
-          type: 'success',
-          text: 'The non-tray item has been updated and verified.',
-          autoClose: true
+        Notify.create({
+          type: 'positive',
+          message: 'The non-tray item has been updated and verified.'
         })
       } else {
-        handleAlert({
-          type: 'success',
-          text: 'The non-tray item has been updated.',
-          autoClose: true
+        Notify.create({
+          type: 'positive',
+          message: 'The non-tray item has been updated.'
         })
       }
     } else {
@@ -471,20 +470,18 @@ const saveItemEdits = async (hideModal) => {
         size_class_id: selectedSizeClass.value?.id
       })
 
-      handleAlert({
-        type: 'success',
-        text: 'Job settings updated successfully.',
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: 'Job settings updated successfully.'
       })
     }
 
     hideModal()
     showEditModal.value = false
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error?.message || error?.toString() || 'An error occurred',
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error?.message || error?.toString() || 'An error occurred'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -519,16 +516,14 @@ const triggerItemScan = async () => {
           containerId: barcode
         }
       })
-      handleAlert({
+      Notify.create({
         type: 'info',
-        text: 'Loaded existing item.',
-        autoClose: true
+        message: 'Loaded existing item.'
       })
     } catch (error) {
-      handleAlert({
-        type: 'error',
-        text: error?.message || error?.toString() || 'An error occurred',
-        persistent: true
+      Notify.create({
+        type: 'negative',
+        message: error?.message || error?.toString() || 'An error occurred'
       })
     } finally {
       isProcessingScan.value = false
@@ -561,16 +556,14 @@ const updateAccessionJobStatus = async (status) => {
       id: accessionJob.value.id,
       status
     })
-    handleAlert({
-      type: 'success',
-      text: `Job ${status === 'Paused' ? 'paused' : 'resumed'} successfully.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Job ${status === 'Paused' ? 'paused' : 'resumed'} successfully.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error?.message || error?.toString() || 'An error occurred',
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error?.message || error?.toString() || 'An error occurred'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -585,10 +578,9 @@ const cancelAccessionJob = async () => {
       status: 'Cancelled'
     })
 
-    handleAlert({
-      type: 'success',
-      text: 'The Accession Job has been canceled.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Accession Job has been canceled.'
     })
 
     await nextTick()
@@ -598,10 +590,9 @@ const cancelAccessionJob = async () => {
       params: { jobId: null }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error?.message || error?.toString() || 'An error occurred',
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error?.message || error?.toString() || 'An error occurred'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -617,10 +608,9 @@ const completeAccessionJob = async (hideModal) => {
       status: 'Completed'
     })
 
-    handleAlert({
-      type: 'success',
-      text: 'The Accession Job has been completed.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Accession Job has been completed.'
     })
 
     hideModal()
@@ -631,10 +621,9 @@ const completeAccessionJob = async (hideModal) => {
       params: { jobId: null }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error?.message || error?.toString() || 'An error occurred',
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error?.message || error?.toString() || 'An error occurred'
     })
   } finally {
     appActionIsLoadingData.value = false

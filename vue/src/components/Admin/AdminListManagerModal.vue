@@ -153,7 +153,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount, inject, toRaw } from 'vue'
+import { ref, computed, onBeforeMount, toRaw } from 'vue'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
@@ -256,7 +257,7 @@ const parentOwnerRequired = computed(() => {
 })
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   generateListModal()
@@ -541,16 +542,14 @@ const addNewListType = async () => {
         break
     }
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully added a new ${titleCaseListType.value}.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Successfully added a new ${titleCaseListType.value}.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to add new item'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -584,10 +583,16 @@ const updateListType = async () => {
           await Promise.all(removedSizeClasses.map(async sizeClassObj => {
             const res = await deleteShelfType(sizeClassObj.shelf_type_id)
             if (res.status !== 200) {
-              handleAlert({
-                type: 'error',
-                text: `The shelf type: "${payload.type} - ${sizeClassObj.name}" is in use and cannot be deleted.`,
-                autoClose: false
+              Notify.create({
+                type: 'negative',
+                message: `The shelf type: "${payload.type} - ${sizeClassObj.name}" is in use and cannot be deleted.`,
+                timeout: 0,
+                actions: [
+                  {
+                    icon: 'close',
+                    color: 'white'
+                  }
+                ]
               })
             }
           }))
@@ -616,10 +621,16 @@ const updateListType = async () => {
             max_capacity: sizeClassObj.max_capacity
           })
           if (res.status !== 200) {
-            handleAlert({
-              type: 'error',
-              text: `"${payload.type} - ${sizeClassObj.name}" - ${res.response.data.detail}`,
-              autoClose: false
+            Notify.create({
+              type: 'negative',
+              message: `"${payload.type} - ${sizeClassObj.name}" - ${res.response.data.detail}`,
+              timeout: 0,
+              actions: [
+                {
+                  icon: 'close',
+                  color: 'white'
+                }
+              ]
             })
           }
         }))
@@ -659,16 +670,14 @@ const updateListType = async () => {
         break
     }
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully updated the ${titleCaseListType.value}.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Successfully updated the ${titleCaseListType.value}.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update item'
     })
   } finally {
     appActionIsLoadingData.value = false

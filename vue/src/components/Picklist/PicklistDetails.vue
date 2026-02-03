@@ -237,6 +237,7 @@
 <script setup>
 import { onBeforeMount, onMounted, ref, computed, inject, toRaw, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
@@ -392,7 +393,7 @@ const showAuditTrailModal = ref(false)
 const showPicklistItemDetailModal = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const currentIsoDate = inject('current-iso-date')
 const formatDateTime = inject('format-date-time')
 const getItemLocation = inject('get-item-location')
@@ -483,17 +484,15 @@ watch(compiledBarCode, (barcode) => {
 const triggerItemScan = (barcode_value) => {
   // check if the scanned barcode is in the item data and that the barcode hasnt been retrieved already
   if (!picklistItems.value.some(itm => itm.item ? itm.item.barcode.value == barcode_value : itm.non_tray_item.barcode.value == barcode_value)) {
-    handleAlert({
-      type: 'error',
-      text: 'The scanned item does not exist in this pick list job. Please try again.',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'The scanned item does not exist in this pick list job. Please try again.'
     })
     return
   } else if (picklistItems.value.some(itm => itm.item ? itm.item.barcode.value == barcode_value && itm.status !== 'PickList' : itm.non_tray_item.barcode.value == barcode_value && itm.status !== 'PickList')) {
-    handleAlert({
-      type: 'error',
-      text: 'The scanned item has already been marked as retrieved.',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'The scanned item has already been marked as retrieved.'
     })
     return
   } else {
@@ -541,16 +540,14 @@ const executePicklistJob = async () => {
     addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
     addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
 
-    handleAlert({
-      type: 'success',
-      text: 'Pick List Job Successfully Started',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Pick List Job Successfully Started'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to start job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -566,16 +563,14 @@ const updatePicklistJob = async () => {
     }
     await patchPicklistJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The job has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The job has been updated.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -602,16 +597,14 @@ const updatePicklistJobStatus = async (status) => {
     addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
     addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
 
-    handleAlert({
-      type: 'success',
-      text: `Job Status has been updated to: ${status}`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Job Status has been updated to: ${status}`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update status'
     })
   } finally {
     appIsLoadingData.value = false
@@ -622,10 +615,9 @@ const cancelPicklistJob = async () => {
     appIsLoadingData.value = true
     await deletePicklistJob(picklistJob.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'The Pick List Job has been canceled.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Pick List Job has been canceled.'
     })
 
     router.push({
@@ -635,10 +627,9 @@ const cancelPicklistJob = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to cancel job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -659,10 +650,9 @@ const completePicklistJob = async (printBool) => {
     if (printBool) {
       batchSheetComponent.value.printBatchReport()
     }
-    handleAlert({
-      type: 'success',
-      text: 'The Pick List Job has been completed.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Pick List Job has been completed.'
     })
 
     router.push({
@@ -672,10 +662,9 @@ const completePicklistJob = async (printBool) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to complete job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -699,16 +688,14 @@ const removePicklistItem = async (itemId) => {
     addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
     addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
 
-    handleAlert({
-      type: 'success',
-      text: `${itemId} has been sent back to the request queue.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `${itemId} has been sent back to the request queue.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to remove item'
     })
   } finally {
     appIsLoadingData.value = false
@@ -743,10 +730,9 @@ const updatePicklistItem = async (barcode_value) => {
     addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
     addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update item'
     })
   } finally {
     appIsLoadingData.value = false

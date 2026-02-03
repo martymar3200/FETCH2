@@ -535,6 +535,7 @@
 <script setup>
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -740,7 +741,7 @@ const isCreateShelvingJobFormValid = computed(() => {
 })
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 
 onBeforeMount(() => {
@@ -832,10 +833,9 @@ const loadShelvingJobs = async (qParams) => {
 
     await getShelvingJobList(filterParams)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load shelving jobs'
     })
   } finally {
     appIsLoadingData.value = false
@@ -909,10 +909,9 @@ const loadShelvingJob = async (jobId, type) => {
       })
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load shelving job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -944,16 +943,14 @@ const submitShelvingJob = async () => {
       }
     })
 
-    handleAlert({
-      type: 'success',
-      text: 'A Shelving Job has been successfully created.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'A Shelving Job has been successfully created.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create Shelving Job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -978,16 +975,14 @@ const submitDirectToShelfJob = async () => {
       }
     })
 
-    handleAlert({
-      type: 'success',
-      text: 'A Direct Shelving Job has been successfully created.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'A Direct Shelving Job has been successfully created.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create Direct Shelving Job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -1015,10 +1010,9 @@ const submitShelvingMove = async (moveType) => {
       }
     })
   } catch (e) {
-    handleAlert({
-      type: 'error',
-      text: e,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: e.response?.data?.detail || e.message || 'Failed to create Move Job'
     })
   } finally {
     appIsLoadingData.value = false

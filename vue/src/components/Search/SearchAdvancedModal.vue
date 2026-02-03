@@ -325,7 +325,8 @@
 </template>
 
 <script setup>
-import { ref, inject, onBeforeMount, watch } from 'vue'
+import { ref, onBeforeMount, watch } from 'vue'
+import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -389,7 +390,7 @@ const searchParams = ref(null)
 const searchForm = ref({})
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   generateSearchModal()
@@ -699,10 +700,9 @@ const executeAdvancedSearch = async () => {
       query: queryParams
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to execute advanced search'
     })
   } finally {
     appActionIsLoadingData.value = false

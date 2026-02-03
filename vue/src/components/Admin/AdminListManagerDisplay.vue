@@ -108,7 +108,8 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref, inject, computed } from 'vue'
+import { onBeforeMount, ref, computed } from 'vue'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
@@ -258,7 +259,7 @@ const showConfirmationModal = ref(null)
 
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   loadListData()
@@ -636,10 +637,9 @@ const loadListData = async (qParams) => {
     // set the listData total based on the loaded list options from store
     listDataTotal.value = optionsTotal.value
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load list data'
     })
   } finally {
     appIsLoadingData.value = false
@@ -668,26 +668,30 @@ const deleteListOption = async (id) => {
           if (res.status == 200) {
             deletedShelfTypes.push(shelfType)
           } else {
-            handleAlert({
-              type: 'error',
-              text: `"${shelfType.type} - ${shelfType.size_class.name}" is in use and cannot be deleted.`,
-              autoClose: false
+            Notify.create({
+              type: 'negative',
+              message: `"${shelfType.type} - ${shelfType.size_class.name}" is in use and cannot be deleted.`,
+              timeout: 0,
+              actions: [
+                {
+                  icon: 'close',
+                  color: 'white'
+                }
+              ]
             })
           }
         }))
 
         // display and alert for the successfully deleted shelfTypes
         if (deletedShelfTypes.length == matchingShelfTypesById.length) {
-          handleAlert({
-            type: 'success',
-            text: `"${deletedShelfTypes[0].type}" has been successfully deleted.`,
-            autoClose: true
+          Notify.create({
+            type: 'positive',
+            message: `"${deletedShelfTypes[0].type}" has been successfully deleted.`
           })
         } else if (deletedShelfTypes.length > 0) {
-          handleAlert({
-            type: 'success',
-            text: `${deletedShelfTypes.length} size classes have been successfully deleted from "${deletedShelfTypes[0].type}".`,
-            autoClose: true
+          Notify.create({
+            type: 'positive',
+            message: `${deletedShelfTypes.length} size classes have been successfully deleted from "${deletedShelfTypes[0].type}".`
           })
         }
         break
@@ -705,19 +709,17 @@ const deleteListOption = async (id) => {
         break
     }
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully Deleted The ${renderTableTitle.value}.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Successfully Deleted The ${renderTableTitle.value}.`
     })
 
     // update listDataTotal for pagination
     listDataTotal.value = listDataTotal.value == 0 ? 0 : listDataTotal.value - 1
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to delete item'
     })
   } finally {
     appActionIsLoadingData.value = false

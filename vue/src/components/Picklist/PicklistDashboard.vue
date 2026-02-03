@@ -178,6 +178,7 @@
 <script setup>
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { usePicklistStore } from '@/stores/picklist-store'
@@ -398,7 +399,7 @@ const picklistTableColumns = ref([
 ])
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 
 onBeforeMount(() => {
@@ -441,10 +442,9 @@ const loadPicklistJobs = async (qParams) => {
 
     await getPicklistJobList(filterParams)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load picklist jobs'
     })
   } finally {
     appIsLoadingData.value = false
@@ -481,10 +481,9 @@ const loadPicklistJob = async (id) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load picklist job'
     })
   } finally {
     appIsLoadingData.value = false

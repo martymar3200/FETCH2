@@ -151,7 +151,8 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount, inject } from 'vue'
+import { ref, onBeforeMount } from 'vue'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
@@ -280,7 +281,7 @@ const getStatusBadgeClass = (status) => {
 }
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   resetVerificationStore()
@@ -321,10 +322,9 @@ const loadVerificationJobs = async (qParams) => {
 
     await getVerificationJobList(filterParams)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appIsLoadingData.value = false
@@ -366,10 +366,9 @@ const loadVerificationJob = async (workflowId) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appIsLoadingData.value = false

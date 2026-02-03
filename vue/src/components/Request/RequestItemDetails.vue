@@ -174,6 +174,7 @@
 <script setup>
 import { ref, inject, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
 import { useRequestStore } from '@/stores/request-store'
@@ -208,7 +209,7 @@ const showEditRequestModal = ref(false)
 const showConfirmationModal = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 
@@ -234,10 +235,9 @@ const deleteRequest = async () => {
     appActionIsLoadingData.value = true
     await deleteRequestJob(requestJob.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'The request has been deleted.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The request has been deleted.'
     })
     appActionIsLoadingData.value = false
 
@@ -250,10 +250,16 @@ const deleteRequest = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to delete request',
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     appActionIsLoadingData.value = false
   }

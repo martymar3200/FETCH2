@@ -170,12 +170,12 @@
 </template>
 
 <script setup>
-import { ref, inject, watch, nextTick } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useRefileStore } from '@/stores/refile-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
-import { useQuasar } from 'quasar'
+import { Notify } from 'quasar'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import PopupModal from '@/components/PopupModal.vue'
 
@@ -183,7 +183,7 @@ import PopupModal from '@/components/PopupModal.vue'
 const emit = defineEmits(['hide'])
 
 // Compasables
-const $q = useQuasar()
+
 const { compiledBarCode } = useBarcodeScanHandler()
 
 // Store Data
@@ -200,7 +200,7 @@ const lastRefileItem = ref({})
 const scanLock = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+// const handleAlert = inject('handle-alert')
 
 const handleClose = () => {
   resetRefileItem()
@@ -234,10 +234,9 @@ const handleScan = (barcode_value) => {
   if (barcode_value !== refileItem.value?.barcode?.value) {
     addItemToQueue(barcode_value)
   } else {
-    handleAlert({
-      type: 'error',
-      text: 'The scanned item barcode was already added. Please try again!',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'The scanned item barcode was already added. Please try again!'
     })
   }
 }
@@ -251,10 +250,9 @@ const addItemToQueue = async (barcode_value) => {
 
     // next check if scanned barcode is an item type barcode
     if (barcodeDetails.value.id && barcodeDetails.value.type.name !== 'Item') {
-      handleAlert({
-        type: 'error',
-        text: 'The scanned barcode is not an "Item Barcode"! Please try again.',
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: 'The scanned barcode is not an "Item Barcode"! Please try again.'
       })
       return
     }
@@ -270,17 +268,16 @@ const addItemToQueue = async (barcode_value) => {
 
     await postRefileQueueItem(payload)
 
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Item added to queue',
       position: 'top',
       timeout: 1000
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to add item to queue'
     })
   } finally {
     appActionIsLoadingData.value = false

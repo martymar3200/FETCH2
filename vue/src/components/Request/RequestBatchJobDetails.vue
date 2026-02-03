@@ -293,6 +293,7 @@
 <script setup>
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useRequestStore } from '@/stores/request-store'
@@ -490,7 +491,7 @@ const showAddPickList = ref(false)
 const selectedRequestItems = ref([])
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 const getItemLocation = inject('get-item-location')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
@@ -531,10 +532,9 @@ const loadRequestJob = async (id) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load request job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -549,17 +549,23 @@ const createPickListJob = async () => {
     await postPicklistJob(payload)
 
     // display an alert with the created picklist job id so you can click that and link directly to the new job if needed
-    handleAlert({
-      type: 'success',
-      text: `Successfully created Pick List #: <a href='/picklist/${picklistJob.value.id}' tabindex='0'>${picklistJob.value.id}</a>`,
-      autoClose: false
+    Notify.create({
+      type: 'positive',
+      message: `Successfully created Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     await getRequestBatchJob(requestBatchJob.value.id)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create picklist'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -576,17 +582,23 @@ const updatePickListJob = async () => {
     await patchPicklistJobItem(payload)
 
     // display an alert with the updated picklist job id so you can click that and link directly to the job if needed
-    handleAlert({
-      type: 'success',
-      text: `Successfully added items to Pick List #: <a href='/picklist/${picklistJob.value.id}' tabindex='0'>${picklistJob.value.id}</a>`,
-      autoClose: false
+    Notify.create({
+      type: 'positive',
+      message: `Successfully added items to Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     await getRequestBatchJob(requestBatchJob.value.id)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update picklist'
     })
   } finally {
     appActionIsLoadingData.value = false

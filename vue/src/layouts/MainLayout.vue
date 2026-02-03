@@ -15,22 +15,7 @@
       <router-view />
 
       <!-- global alert component -->
-      <transition-group
-        name="alert-notification"
-        tag="div"
-        class="alert-notification"
-        :style="calcAlertWidthPlusScrollOffset"
-      >
-        <AlertPopup
-          v-for="(item, i) in alerts"
-          :key="i"
-          :alert-type="item.type"
-          :alert-text="item.text"
-          :persistent="item.persistent"
-          :auto-close="item.autoClose"
-          @reset="clearAlerts(item.timestamp, true)"
-        />
-      </transition-group>
+
     </q-page-container>
 
     <!-- pwa install banner -->
@@ -69,41 +54,32 @@
 </template>
 
 <script setup>
-import { onMounted, ref, provide, computed } from 'vue'
+import { onMounted, ref, provide } from 'vue'
 import { useRoute } from 'vue-router'
-import { useQuasar } from 'quasar'
+import { LocalStorage } from 'quasar'
 import moment from 'moment'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
-import { useAlertPopup } from '@/composables/useAlertPopup'
-import AlertPopup from '@/components/AlertPopup.vue'
+
 import NavigationBar from '@/components/NavigationBar.vue'
 import BreadCrumb from '@/components/BreadCrumb.vue'
 
 const route = useRoute()
 
 // Composables
-const $q = useQuasar()
+
 const { currentScreenSize } = useCurrentScreenSize()
-const { alerts, handleAlert, clearAlerts } = useAlertPopup()
+
 
 // Local Data
 const breadCrumbComponent = ref(null)
 const appInstallPrompt = ref(null)
 const showAppInstallBanner = ref(false)
 const main = ref(null)
-const calcAlertWidthPlusScrollOffset = computed(() => {
-  // get the offset of the main qlayout prop and assign the calculated width for the alerts container
-  // get the scroll position of the main qlayout prop and assign the calculated top spacing for the alerts container
-  if (main.value) {
-    return `width: calc(100% - ${main.value.$.provides._q_l_.left.offset}px); top: ${main.value.$.provides._q_l_.scroll.value.position + 50}px`
-  } else {
-    return `width: calc(100% - ${300}px);`
-  }
-})
+
 
 // Logic
 onMounted(() => {
-  if (!$q.localStorage.getItem('hideAppInstallation')) {
+  if (!LocalStorage.getItem('hideAppInstallation')) {
     // this event only gets fired on devices that support pwa installs
     window.addEventListener('beforeinstallprompt', (event) => {
       appInstallPrompt.value = event
@@ -129,7 +105,7 @@ const installApp = () => {
 }
 const neverShowAppInstallBanner = () => {
   showAppInstallBanner.value = false
-  $q.localStorage.set('hideAppInstallation', true)
+  LocalStorage.set('hideAppInstallation', true)
 }
 const checkForServiceWorkerUpdates = () => {
   navigator.serviceWorker.getRegistrations().then(async (registrations) => {
@@ -147,7 +123,7 @@ const checkForServiceWorkerUpdates = () => {
 }
 
 // Global Functions
-provide('handle-alert', handleAlert) // handleAlert is globally accessible via provide/inject
+
 const handlePageOffset = () => {
   // this is the global function will use to control the q-page components min-height generation
   // this is needed since we are adding breadcrumbs to all pages which the q-page components default offset only checks for the navigation bar
@@ -234,28 +210,7 @@ const getItemLocation = (itemData) => {
   return `${module}-${aisle}-${side == 'Right' ? 'R' : side == 'Left' ? 'L' : side}-${ladder}-${shelf}-${shelfPosition}`.replace('undefined-', '')
 }
 provide('get-item-location', getItemLocation)
-const audioAlert = () => {
-  const beep = new AudioContext()
 
-  let oscillatorNode = beep.createOscillator()
-  let gainNode = beep.createGain()
-  oscillatorNode.connect(gainNode)
-
-  // Set the oscillator frequency in hertz
-  oscillatorNode.frequency.value = 280
-
-  // Set the type of oscillator
-  oscillatorNode.type= 'square'
-  gainNode.connect(beep.destination)
-
-  // Set the gain to the volume
-  gainNode.gain.value = 100 * 0.01
-
-  // Start audio with the desired duration
-  oscillatorNode.start(beep.currentTime)
-  oscillatorNode.stop(beep.currentTime + 250 * 0.001)
-}
-provide('audio-alert', audioAlert)
 const renderItemBarcodeDisplay = (itemData) => {
   // check if item data object contains barcode.value, or withdrawn_barcode.value field
   if (typeof itemData == 'object' && itemData) {
@@ -316,29 +271,5 @@ provide('handle-csv-download', handleCSVDownload)
   box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.2), 0 3px 5px rgba(0, 0, 0, 0.24);
 }
 
-.alert-notification {
-  position: absolute;
-  top: 50px;
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 0.8rem;
-  z-index: 7000;
 
-  &-enter-active {
-    animation: alert-fade-in 0.5s ease-in-out;
-  }
-
-  &-leave-active {
-    animation: alert-fade-in 0.5s ease-in-out reverse;
-  }
-}
-
-@keyframes alert-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 </style>

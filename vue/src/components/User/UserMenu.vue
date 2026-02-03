@@ -102,7 +102,8 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref } from 'vue'
+import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
@@ -130,7 +131,7 @@ const userOptions = ref([
 ])
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 const handleOptions = (option) => {
   if (option == 'Logout') {
@@ -144,10 +145,9 @@ const logoutUser = async () => {
     //reload the route to trigger any route gaurds if the user is on an auth based page
     router.go()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Logout failed'
     })
   }
 }

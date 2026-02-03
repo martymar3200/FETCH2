@@ -403,7 +403,9 @@ import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
+
 import { storeToRefs } from 'pinia'
+import { Notify } from 'quasar'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
@@ -467,7 +469,7 @@ const clearColumnFilters = () => {
 }
 
 // Logic - injections
-const handleAlert = inject('handle-alert')
+
 const currentIsoDate = inject('current-iso-date')
 const formatDateTime = inject('format-date-time')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
@@ -706,23 +708,21 @@ const handleScanInput = async () => {
     const errors = await postWithdrawJobItem(payload)
 
     if (errors && errors.length > 0) {
-      handleAlert({
-        type: 'error',
-        text: errors.join(', '),
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: errors.join(', ')
       })
     } else {
-      handleAlert({
-        type: 'success',
-        text: `Item ${barcode} added to job.`,
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: `Item ${barcode} added to job.`,
+        timeout: 1000
       })
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to add item'
     })
   } finally {
     appIsLoadingData.value = false
@@ -746,16 +746,16 @@ const updateWithdrawJob = async () => {
     }
     await patchWithdrawJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The job has been updated.',
-      autoClose: true
+    await patchWithdrawJob(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'The job has been updated.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -768,10 +768,11 @@ const cancelWithdrawJob = async () => {
     appIsLoadingData.value = true
     await deleteWithdrawJob(withdrawJob.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'The Withdraw Job has been canceled.',
-      autoClose: true
+    await deleteWithdrawJob(withdrawJob.value.id)
+
+    Notify.create({
+      type: 'positive',
+      message: 'The Withdraw Job has been canceled.'
     })
 
     router.push({
@@ -781,10 +782,9 @@ const cancelWithdrawJob = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to cancel job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -795,10 +795,17 @@ const completeWithdrawJob = async (withdrawType) => {
   try {
     // check if an associated picklist exists and make sure it is completed
     if (withdrawJob.value.pick_list && withdrawJob.value.pick_list.status !== 'Completed') {
-      handleAlert({
-        type: 'error',
-        text: `A Pick list job # <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a> was generated for withdrawal but not completed yet, please complete the picklist job inorder to complete withdrawal process.`,
-        autoClose: false
+      Notify.create({
+        type: 'negative',
+        message: `A Pick list job # <a href='/picklist/${withdrawJob.value.pick_list_id}' style='color: white; text-decoration: underline;'>${withdrawJob.value.pick_list_id}</a> was generated for withdrawal but not completed yet, please complete the picklist job inorder to complete withdrawal process.`,
+        html: true,
+        timeout: 0,
+        actions: [
+          {
+            icon: 'close',
+            color: 'white'
+          }
+        ]
       })
       return
     }
@@ -812,10 +819,11 @@ const completeWithdrawJob = async (withdrawType) => {
     }
     await patchWithdrawJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'All items have been successfully withdrawn, the job has been completed.',
-      autoClose: true
+    await patchWithdrawJob(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'All items have been successfully withdrawn, the job has been completed.'
     })
 
     // If the user has selected complete and print, let's print!
@@ -823,10 +831,9 @@ const completeWithdrawJob = async (withdrawType) => {
       batchSheetComponent.value.printBatchReport()
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to complete job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -841,16 +848,16 @@ const removeWithdrawItems = async (barcode_values) => {
     }
     await deleteWithdrawJobItems(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The item has been removed from the job.',
-      autoClose: true
+    await deleteWithdrawJobItems(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'The item has been removed from the job.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to remove item'
     })
   } finally {
     appIsLoadingData.value = false
@@ -866,16 +873,24 @@ const createPicklistJob = async () => {
     }
     await patchWithdrawJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully created Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a>`,
-      autoClose: false
+    await patchWithdrawJob(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: `Successfully created Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' style='color: white; text-decoration: underline;'>${withdrawJob.value.pick_list_id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create picklist job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -891,16 +906,24 @@ const addToPicklistJob = async () => {
     }
     await patchWithdrawJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: `Successfully updated Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' tabindex='0'>${withdrawJob.value.pick_list_id}</a>`,
-      autoClose: false
+    await patchWithdrawJob(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: `Successfully updated Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' style='color: white; text-decoration: underline;'>${withdrawJob.value.pick_list_id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update picklist job'
     })
   } finally {
     appActionIsLoadingData.value = false

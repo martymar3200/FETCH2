@@ -53,10 +53,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
+import { Notify } from 'quasar'
 
 // Store Data
 const { appIsLoadingData, appActionIsLoadingData } = storeToRefs(useGlobalStore())
@@ -67,7 +68,7 @@ const allowChildOwnerShelving = ref(false)
 const settingExists = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onMounted(async () => {
   await loadCurrentSetting()
@@ -109,17 +110,15 @@ const updateSetting = async (newValue) => {
       settingExists.value = true
     }
 
-    handleAlert({
-      type: 'success',
-      text: 'Child owner shelving setting updated successfully.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Child owner shelving setting updated successfully.'
     })
   } catch (error) {
     console.error('Update error:', error)
-    handleAlert({
-      type: 'error',
-      text: 'Failed to update child owner shelving setting.',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to update child owner shelving setting.'
     })
     // Revert to previous value
     await loadCurrentSetting()

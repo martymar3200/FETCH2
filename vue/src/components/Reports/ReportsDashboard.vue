@@ -350,6 +350,7 @@
 
 <script setup>
 import { ref, inject, onBeforeMount, computed, watch } from 'vue'
+import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { useReportsStore } from '@/stores/reports-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -559,7 +560,7 @@ watch(
 )
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 
@@ -1299,10 +1300,9 @@ const regenerateReport = async (qParams) => {
       ...serverSideFilters
     }, reportType.value)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to regenerate report'
     })
   } finally {
     appIsLoadingData.value = false

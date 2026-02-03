@@ -19,6 +19,7 @@
 <script setup>
 import { onBeforeMount, onMounted, inject, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useVerificationStore } from 'src/stores/verification-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -42,7 +43,7 @@ const { setMainNavDrawerOpen } = globalStore
 
 // Logic
 const handlePageOffset = inject('handle-page-offset')
-const handleAlert = inject('handle-alert') // Inject handleAlert
+
 
 // Watch for changes in the jobId to control the drawer state
 watch(() => route.params.jobId, (newJobId) => {
@@ -65,10 +66,9 @@ watch(() => route.params.containerId, async (newId, oldId) => {
     // Re-fetch the data for the newly selected tray
     if (verificationJob.value.trayed) {
       await getVerificationTray(newId).catch(error => {
-        handleAlert({
-          type: 'error',
-          text: error,
-          autoClose: true
+        Notify.create({
+          type: 'negative',
+          message: error.response?.data?.detail || error
         })
         router.push({
           name: 'verification',

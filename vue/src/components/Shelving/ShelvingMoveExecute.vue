@@ -292,7 +292,7 @@ import { useShelvingStore } from '@/stores/shelving-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
 import { storeToRefs } from 'pinia'
-import { useQuasar } from 'quasar'
+import { Notify } from 'quasar'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
@@ -308,7 +308,7 @@ const router = useRouter()
 const route = useRoute()
 const shelvingStore = useShelvingStore()
 const barcodeStore = useBarcodeStore()
-const $q = useQuasar()
+
 
 // Composables
 const { compiledBarCode } = useBarcodeScanHandler()
@@ -331,7 +331,6 @@ const { verifyBarcode, getBarcodeDetails } = barcodeStore
 
 // Injected helpers
 const currentIsoDate = inject('current-iso-date')
-const handleAlert = inject('handle-alert')
 
 // Props from route
 const moveType = computed(() => route.params.type || 'tray-non-tray')
@@ -461,13 +460,13 @@ const startJob = async () => {
       id: job.value.id,
       status: 'Running'
     })
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Move job started!'
     })
     saveState()
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -488,14 +487,14 @@ const cancelJob = async () => {
       status: 'Cancelled'
     })
     showCancelDialog.value = false
-    $q.notify({
+    Notify.create({
       type: 'info',
       message: 'Move job cancelled'
     })
     deleteDataInIndexDb('shelvingStore', 'moveJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to cancel job'
     })
@@ -510,10 +509,9 @@ const scanDestination = async () => {
   }
 
   if (!checkUserPermission('can_move_trays_and_items_shelving_locations')) {
-    handleAlert({
-      type: 'error',
-      text: 'Permission denied',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'Permission denied'
     })
     return
   }
@@ -546,10 +544,9 @@ const scanDestination = async () => {
       containerInput.value?.focus()
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error?.response?.data?.detail || 'Failed to scan destination',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error?.response?.data?.detail || 'Failed to scan destination'
     })
   } finally {
     appIsLoadingData.value = false
@@ -702,14 +699,14 @@ const completeJob = async () => {
     })
 
     showCompleteDialog.value = false
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Move job completed!'
     })
     deleteDataInIndexDb('shelvingStore', 'moveJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: error?.response?.data?.detail || 'Failed to complete job'
     })
@@ -796,10 +793,9 @@ onMounted(async () => {
         }
       }
     } catch (error) {
-      handleAlert({
-        type: 'error',
-        text: 'Failed to load move job',
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: 'Failed to load move job'
       })
       router.push({ name: 'shelving' })
       return

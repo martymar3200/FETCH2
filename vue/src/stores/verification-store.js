@@ -1,4 +1,4 @@
-2;iimport { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
 
 export const useVerificationStore = defineStore('verification-store', {
@@ -55,10 +55,10 @@ export const useVerificationStore = defineStore('verification-store', {
     }
   },
   actions: {
-    resetVerificationStore() {
+    resetVerificationStore () {
       this.$reset()
     },
-    resetVerificationJob() {
+    resetVerificationJob () {
       this.verificationJob = {
         id: null,
         trayed: null,
@@ -74,7 +74,7 @@ export const useVerificationStore = defineStore('verification-store', {
       }
       this.originalVerificationJob = null
     },
-    resetVerificationContainer() {
+    resetVerificationContainer () {
       this.verificationContainer = {
         id: null,
         owner: '',
@@ -87,7 +87,7 @@ export const useVerificationStore = defineStore('verification-store', {
         items: []
       }
     },
-    async getVerificationJobByAccessionId(accessionJobId) {
+    async getVerificationJobByAccessionId (accessionJobId) {
       try {
         const res = await this.$api.get(`${inventoryServiceApi.verificationJobsByAccessionJobId}${accessionJobId}`)
         return res
@@ -95,7 +95,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async getVerificationJobList(paramsObj) {
+    async getVerificationJobList (paramsObj) {
       try {
         const res = await this.$api.get(inventoryServiceApi.verificationJobs, {
           params: {
@@ -112,7 +112,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async getVerificationJob(workflowId) {
+    async getVerificationJob (workflowId) {
       try {
         const res = await this.$api.get(`${inventoryServiceApi.verificationJobsWorkflow}${workflowId}`)
         this.verificationJob = res.data
@@ -121,7 +121,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async patchVerificationJob(payload) {
+    async patchVerificationJob (payload) {
       try {
         const res = await this.$api.patch(`${inventoryServiceApi.verificationJobs}${payload.id}`, payload)
         this.verificationJob = res.data
@@ -130,7 +130,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async getVerificationTray(barcode) {
+    async getVerificationTray (barcode) {
       try {
         const res = await this.$api.get(`${inventoryServiceApi.traysBarcode}${barcode}`)
         this.verificationContainer = res.data
@@ -139,7 +139,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async patchVerificationTray(payload) {
+    async patchVerificationTray (payload) {
       try {
         const res = await this.$api.patch(`${inventoryServiceApi.trays}${payload.id}`, payload)
         this.verificationContainer = {
@@ -155,7 +155,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async postVerificationTrayItem(payload) {
+    async postVerificationTrayItem (payload) {
       try {
         // add the item to the items table
         const res = await this.$api.post(inventoryServiceApi.items, payload)
@@ -177,7 +177,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async patchVerificationTrayItem(payload) {
+    async patchVerificationTrayItem (payload) {
       try {
         const res = await this.$api.patch(`${inventoryServiceApi.items}${payload.id}`, payload)
 
@@ -194,7 +194,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async deleteVerificationTrayItem(barcodeItemList) {
+    async deleteVerificationTrayItem (barcodeItemList) {
       try {
         //pass an update to verification job to track which user removed the tray item before we delete it from the system
         await Promise.all(barcodeItemList.map(item => {
@@ -221,7 +221,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async getVerificationNonTrayItem(barcode) {
+    async getVerificationNonTrayItem (barcode) {
       try {
         const res = await this.$api.get(`${inventoryServiceApi.nonTrayItemsBarcode}${barcode}`)
         this.verificationContainer = res.data
@@ -230,7 +230,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async postVerificationNonTrayItem(payload) {
+    async postVerificationNonTrayItem (payload) {
       try {
         // add the item to the nontray items table
         const res = await this.$api.post(inventoryServiceApi.nonTrayItems, payload)
@@ -255,7 +255,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async patchVerificationNonTrayItem(payload) {
+    async patchVerificationNonTrayItem (payload) {
       try {
         const res = await this.$api.patch(`${inventoryServiceApi.nonTrayItems}${payload.id}`, payload)
         this.verificationContainer = res.data
@@ -268,7 +268,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async deleteVerificationNonTrayItem(barcodeItemList) {
+    async deleteVerificationNonTrayItem (barcodeItemList) {
       try {
         //pass an update to verification job to track which user removed the nontray item before we delete it from the system
         await Promise.all(barcodeItemList.map(item => {
@@ -292,7 +292,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async verifyTrayItem(id) {
+    async verifyTrayItem (id) {
       try {
         await this.$api.patch(`${inventoryServiceApi.items}${id}`, { scanned_for_verification: true })
 
@@ -321,7 +321,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async verifyNonTrayItem(id) {
+    async verifyNonTrayItem (id) {
       try {
         await this.$api.patch(`${inventoryServiceApi.nonTrayItems}${id}`, { scanned_for_verification: true })
 
@@ -331,7 +331,7 @@ export const useVerificationStore = defineStore('verification-store', {
         throw error
       }
     },
-    async cancelVerificationJob(id) {
+    async cancelVerificationJob (id) {
       try {
         await this.$api.delete(`${inventoryServiceApi.verificationJobs}${id}`)
         this.resetVerificationJob()

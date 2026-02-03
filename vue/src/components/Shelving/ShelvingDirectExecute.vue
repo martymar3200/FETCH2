@@ -312,7 +312,7 @@ import { useShelvingStore } from '@/stores/shelving-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
-import { useQuasar } from 'quasar'
+import { Notify } from 'quasar'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
@@ -328,7 +328,7 @@ import ShelvingBatchSheet from '@/components/Shelving/ShelvingBatchSheet.vue'
 
 const router = useRouter()
 const shelvingStore = useShelvingStore()
-const $q = useQuasar()
+
 
 // Composables
 const { compiledBarCode } = useBarcodeScanHandler()
@@ -343,7 +343,6 @@ const { getShelfByBarcode, patchShelvingJob, postShelvingJobContainer, resetShel
 
 // Injected helpers
 const currentIsoDate = inject('current-iso-date')
-const handleAlert = inject('handle-alert')
 const getItemLocation = inject('get-item-location')
 
 // Local State
@@ -438,13 +437,13 @@ const updateUserAssignment = async () => {
       id: job.value.id,
       assigned_user_id: job.value.assigned_user_id
     })
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'User assignment updated'
     })
     editJob.value = false
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to update user assignment'
     })
@@ -505,13 +504,13 @@ const startJob = async () => {
       id: job.value.id,
       status: 'Running'
     })
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Job started!'
     })
     addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(shelvingJob.value)))
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -536,14 +535,14 @@ const cancelJob = async () => {
       status: 'Cancelled'
     })
     showCancelDialog.value = false
-    $q.notify({
+    Notify.create({
       type: 'info',
       message: 'Job cancelled'
     })
     deleteDataInIndexDb('shelvingStore', 'shelvingJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to cancel job'
     })
@@ -558,10 +557,9 @@ const scanShelf = async () => {
   }
 
   if (!checkUserPermission('can_create_and_execute_direct_shelving_job')) {
-    handleAlert({
-      type: 'error',
-      text: 'Permission denied',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'Permission denied'
     })
     return
   }
@@ -576,10 +574,9 @@ const scanShelf = async () => {
       containerInput.value?.focus()
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to scan shelf'
     })
   } finally {
     appIsLoadingData.value = false
@@ -644,7 +641,7 @@ const shelveContainer = async () => {
 
     addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(shelvingJob.value)))
 
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Container shelved!'
     })
@@ -672,14 +669,14 @@ const completeJob = async () => {
     })
 
     showCompleteDialog.value = false
-    $q.notify({
+    Notify.create({
       type: 'positive',
       message: 'Job completed!'
     })
     deleteDataInIndexDb('shelvingStore', 'shelvingJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    $q.notify({
+    Notify.create({
       type: 'negative',
       message: 'Failed to complete job'
     })

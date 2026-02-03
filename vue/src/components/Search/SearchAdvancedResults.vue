@@ -75,6 +75,7 @@
 
 <script setup>
 import { onBeforeMount, ref, inject, watch } from 'vue'
+import { Notify } from 'quasar'
 import { useRoute, useRouter  } from 'vue-router'
 import { useSearchStore } from '@/stores/search-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -107,7 +108,7 @@ const showDownloadReport = ref(false)
 
 // Logic
 const formatDateTime = inject('format-date-time')
-const handleAlert = inject('handle-alert')
+
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 
 onBeforeMount(() => {
@@ -770,10 +771,9 @@ const loadAdvancedSearch = async (qParams) => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load advanced search results'
     })
   } finally {
     appIsLoadingData.value = false
@@ -798,10 +798,9 @@ const downloadAdvancedSearchReport = async () => {
     }
     await downloadAdvancedSearchResults(endpoint)
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to download report'
     })
   } finally {
     appIsLoadingData.value = false

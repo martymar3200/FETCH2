@@ -389,6 +389,7 @@ import { useOptionStore } from '@/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
 import { useRefileStore } from '@/stores/refile-store'
 import { storeToRefs } from 'pinia'
+import { Notify } from 'quasar'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
@@ -568,7 +569,7 @@ const getStatusColor = (status) => {
 }
 
 // Logic - injections need to be before computeds that use them
-const handleAlert = inject('handle-alert')
+
 const currentIsoDate = inject('current-iso-date')
 const getItemLocation = inject('get-item-location')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
@@ -687,17 +688,17 @@ watch(compiledBarCode, (barcode) => {
 const triggerItemScan = (barcode_value) => {
   // check if the scanned barcode is in the item data and that the barcode hasnt been refiled already
   if (!refileJob.value.refile_job_items?.some(itm => itm.barcode.value == barcode_value)) {
-    handleAlert({
-      type: 'error',
-      text: 'The scanned item does not exist in this refile job. Please try again.',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'The scanned item does not exist in this refile job. Please try again.',
+      timeout: 2000
     })
     return
   } else if (refileJob.value.refile_job_items?.some(itm => itm.barcode.value == barcode_value && itm.status !== 'Out')) {
-    handleAlert({
-      type: 'error',
-      text: 'The scanned item has already been marked as refiled.',
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: 'The scanned item has already been marked as refiled.',
+      timeout: 2000
     })
     return
   } else {
@@ -730,16 +731,14 @@ const executeRefileJob = async () => {
     addDataToIndexDb('refileStore', 'refileJob', JSON.parse(JSON.stringify(refileJob.value)))
     addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(originalRefileJob.value)))
 
-    handleAlert({
-      type: 'success',
-      text: 'Refile Job Successfully Started',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Refile Job Successfully Started'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to start refile job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -751,10 +750,9 @@ const revertItemsToQueue = async () => {
     await removeRefileItems(selectedItems.value.map(item => item.barcode.value))
     refileItemsTableComponent.value.clearSelectedData()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to revert items'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -770,16 +768,14 @@ const updateRefileJob = async () => {
     }
     await patchRefileJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The job has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The job has been updated.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -791,10 +787,9 @@ const cancelRefileJob = async () => {
     appIsLoadingData.value = true
     await deleteRefileJob(refileJob.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'The Refile Job has been canceled.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Refile Job has been canceled.'
     })
 
     router.push({
@@ -804,10 +799,9 @@ const cancelRefileJob = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to cancel job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -825,10 +819,9 @@ const completeRefileJob = async () => {
     }
     await patchRefileJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The Refile Job has been completed.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Refile Job has been completed.'
     })
 
     router.push({
@@ -838,10 +831,9 @@ const completeRefileJob = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to complete job'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -875,16 +867,14 @@ const removeRefileItems = async (barcode_values) => {
     addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(originalRefileJob.value)))
 
     const alertMessage = (editItems.value && selectedItems.value.length) > 1 ? 'items have' : 'item has'
-    handleAlert({
-      type: 'success',
-      text: `The ${alertMessage} been sent back to the refile queue.`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `The ${alertMessage} been sent back to the refile queue.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to remove items'
     })
   } finally {
     appIsLoadingData.value = false

@@ -639,6 +639,7 @@
 <script setup>
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -1075,7 +1076,7 @@ const filterRequestsByBuilding = ref(null)
 const activePickListBuildingFilter = ref(null)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 const getItemLocation = inject('get-item-location')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
@@ -1192,10 +1193,9 @@ const loadRequestJobs = async (qParams) => {
       await getRequestBatchJobList(batchFilterParams)
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load requests'
     })
   } finally {
     appIsLoadingData.value = false
@@ -1257,10 +1257,9 @@ const loadRequestJobsByBuilding = async () => {
       showAddPickList.value = true
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to filter requests'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1289,10 +1288,9 @@ const loadRequestJob = async (id) => {
       })
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load request job'
     })
   } finally {
     appIsLoadingData.value = false
@@ -1308,18 +1306,24 @@ const createPickListJob = async () => {
     await postPicklistJob(payload)
 
     // display an alert with the created picklist job id so you can click that and link directly to the new job if needed
-    handleAlert({
-      type: 'success',
-      text: `Successfully created Pick List #: <a href='/picklist/${picklistJob.value.id}' tabindex='0'>${picklistJob.value.id}</a>`,
-      autoClose: false
+    Notify.create({
+      type: 'positive',
+      message: `Successfully created Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     requestTableComponent.value.resetTablePagination()
     loadRequestJobs()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create picklist'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1336,18 +1340,24 @@ const updatePickListJob = async () => {
     await patchPicklistJobItem(payload)
 
     // display an alert with the updated picklist job id so you can click that and link directly to the job if needed
-    handleAlert({
-      type: 'success',
-      text: `Successfully added items to Pick List #: <a href='/picklist/${picklistJob.value.id}' tabindex='0'>${picklistJob.value.id}</a>`,
-      autoClose: false
+    Notify.create({
+      type: 'positive',
+      message: `Successfully added items to Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
+      html: true,
+      timeout: 0,
+      actions: [
+        {
+          icon: 'close',
+          color: 'white'
+        }
+      ]
     })
     requestTableComponent.value.resetTablePagination()
     loadRequestJobs()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update picklist'
     })
   } finally {
     appActionIsLoadingData.value = false

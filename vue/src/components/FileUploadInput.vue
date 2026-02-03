@@ -64,7 +64,8 @@
 </template>
 
 <script setup>
-import { ref, inject, watch } from 'vue'
+import { ref, watch } from 'vue'
+import { Notify } from 'quasar'
 
 // Props
 const mainProps = defineProps({
@@ -92,7 +93,7 @@ const activeState = ref(false)
 const files = ref([])
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 const handleDrop = (evt) => {
   evt.preventDefault()
@@ -135,10 +136,9 @@ const addFiles = (newFiles) => {
   // validate the files and cancel adding if a file is invalid
   for (const f of uploadableFiles) {
     if (!validateFile(f)) {
-      handleAlert({
-        type: 'error',
-        text: 'One or More Files Selected Are Not Allowed!',
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: 'One or More Files Selected Are Not Allowed!'
       })
       return
     }

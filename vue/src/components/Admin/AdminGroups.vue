@@ -305,8 +305,9 @@
 </template>
 
 <script setup>
-import { ref, inject, onBeforeMount } from 'vue'
+import { ref, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -353,7 +354,7 @@ const confirmationModal = ref(null)
 const showConfirmationModal = ref(null)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 
 onBeforeMount(() => {
   resetGroupStore()
@@ -389,10 +390,9 @@ const loadAdminGroups = async () => {
     appIsLoadingData.value = true
     await getAdminGroupList()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load admin groups'
     })
   } finally {
     appIsLoadingData.value = false
@@ -410,10 +410,9 @@ const loadAdminGroupPermissions = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load group permissions'
     })
   } finally {
     appIsLoadingData.value = false
@@ -425,10 +424,9 @@ const loadAdminGroupUsers = async () => {
     await getAdminGroupUsers(selectedGroup.value.id)
     showGroupUserModal.value = true
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load group users'
     })
   } finally {
     appIsLoadingData.value = false
@@ -442,16 +440,16 @@ const createAdminGroup = async () => {
     }
     await postAdminGroup(payload)
 
-    handleAlert({
-      type: 'success',
-      text: `The ${groupDetails.value.name} group has been created.`,
-      autoClose: true
+    await postAdminGroup(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: `The ${groupDetails.value.name} group has been created.`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to create group'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -467,16 +465,16 @@ const updateAdminGroup = async () => {
     }
     await patchAdminGroup(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The groups name has been updated.',
-      autoClose: true
+    await patchAdminGroup(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'The groups name has been updated.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update group name'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -488,16 +486,16 @@ const removeAdminGroup = async () => {
     appActionIsLoadingData.value = true
     await deleteAdminGroup(selectedGroup.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'The group has been successfully deleted.',
-      autoClose: true
+    await deleteAdminGroup(selectedGroup.value.id)
+
+    Notify.create({
+      type: 'positive',
+      message: 'The group has been successfully deleted.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to delete group'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -510,10 +508,11 @@ const addAdminGroupUser = async () => {
     appActionIsLoadingData.value = true
     await Promise.all(addUserInput.value.map(usr => postAdminGroupUser(selectedGroup.value.id, usr)))
 
-    handleAlert({
-      type: 'success',
-      text: 'The group users have been updated.',
-      autoClose: true
+    await Promise.all(addUserInput.value.map(usr => postAdminGroupUser(selectedGroup.value.id, usr)))
+
+    Notify.create({
+      type: 'positive',
+      message: 'The group users have been updated.'
     })
 
     // check if the signed in user exists in an edited group and reload permissions on the user if change to group is detected
@@ -521,10 +520,9 @@ const addAdminGroupUser = async () => {
       loadUserPermissions()
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to add user to group'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -536,10 +534,11 @@ const removeAdminGroupUser = async () => {
     appActionIsLoadingData.value = true
     await deleteAdminGroupUser(selectedGroup.value.id, selectedGroupUserId.value)
 
-    handleAlert({
-      type: 'success',
-      text: 'The user has been successfully deleted from the group.',
-      autoClose: true
+    await deleteAdminGroupUser(selectedGroup.value.id, selectedGroupUserId.value)
+
+    Notify.create({
+      type: 'positive',
+      message: 'The user has been successfully deleted from the group.'
     })
 
     // check if the delete user is the signed user and reload their permissions
@@ -547,10 +546,9 @@ const removeAdminGroupUser = async () => {
       loadUserPermissions()
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to remove user from group'
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -562,10 +560,9 @@ const loadUserPermissions = async () => {
   try {
     await getUserPermissions()
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to reload user permissions'
     })
   }
 }

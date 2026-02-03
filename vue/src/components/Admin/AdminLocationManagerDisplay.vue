@@ -74,7 +74,8 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref, inject, computed } from 'vue'
+import { onBeforeMount, ref, computed, inject } from 'vue'
+import { Notify } from 'quasar'
 import { useRoute } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
 import { useBuildingStore } from '@/stores/building-store'
@@ -226,7 +227,7 @@ const showLocationModal = ref({
 
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const formatDateTime = inject('format-date-time')
 
 onBeforeMount(() => {
@@ -585,10 +586,9 @@ const loadLocationData = async (qParams) => {
         break
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to load location data'
     })
   } finally {
     appIsLoadingData.value = false

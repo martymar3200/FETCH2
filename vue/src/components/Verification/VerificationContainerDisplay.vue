@@ -669,6 +669,7 @@
 <script setup>
 import { ref, watch, inject, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
@@ -686,6 +687,7 @@ import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import MobileActionBar from '@/components/MobileActionBar.vue'
 import VerificationNonTrayInfo from '@/components/Verification/VerificationNonTrayInfo.vue'
 import VerificationBatchSheet from '@/components/Verification/VerificationBatchSheet.vue'
+import { audioAlert } from '@/utils/audio.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -746,8 +748,8 @@ const selectedItems = ref([])
 // renderIsEditMode removed
 
 // Logic
-const handleAlert = inject('handle-alert')
-const audioAlert = inject('audio-alert')
+
+
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 const currentIsoDate = inject('current-iso-date')
 
@@ -816,10 +818,9 @@ watch(
           await updateVerificationJobStatus('Running')
         }
       } catch (error) {
-        handleAlert({
-          type: 'error',
-          text: `Failed to load tray: ${error}`,
-          persistent: true
+        Notify.create({
+          type: 'negative',
+          message: `Failed to load tray: ${error.response?.data?.detail || error}`
         })
       } finally {
         appIsLoadingData.value = false
@@ -851,10 +852,9 @@ watch(compiledBarCode, (barcode_value) => {
 const handleTrayScan = async (barcode_value) => {
   try {
     if (verificationJob.value.trays && !verificationJob.value.trays.some(tray => tray.barcode.value == barcode_value)) {
-      handleAlert({
-        type: 'error',
-        text: `The scanned tray ${barcode_value} doesn't exist on this verification job. Please scan a tray that is associated to this job.`,
-        persistent: true
+      Notify.create({
+        type: 'negative',
+        message: `The scanned tray ${barcode_value} doesn't exist on this verification job. Please scan a tray that is associated to this job.`
       })
       scanBarcodeInput.value = ''
       return
@@ -885,10 +885,9 @@ const handleTrayScan = async (barcode_value) => {
       scanBarcodeInput.value = ''
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appIsLoadingData.value = false
@@ -952,10 +951,9 @@ const triggerItemScan = async (barcode_value) => {
       }
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: `Error with barcode "${barcode_value}": ${error}`,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: `Error with barcode "${barcode_value}": ${error.response?.data?.detail || error}`
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -974,20 +972,15 @@ const validateItemBarcode = async () => {
         (item) => item.barcode.id == barcodeDetails.value.id
       ).id
       await verifyTrayItem(trayItemId)
-      handleAlert({
-        type: 'success',
-        text: 'Item Verified',
-        autoClose: true
-      })
+      // Removed "Item Verified" notification as requested
     } else {
       const nonTrayItemId = verificationContainer.value.id
       await verifyNonTrayItem(nonTrayItemId)
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1033,16 +1026,14 @@ const addContainerItem = async () => {
       }
       await postVerificationNonTrayItem(payload)
     }
-    handleAlert({
-      type: 'success',
-      text: 'Item has been added to the job.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Item has been added to the job.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1061,10 +1052,9 @@ const updateContainerItem = async (barcode_value) => {
         (item) => item.barcode.id == barcodeDetails.value.id
       )
     ) {
-      handleAlert({
-        type: 'error',
-        text: 'This Barcode already exists in this container.',
-        autoClose: true
+      Notify.create({
+        type: 'negative',
+        message: 'This Barcode already exists in this container.'
       })
       return
     }
@@ -1098,10 +1088,9 @@ const updateContainerItem = async (barcode_value) => {
     }
 
     // Update local state potentially? Store should handle it on refetch/reactivity
-    handleAlert({
-      type: 'success',
-      text: 'The item has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The item has been updated.'
     })
 
     selectedItems.value = []
@@ -1109,10 +1098,9 @@ const updateContainerItem = async (barcode_value) => {
       barcodeEditModal.value.hideModal()
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1138,10 +1126,9 @@ const handleConfirmationModal = async (type) => {
       if (type === 'completePrint') {
         batchSheetComponent.value.printBatchReport()
       }
-      handleAlert({
-        type: 'success',
-        text: 'Job Completed',
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: 'Job Completed'
       })
       router.push({
         name: 'verification',
@@ -1162,10 +1149,9 @@ const handleConfirmationModal = async (type) => {
         await deleteBarcode(item.barcode.id)
       }
 
-      handleAlert({
-        type: 'success',
-        text: 'Item Deleted',
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: 'Item Deleted'
       })
       selectedItems.value = []
     } else if (type === 'delete') {
@@ -1178,10 +1164,9 @@ const handleConfirmationModal = async (type) => {
       }
       // Bulk delete barcodes
       await Promise.all(selectedItems.value.map(i => deleteBarcode(i.barcode.id)))
-      handleAlert({
-        type: 'success',
-        text: 'Items removed',
-        autoClose: true
+      Notify.create({
+        type: 'positive',
+        message: 'Items removed'
       })
       selectedItems.value = []
     } else if (type === 'addItem') {
@@ -1195,25 +1180,22 @@ const handleConfirmationModal = async (type) => {
           id: accessionJobId,
           status: 'Running'
         })
-        handleAlert({
-          type: 'success',
-          text: 'Verification Job cancelled. Accession Job returned to Running status.',
-          autoClose: true
+        Notify.create({
+          type: 'positive',
+          message: 'Verification Job cancelled. Accession Job returned to Running status.'
         })
       } else {
-        handleAlert({
-          type: 'success',
-          text: 'Verification Job cancelled.',
-          autoClose: true
+        Notify.create({
+          type: 'positive',
+          message: 'Verification Job cancelled.'
         })
       }
       router.push({ name: 'home' })
     }
   } catch (err) {
-    handleAlert({
-      type: 'error',
-      text: err.message || err,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: err.message || err
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1296,16 +1278,14 @@ const updateVerificationJobStatus = async (status) => {
     }
     await patchVerificationJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: `Job Status has been updated to: ${status}`,
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: `Job Status has been updated to: ${status}`
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      autoClose: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appIsLoadingData.value = false
@@ -1319,17 +1299,15 @@ const updateJobMediaType = async (hideModal) => {
       id: verificationJob.value.id,
       media_type_id: selectedMediaType.value.id
     })
-    handleAlert({
-      type: 'success',
-      text: 'Job Settings Updated',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'Job Settings Updated'
     })
     hideModal()
   } catch (err) {
-    handleAlert({
-      type: 'error',
-      text: err.message,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: err.message || err.toString()
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -1341,10 +1319,9 @@ const updateTrayBarcode = async () => {
   // verificationContainer.value.id
   // But we need backend support.
   // For now, let's just alert
-  handleAlert({
+  Notify.create({
     type: 'warning',
-    text: 'Editing tray barcode is not fully implemented.',
-    autoClose: true
+    message: 'Editing tray barcode is not fully implemented.'
   })
   showEditTrayModal.value = false
 }

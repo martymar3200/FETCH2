@@ -233,6 +233,7 @@
 <script setup>
 import { ref, watch, toRaw, inject, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
@@ -291,7 +292,7 @@ const historyModal = ref(null)
 const showAuditTrailModal = ref(false)
 
 // Logic
-const handleAlert = inject('handle-alert')
+
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 
 watch(route, () => {
@@ -314,10 +315,9 @@ const handleTrayScan = async (barcode_value) => {
     await getOptions('sizeClass', { short_name: barcode_value.slice(0, 2) })
     const generateSizeClass = sizeClass.value.find(size => size.short_name == barcode_value.slice(0, 2))?.id
     if (!generateSizeClass && accessionJob.value.status !== 'Completed') {
-      handleAlert({
-        type: 'error',
-        text: `The tray can not be added, the container size ${barcode_value.slice(0, 2)} doesnt exist in the system. Please add it and try again.`,
-        persistent: true
+      Notify.create({
+        type: 'negative',
+        message: `The tray can not be added, the container size ${barcode_value.slice(0, 2)} doesnt exist in the system. Please add it and try again.`
       })
       return
     }
@@ -355,10 +355,9 @@ const handleTrayScan = async (barcode_value) => {
       })
     }
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appIsLoadingData.value = false
@@ -384,16 +383,14 @@ const updateTrayJob = async () => {
 
     await patchAccessionJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The job has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The job has been updated.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -409,10 +406,9 @@ const cancelAccessionJob = async () => {
     }
     await patchAccessionJob(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The Accession Job has been canceled.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Accession Job has been canceled.'
     })
     appActionIsLoadingData.value = false
 
@@ -425,10 +421,9 @@ const cancelAccessionJob = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
     appActionIsLoadingData.value = false
   }
@@ -442,16 +437,14 @@ const updateTrayContainer = async () => {
 
     await patchAccessionTray(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The tray has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The tray has been updated.'
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -471,10 +464,9 @@ const updateTrayContainerBarcode = async () => {
     }
     await patchAccessionTray(payload)
 
-    handleAlert({
-      type: 'success',
-      text: 'The tray has been updated.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The tray has been updated.'
     })
 
     // update our router params without reloading the page
@@ -486,10 +478,9 @@ const updateTrayContainerBarcode = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
   } finally {
     appActionIsLoadingData.value = false
@@ -503,10 +494,9 @@ const removeTrayContainer = async () => {
     await deleteAccessionTrayItem(accessionContainer.value.items.map(item => item.id))
     await deleteAccessionTray(accessionContainer.value.id)
 
-    handleAlert({
-      type: 'success',
-      text: 'The Tray Container has been deleted.',
-      autoClose: true
+    Notify.create({
+      type: 'positive',
+      message: 'The Tray Container has been deleted.'
     })
     confirmationModal.value.hideModal()
     appActionIsLoadingData.value = false
@@ -518,10 +508,9 @@ const removeTrayContainer = async () => {
       }
     })
   } catch (error) {
-    handleAlert({
-      type: 'error',
-      text: error,
-      persistent: true
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
     })
     appActionIsLoadingData.value = false
   }
