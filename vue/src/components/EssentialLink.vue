@@ -103,8 +103,24 @@ const emit = defineEmits(['click'])
 
 <style lang="scss" scoped>
 .essential-link {
+  min-height: 48px;
+  border-radius: 8px; /* rounded-borders equivalent */
+  margin: 4px 8px; /* space between links */
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+
   :deep(div.q-item__section--avatar) {
     min-width: initial;
+  }
+
+  /* Active state styling handled by parent or router-link-active class */
+  &.q-router-link--active,
+  &.nav-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    font-weight: 500;
+  }
+
+  &:hover:not(.disabled) {
+    background-color: rgba(255, 255, 255, 0.05);
   }
 }
 </style>

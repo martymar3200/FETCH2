@@ -4,7 +4,7 @@
     flat
     dense
     class="text-body1 authentication"
-    color="white"
+    color="primary"
     label="Login"
     aria-label="Login"
     :loading="isStageOrProd ? appActionIsLoadingData : null"

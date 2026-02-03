@@ -9,3 +9,25 @@
 @import "components/qdialog";
 @import "components/qtable";
 @import "components/table";
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.text-h1,
+.text-h2,
+.text-h3,
+.text-h4,
+.text-h5,
+.text-h6,
+th,
+td {
+    font-family: 'Inter', sans-serif;
+}
+
+.bg-sidebar-theme {
+    background-color: $sidebar-bg !important;
+}

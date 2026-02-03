@@ -2,14 +2,13 @@
   <div class="nav">
     <!-- main nav -->
     <q-header
-      elevated
-      class="nav-top"
+      class="nav-top bg-white text-primary bordered"
     >
-      <q-toolbar class="bg-secondary justify-between">
+      <q-toolbar class="justify-between q-py-xs">
         <!-- MODIFIED: This button now calls the global store action -->
         <q-btn
           v-if="userData.user_id"
-          color="white"
+          color="primary"
           flat
           dense
           icon="menu"
@@ -30,25 +29,25 @@
       <!-- barcode scan banner -->
       <q-banner
         v-if="!barcodeScanAllowed"
-        class="nav-banner bg-color-gray-light text-color-black"
+        class="nav-banner bg-red-1 text-negative"
         inline-actions
         dense
       >
         <q-icon
           name="mdi-barcode-scan"
-          color="black"
-          size="25px"
+          color="negative"
+          size="20px"
           class="q-mr-sm"
         />
-        Barcode scanning is <strong class="text-red">disabled</strong>.
+        <span class="text-weight-medium">Barcode scanning is disabled.</span>
         <template #action>
           <q-btn
             dense
             no-caps
             unelevated
-            color="positive"
+            color="negative"
             label="Enable Scan"
-            class="text-body1"
+            class="text-body2"
             @click="barcodeScanAllowed = true"
           />
         </template>
@@ -57,33 +56,33 @@
       <!-- offline banner -->
       <q-banner
         v-if="showOfflineBanner"
-        class="nav-banner bg-color-gray-light text-color-black"
+        class="nav-banner bg-amber-1 text-warning-dark"
         inline-actions
         dense
       >
         <q-icon
           name="signal_wifi_off"
-          color="negative"
-          size="25px"
+          color="warning"
+          size="20px"
           class="q-mr-sm"
         />
-        You are in offline mode.
+        <span class="text-weight-medium">You are in offline mode.</span>
       </q-banner>
 
       <!-- online banner if user has pending api requests -->
       <q-banner
         v-if="appPendingSync && !appIsOffline"
-        class="nav-banner bg-color-gray-light text-color-black"
+        class="nav-banner bg-green-1 text-positive"
         inline-actions
         dense
       >
         <q-icon
           name="wifi"
           color="positive"
-          size="25px"
+          size="20px"
           class="q-mr-sm"
         />
-        You are back online! There are pending requests to be sent.
+        <span class="text-weight-medium">You are back online! There are pending requests.</span>
         <template #action>
           <q-btn
             dense
@@ -92,7 +91,7 @@
             :loading="syncInProgress == 'In Progress'"
             color="positive"
             :label="syncInProgress == 'Complete' ? 'Sync Completed' : 'Send Requests'"
-            class="text-body1"
+            class="text-body2"
             @click="triggerBackgroundSync"
           />
         </template>
@@ -105,7 +104,7 @@
       v-if="userData.user_id"
       v-model="mainNavDrawerOpen"
       show-if-above
-      class="nav-side bg-primary"
+      class="nav-side bg-sidebar-theme"
     >
       <q-list
         class="nav-list"

@@ -31,15 +31,17 @@ $breakpoint-lg: 1920px !default;
 $input-font-size: .95rem;
 
 // quasar color variables
-$primary   : #000068;
-$secondary : #6F6FB8;
-$accent    : #0066ff;
-$dark      : #1D1D1D;
+// quasar color variables
+$primary : #0f172a; // Slate 900
+$secondary : #334155; // Slate 700
+$accent : #1d4ed8; // Blue 700
+$dark : #1D1D1D;
 $dark-page : #121212;
-$positive  : #1a8000;
-$negative  : #a00000;
-$info      : #31CCEC;
-$warning   : #F2C037;
+$positive : #15803d; // Green 700
+$negative : #b91c1c; // Red 700
+$info : #31CCEC;
+$warning : #F2C037;
+$sidebar-bg: #262626; // Carbon Grey
 
 // custom color variables
 $color-white: #ffffff;
@@ -51,5 +53,10 @@ $color-pink: #ecb2b8;
 $color-green-light: #edf5eb;
 $color-brown: #774f2c;
 
+// Page background
+$light-page : #f8fafc; // Slate 50
+
 // custom typography variables
+$typography-font-family : 'Inter',
+sans-serif !default;
 $font-default: 1rem;

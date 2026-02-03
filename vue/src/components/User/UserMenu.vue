@@ -5,7 +5,7 @@
     dense
     round
     icon="person"
-    color="white"
+    color="primary"
     class="user-avatar"
     aria-label="UserMenu"
     aria-haspopup="menu"

@@ -456,8 +456,9 @@ const handlingSearchResultRouting = () => {
   flex-flow: row nowrap;
   width: 100%;
   height: 40px;
-  background-color: $color-white;
-  border-radius: 3px;
+  background-color: #f1f5f9; /* Slate 100 */
+  border: 1px solid $secondary;
+  border-radius: 8px;
   overflow: hidden;
 
   @media (max-width: $breakpoint-sm-min) {
