@@ -484,8 +484,10 @@ def add_item_to_verification_job(
         )
         commit_record(session, new_verification_change)
     else:
-        non_tray_item.scanned_for_verification = True
+        # User requested that adding an item implies it must be scanned again to verify.
+        non_tray_item.scanned_for_verification = False
         session.add(non_tray_item)
+
         
         new_verification_change = VerificationChange(
             workflow_id=verification_job.workflow_id,

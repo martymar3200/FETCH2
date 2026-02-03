@@ -31,7 +31,9 @@ class VerificationChange(Base): # <--- Inherit from Base
     Model to represent the Verification Changes table
     """
 
-    # NOTE: __tablename__ is handled by Base.
+    # NOTE: __tablename__ is handled by Base, but we need to override it to match the migration.
+    __tablename__ = "verification_changes"
+
     __table_args__ = (
         sa.CheckConstraint(
             "(item_barcode_value IS NOT NULL AND tray_barcode_value IS NULL) OR ("

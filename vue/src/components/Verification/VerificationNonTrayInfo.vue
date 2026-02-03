@@ -50,7 +50,7 @@
           class="btn-modern"
           :disabled="!canComplete || verificationJob.status === 'Paused'"
           :loading="appActionIsLoadingData"
-          @click="showConfirmationModal = true"
+          @click="showConfirmationModal = { type: 'complete', text: 'Are you sure you want to complete the job?' }"
         />
       </div>
     </div>
@@ -257,8 +257,8 @@
   <PopupModal
     v-if="showConfirmationModal"
     ref="confirmationModal"
-    :title="showConfirmationModal === 'cancel' ? 'Cancel' : 'Complete'"
-    :text="showConfirmationModal === 'cancel' ? 'Are you sure you want to cancel the Verification Job?' : 'Are you sure you want to complete the job?'"
+    :title="showConfirmationModal.type === 'cancel' ? 'Cancel' : (showConfirmationModal.type === 'addItem' ? 'Add Item' : 'Complete')"
+    :text="showConfirmationModal.text"
     :show-actions="false"
     @reset="showConfirmationModal = null"
     aria-label="confirmationModal"
@@ -268,11 +268,11 @@
         <q-btn
           no-caps
           unelevated
-          :color="showConfirmationModal === 'cancel' ? 'negative' : 'positive'"
-          :label="showConfirmationModal === 'cancel' ? 'Cancel Verification' : 'Complete Job'"
+          :color="showConfirmationModal.type === 'cancel' ? 'negative' : 'positive'"
+          :label="showConfirmationModal.type === 'cancel' ? 'Cancel Verification' : (showConfirmationModal.type === 'addItem' ? 'Add Item' : 'Complete Job')"
           class="text-body1 full-width"
           :loading="appActionIsLoadingData"
-          @click="showConfirmationModal === 'cancel' ? cancelVerification() : completeVerificationJob()"
+          @click="handleConfirmationAction"
         />
         <q-space class="q-mx-xs" />
         <q-btn
@@ -304,6 +304,9 @@ import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
 import { useVerificationStore } from '@/stores/verification-store'
 import { useOptionStore } from '@/stores/option-store'
+import { useBarcodeStore } from '@/stores/barcode-store'
+import { useUserStore } from '@/stores/user-store'
+import { audioAlert } from '@/utils/audio.js'
 import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
 import PopupModal from '@/components/PopupModal.vue'
@@ -339,6 +342,10 @@ const {
   verificationJob,
   verificationContainer
 } = storeToRefs(useVerificationStore())
+const { verifyBarcode } = useBarcodeStore()
+const { barcodeDetails } = storeToRefs(useBarcodeStore())
+const { userData } = storeToRefs(useUserStore())
+const { postVerificationNonTrayItem } = useVerificationStore()
 
 // Local Data
 const scanBarcodeInput = ref('')
@@ -383,7 +390,10 @@ const handleOptionMenu = async (option) => {
   } else if (option.text == 'Print Job') {
     emit('print')
   } else if (option.text == 'Cancel Job') {
-    showConfirmationModal.value = 'cancel'
+    showConfirmationModal.value = {
+      type: 'cancel',
+      text: 'Are you sure you want to cancel the Verification Job?'
+    }
   } else if (option.text == 'View History') {
     showAuditTrailModal.value = 'verification_jobs'
   }
@@ -425,32 +435,32 @@ const triggerItemScan = async () => {
   scanBarcodeInput.value = ''
 
   try {
-    // Check if item exists in job
-    const existingItem = verificationJob.value.non_tray_items?.find(item => item.barcode?.value === barcode)
+    appActionIsLoadingData.value = true
+    await verifyBarcode(barcode, 'Item', true)
 
-    if (existingItem) {
+    // Check if item exists in job
+    if (verificationJob.value.non_tray_items?.some(item => item.barcode?.id === barcodeDetails.value.id)) {
       // Load item
       await getVerificationNonTrayItem(barcode)
       // Verify it if not verified
       if (!verificationContainer.value.scanned_for_verification) {
         await verifyNonTrayItem(verificationContainer.value.id)
-        // Removed "Item Verified" notification as requested
       } else {
         Notify.create({
           type: 'info',
           message: 'Item already verified'
         })
       }
+
+      if (verificationJob.value.status !== 'Running' && verificationJob.value.status !== 'Completed') {
+        await updateVerificationJobStatus('Running')
+      }
     } else {
-      // Determine if we should add it (prompt?) or if it's an error.
-      // In Verification, usually we scan existing items. If it's not in the list, it might be a new item to ADD?
-      // For now, let's assume we alert user or auto-add like Accession?
-      // Verification usually requires items to be in the job or we are verifying what was accessioned.
-      // If we are scanning a barcode not in the list, we might want to check if it matches a known item record?
-      Notify.create({
-        type: 'warning',
-        message: `Item ${barcode} is not in this verification job.`
-      })
+      showConfirmationModal.value = {
+        type: 'addItem',
+        text: 'Are you sure you want to add a new item to the job?'
+      }
+      audioAlert()
     }
   } catch (error) {
     Notify.create({
@@ -465,11 +475,51 @@ const triggerItemScan = async () => {
         }
       ]
     })
-    // Note: To mimic persistent=true, we can use timeout: 0 and an action.
-    // Or just let it be a normal error toast which is usually sufficient.
-    // Using standard negative toast logic here for consistency.
   } finally {
     isProcessingScan.value = false
+    appActionIsLoadingData.value = false
+  }
+}
+
+const handleConfirmationAction = () => {
+  if (showConfirmationModal.value.type === 'cancel') {
+    cancelVerification()
+  } else if (showConfirmationModal.value.type === 'addItem') {
+    addItemToJob()
+  } else {
+    completeVerificationJob()
+  }
+}
+
+const addItemToJob = async () => {
+  try {
+    appActionIsLoadingData.value = true
+    const payload = {
+      barcode_id: barcodeDetails.value.id,
+      barcode_value: barcodeDetails.value.value,
+      media_type_id: verificationJob.value.media_type_id,
+      size_class_id: verificationJob.value.size_class_id,
+      status: 'In',
+      verification_job_id: verificationJob.value.id,
+      user_id: userData.value.user_id
+    }
+    await postVerificationNonTrayItem(payload)
+    Notify.create({
+      type: 'positive',
+      message: 'Item has been added to the job.'
+    })
+
+    if (verificationJob.value.status !== 'Running' && verificationJob.value.status !== 'Completed') {
+      await updateVerificationJobStatus('Running')
+    }
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error
+    })
+  } finally {
+    appActionIsLoadingData.value = false
+    showConfirmationModal.value = null
   }
 }
 
