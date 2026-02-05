@@ -114,9 +114,12 @@ from app.schemas.reporting import (
 from app.models.items import ItemStatus
 from app.models.non_tray_items import NonTrayItemStatus
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/reporting",
     tags=["reporting"],
+    dependencies=[Depends(RequiresPermission("can_access_reports"))],
 )
 
 

@@ -24,9 +24,12 @@ from app.schemas.non_tray_tem_retrieval_events import (
 from app.config.exceptions import NotFound
 
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/non-tray-item-retrieval-events",
     tags=["Non tray item retrieval events"],
+    dependencies=[Depends(RequiresPermission("can_access_reports"))],
 )
 
 

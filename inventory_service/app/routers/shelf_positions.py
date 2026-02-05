@@ -30,9 +30,12 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter, ShelvesSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/shelves/positions",
     tags=["shelves"],
+    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
 )
 
 

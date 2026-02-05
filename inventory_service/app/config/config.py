@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     TIMEZONE: str = "America/New_York"
     IDP_ENTITY_ID: str = "https://idp.example.net/12345-ffff/"
     IDP_LOGIN_URL: str = "https://login.example.com/12345-fff/saml2"
+    SECRET_KEY: str = "your-secret-key"
     VUE_HOST: str = "https://localhost:8000"
     DATABASE_URL: str = (
         "postgresql://postgres:postgres@inventory-database:5432/inventory_service"

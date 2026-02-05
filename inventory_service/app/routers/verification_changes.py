@@ -27,9 +27,12 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter, VerificationChangeSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/verification-changes",
     tags=["verification changes"],
+    dependencies=[Depends(RequiresPermission("can_access_verification"))],
 )
 
 

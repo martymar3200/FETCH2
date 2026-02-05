@@ -15,11 +15,16 @@ import pkgutil
 
 from app.middlware import JWTMiddleware
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
+import logging
+import time
+
+# Ensure all models are imported/registered
+import app.models.all
 
 from alembic.config import Config
 from alembic import command

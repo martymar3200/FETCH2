@@ -58,9 +58,12 @@ from app.helpers.system_setting_helpers import get_setting_value
 
 logger = logging.getLogger(__name__)
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/shelving-jobs",
     tags=["shelving jobs"],
+    dependencies=[Depends(RequiresPermission("can_create_and_execute_shelving_job"))],
 )
 
 
@@ -224,7 +227,7 @@ def get_shelving_job_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Shelving Job ID {id} Not Found")
 
 
-@router.post("/", response_model=ShelvingJobDetailOutput, status_code=201)
+@router.post("/", response_model=ShelvingJobDetailOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_create_and_execute_shelving_job"))])
 def create_shelving_job(
     shelving_job_input: ShelvingJobInput,
     session: Session = Depends(get_session),
@@ -361,7 +364,7 @@ def create_shelving_job(
         raise InternalServerError(detail=str(e))
 
 
-@router.patch("/{id}", response_model=ShelvingJobDetailOutput)
+@router.patch("/{id}", response_model=ShelvingJobDetailOutput, dependencies=[Depends(RequiresPermission("process_shelving_jobs"))])
 def update_shelving_job(
     id: int,
     shelving_job: ShelvingJobUpdateInput,
@@ -409,7 +412,7 @@ def update_shelving_job(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}", status_code=204)
+@router.delete("/{id}", status_code=204, dependencies=[Depends(RequiresPermission("delete_shelving_jobs"))])
 def delete_shelving_job(id: int, session: Session = Depends(get_session)):
     """
     Delete a shelving job by its ID.
@@ -504,7 +507,7 @@ def delete_shelving_job(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Shelving Job ID {id} Not Found")
 
 
-@router.post("/{id}/reassign-container-location", response_model=ReAssignmentOutput)
+@router.post("/{id}/reassign-container-location", response_model=ReAssignmentOutput, dependencies=[Depends(RequiresPermission("process_shelving_jobs"))])
 def reassign_container_location(
     id: int,
     reassignment_input: ReAssignmentInput,

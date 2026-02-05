@@ -32,9 +32,12 @@ from app.schemas.accession_jobs import (
 )
 from app.utilities import start_session_with_audit_info
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/accession-jobs",
     tags=["accession jobs"],
+    dependencies=[Depends(RequiresPermission("can_access_accession"))],
 )
 
 
@@ -136,7 +139,8 @@ def get_accession_job_detail_by_workflow(
     raise NotFound(detail=f"Accession Job ID {id} Not Found")
 
 
-@router.post("/", response_model=AccessionJobDetailOutput, status_code=201)
+@router.post("/", response_model=AccessionJobDetailOutput, status_code=201,
+             dependencies=[Depends(RequiresPermission("create_accession_jobs"))])
 def create_accession_job(
     accession_job_input: AccessionJobInput, session: Session = Depends(get_session)
 ) -> AccessionJob:
@@ -283,7 +287,7 @@ def update_accession_job(
     return existing_accession_job
 
 
-@router.delete("/{id}", status_code=204)
+@router.delete("/{id}", status_code=204, dependencies=[Depends(RequiresPermission("delete_accession_jobs"))])
 def delete_accession_job(id: int, session: Session = Depends(get_session)):
     """
     Delete an accession job by its ID.

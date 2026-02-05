@@ -34,9 +34,12 @@ from app.config.exceptions import BadRequest, NotFound
 from app.sorting import RefileJobSorter
 from app.utilities import manage_transition, get_location
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/refile-jobs",
     tags=["refile-jobs"],
+    dependencies=[Depends(RequiresPermission("can_create_refile_job"))],
 )
 
 
@@ -187,7 +190,7 @@ def get_refile_job_detail(id: int, session: Session = Depends(get_session)):
         raise NotFound(detail=f"Refile Job ID {id} Not Found")
 
 
-@router.post("/", response_model=RefileJobDetailOutput, status_code=201)
+@router.post("/", response_model=RefileJobDetailOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_create_refile_job"))])
 def create_refile_job(
     refile_job_input: RefileJobInput, session: Session = Depends(get_session)
 ):
@@ -325,7 +328,7 @@ def create_refile_job(
     return sorted_requests(session, new_refile_job)
 
 
-@router.patch("/{id}", response_model=RefileJobDetailOutput)
+@router.patch("/{id}", response_model=RefileJobDetailOutput, dependencies=[Depends(RequiresPermission("process_refile_jobs"))])
 def update_refile_job(
     id: int, refile_job: RefileJobUpdateInput, session: Session = Depends(get_session)
 ):
@@ -356,7 +359,7 @@ def update_refile_job(
     return sorted_requests(session, existing_refile_job)
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("delete_refile_jobs"))])
 def delete_refile_job(id: int, session: Session = Depends(get_session)):
     """
     Delete a refile job by ID.
@@ -429,7 +432,7 @@ def delete_refile_job(id: int, session: Session = Depends(get_session)):
     )
 
 
-@router.post("/{job_id}/add_items", response_model=RefileJobDetailOutput)
+@router.post("/{job_id}/add_items", response_model=RefileJobDetailOutput, dependencies=[Depends(RequiresPermission("process_refile_jobs"))])
 def add_items_to_refile_job(
     job_id: int,
     refile_job_input: RefileJobInput,
@@ -569,7 +572,7 @@ def add_items_to_refile_job(
     return sorted_requests(session, refile_job)
 
 
-@router.delete("/{job_id}/remove_items", response_model=RefileJobDetailOutput)
+@router.delete("/{job_id}/remove_items", response_model=RefileJobDetailOutput, dependencies=[Depends(RequiresPermission("process_refile_jobs"))])
 def remove_item_from_refile_job(
     job_id: int,
     refile_job_input: RefileJobInput,

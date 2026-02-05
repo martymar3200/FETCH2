@@ -47,9 +47,12 @@ from app.schemas.non_tray_items import (
 from app.config.exceptions import NotFound, ValidationException
 from app.sorting import ItemSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/non_tray_items",
     tags=["non tray items"],
+    dependencies=[Depends(RequiresPermission("can_access_item_detail"))],
 )
 
 
@@ -311,7 +314,7 @@ def create_non_tray_item(
     return new_non_tray_item
 
 
-@router.patch("/{id}", response_model=NonTrayItemDetailWriteOutput)
+@router.patch("/{id}", response_model=NonTrayItemDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_edit_non_tray_item"))])
 def update_non_tray_item(
     id: int,
     non_tray_item: NonTrayItemUpdateInput,

@@ -168,6 +168,82 @@
         {
             "name": "can_access_admin",
             "description": "Can view and access admin dashboard."
+        },
+        {
+            "name": "delete_accession_jobs",
+            "description": "Can delete accession jobs."
+        },
+        {
+            "name": "delete_verification_jobs",
+            "description": "Can delete verification jobs."
+        },
+        {
+            "name": "delete_shelving_jobs",
+            "description": "Can delete shelving jobs."
+        },
+        {
+            "name": "delete_refile_jobs",
+            "description": "Can delete refile jobs."
+        },
+        {
+            "name": "delete_pick_lists",
+            "description": "Can delete pick lists."
+        },
+        {
+            "name": "delete_requests",
+            "description": "Can delete requests."
+        },
+        {
+            "name": "manage_shelving_assignments",
+            "description": "Can assign or reassign shelving jobs."
+        },
+        {
+            "name": "manage_picklist_assignments",
+            "description": "Can assign or reassign picklist jobs."
+        },
+        {
+            "name": "manage_refile_assignments",
+            "description": "Can assign or reassign refile jobs."
+        },
+        {
+            "name": "create_accession_jobs",
+            "description": "Can create accession jobs."
+        },
+        {
+            "name": "create_verification_jobs",
+            "description": "Can create verification jobs."
+        },
+        {
+            "name": "process_verification_jobs",
+            "description": "Can process (scan items into) verification jobs."
+        },
+        {
+            "name": "process_shelving_jobs",
+            "description": "Can process (scan items into) shelving jobs."
+        },
+        {
+            "name": "process_refile_jobs",
+            "description": "Can process (scan items into) refile jobs."
+        },
+        {
+            "name": "process_pick_lists",
+            "description": "Can process (scan items into) pick lists."
+        },
+        {
+            "name": "place_requests",
+            "description": "Can place (update/submit) requests."
+        },
+        {
+            "name": "can_perform_batch_uploads",
+            "description": "Can perform batch uploads for requests."
+        },
+        {
+            "name": "can_edit_tray",
+            "description": "Can edit tray details."
+        },
+        {
+            "name": "can_edit_non_tray_item",
+            "description": "Can edit non-tray item details."
         }
     ]
 }

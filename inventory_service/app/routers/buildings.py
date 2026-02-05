@@ -30,9 +30,12 @@ from app.sorting import BaseSorter
 # For future circular imports
 # https://sqlmodel.tiangolo.com/tutorial/code-structure/#import-only-while-editing-with-type_checking
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/buildings",
     tags=["buildings"],
+    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
 )
 
 

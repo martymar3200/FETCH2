@@ -25,9 +25,12 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/permissions",
     tags=["permissions"],
+    dependencies=[Depends(RequiresPermission("can_manage_groups_and_permissions"))],
 )
 
 

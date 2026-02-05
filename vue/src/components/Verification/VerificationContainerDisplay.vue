@@ -889,6 +889,7 @@ const handleTrayScan = async (barcode_value) => {
       type: 'negative',
       message: error.response?.data?.detail || error
     })
+    resetVerificationContainer()
   } finally {
     appIsLoadingData.value = false
   }

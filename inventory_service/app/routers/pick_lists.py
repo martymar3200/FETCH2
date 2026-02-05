@@ -39,9 +39,12 @@ from app.config.exceptions import (
 from app.sorting import PickListSorter
 from app.utilities import get_location, manage_transition
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/pick-lists",
     tags=["pick lists"],
+    dependencies=[Depends(RequiresPermission("can_create_picklist_job"))],
 )
 
 
@@ -186,7 +189,7 @@ def get_pick_list_detail(id: int, session: Session = Depends(get_session)):
     return sort_order_priority(session, pick_list, pick_list.requests)
 
 
-@router.post("/", response_model=PickListDetailOutput, status_code=201)
+@router.post("/", response_model=PickListDetailOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_create_picklist_job"))])
 def create_pick_list(
     pick_list_input: PickListInput, session: Session = Depends(get_session)
 ):
@@ -262,7 +265,7 @@ def create_pick_list(
     return sort_order_priority(session, new_pick_list, new_pick_list.requests)
 
 
-@router.patch("/{id}", response_model=PickListDetailOutput)
+@router.patch("/{id}", response_model=PickListDetailOutput, dependencies=[Depends(RequiresPermission("process_pick_lists"))])
 def update_pick_list(
     id: int, pick_list: PickListUpdateInput, session: Session = Depends(get_session)
 ):
@@ -305,7 +308,7 @@ def update_pick_list(
                 if item_ids:
                     session.execute(
                         update(Item).where(Item.id.in_(item_ids)).values(
-                            status=ItemStatus.Out,
+                            status="Out",
                             scanned_for_refile=None,
                             update_dt=datetime.now(timezone.utc),
                         )
@@ -314,7 +317,7 @@ def update_pick_list(
                 if non_tray_item_ids:
                     session.execute(
                         update(NonTrayItem).where(NonTrayItem.id.in_(non_tray_item_ids)).values(
-                            status=NonTrayItemStatus.Out,
+                            status="Out",
                             scanned_for_refile=None,
                             update_dt=datetime.now(timezone.utc),
                         )
@@ -380,7 +383,7 @@ def update_pick_list(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.patch("/{pick_list_id}/add_request", response_model=PickListDetailOutput)
+@router.patch("/{pick_list_id}/add_request", response_model=PickListDetailOutput, dependencies=[Depends(RequiresPermission("process_pick_lists"))])
 def add_request_to_pick_list(
     pick_list_id: int,
     pick_list_input: PickListInput,
@@ -451,7 +454,7 @@ def add_request_to_pick_list(
 
 
 @router.patch(
-    "/{pick_list_id}/update_request/{request_id}", response_model=PickListDetailOutput
+    "/{pick_list_id}/update_request/{request_id}", response_model=PickListDetailOutput, dependencies=[Depends(RequiresPermission("process_pick_lists"))]
 )
 def update_request_for_pick_list(
     pick_list_id: int,
@@ -512,7 +515,7 @@ def update_request_for_pick_list(
 
 
 @router.delete(
-    "/{pick_list_id}/remove_request/{request_id}", response_model=PickListDetailOutput
+    "/{pick_list_id}/remove_request/{request_id}", response_model=PickListDetailOutput, dependencies=[Depends(RequiresPermission("process_pick_lists"))]
 )
 def remove_request_from_pick_list(
     pick_list_id: int, request_id: int, session: Session = Depends(get_session)
@@ -597,7 +600,7 @@ def remove_request_from_pick_list(
     return sort_order_priority(session, pick_list, pick_list.requests)
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("delete_pick_lists"))])
 def delete_pick_list(id: int, session: Session = Depends(get_session)):
     """
     Delete an existing pick list.

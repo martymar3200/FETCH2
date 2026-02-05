@@ -15,9 +15,12 @@ from app.schemas.system_settings import (
 )
 from app.config.exceptions import NotFound, ValidationException
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/system-settings",
     tags=["system settings"],
+    dependencies=[Depends(RequiresPermission("can_manage_system_configurations"))],
 )
 
 

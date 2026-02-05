@@ -43,7 +43,7 @@ class JWTMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("authorization")
         if auth_header:
             token = auth_header.split("Bearer ")[1]
-            decoded_token = jwt.decode(token, 'your-secret-key', algorithms=['HS256'])
+            decoded_token = jwt.decode(token, get_settings().SECRET_KEY, algorithms=['HS256'])
             fetch_user = decoded_token.get('email')
 
         # Exclude /auth endpoints from token validation

@@ -31,9 +31,12 @@ from app.schemas.audit_trails import AuditTrailListOutput, AuditTrailDetailOutpu
 from app.sorting import BaseSorter
 from app.models.audit_trails import AuditTrail
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/history",
     tags=["audit tails"],
+    dependencies=[Depends(RequiresPermission("can_view_audit_logs"))],
 )
 
 

@@ -57,9 +57,12 @@ from app.config.exceptions import (
     InternalServerError,
 )
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/batch-upload",
     tags=["batch upload"],
+    dependencies=[Depends(RequiresPermission("can_perform_batch_uploads"))],
 )
 
 

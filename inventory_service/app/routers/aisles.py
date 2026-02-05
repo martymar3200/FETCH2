@@ -29,9 +29,12 @@ import traceback
 
 from app.sorting import BaseSorter, AisleSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/aisles",
     tags=["aisles"],
+    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
 )
 
 

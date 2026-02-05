@@ -50,10 +50,12 @@ from app.config.exceptions import (
     InternalServerError,
 )
 from app.utilities import manage_transition, get_module_shelf_position
+from app.auth.dependencies import RequiresPermission
 
 router = APIRouter(
     prefix="/withdraw-jobs",
     tags=["withdraw jobs"],
+    dependencies=[Depends(RequiresPermission("can_access_withdraw"))],
 )
 
 

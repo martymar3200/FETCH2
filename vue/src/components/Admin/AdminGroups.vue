@@ -440,7 +440,7 @@ const createAdminGroup = async () => {
     }
     await postAdminGroup(payload)
 
-    await postAdminGroup(payload)
+
 
     Notify.create({
       type: 'positive',
@@ -465,7 +465,7 @@ const updateAdminGroup = async () => {
     }
     await patchAdminGroup(payload)
 
-    await patchAdminGroup(payload)
+
 
     Notify.create({
       type: 'positive',
@@ -486,7 +486,7 @@ const removeAdminGroup = async () => {
     appActionIsLoadingData.value = true
     await deleteAdminGroup(selectedGroup.value.id)
 
-    await deleteAdminGroup(selectedGroup.value.id)
+
 
     Notify.create({
       type: 'positive',
@@ -508,7 +508,7 @@ const addAdminGroupUser = async () => {
     appActionIsLoadingData.value = true
     await Promise.all(addUserInput.value.map(usr => postAdminGroupUser(selectedGroup.value.id, usr)))
 
-    await Promise.all(addUserInput.value.map(usr => postAdminGroupUser(selectedGroup.value.id, usr)))
+
 
     Notify.create({
       type: 'positive',
@@ -534,7 +534,7 @@ const removeAdminGroupUser = async () => {
     appActionIsLoadingData.value = true
     await deleteAdminGroupUser(selectedGroup.value.id, selectedGroupUserId.value)
 
-    await deleteAdminGroupUser(selectedGroup.value.id, selectedGroupUserId.value)
+
 
     Notify.create({
       type: 'positive',

@@ -44,9 +44,12 @@ from app.config.exceptions import (
 from app.sorting import RequestSorter
 from app.utilities import get_module_shelf_position
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/requests",
     tags=["requests"],
+    dependencies=[Depends(RequiresPermission("can_create_and_submit_manual_requests"))],
 )
 
 
@@ -240,7 +243,7 @@ def get_request_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Request ID {id} Not Found")
 
 
-@router.post("/", response_model=RequestDetailWriteOutput, status_code=201)
+@router.post("/", response_model=RequestDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_create_and_submit_manual_requests"))])
 def create_request(
     request_input: RequestInput, session: Session = Depends(get_session)
 ) -> Request:
@@ -392,7 +395,7 @@ def create_request(
     return new_request
 
 
-@router.patch("/{id}", response_model=RequestDetailWriteOutput)
+@router.patch("/{id}", response_model=RequestDetailWriteOutput, dependencies=[Depends(RequiresPermission("place_requests"))])
 def update_request(
     id: int, request: RequestUpdateInput, session: Session = Depends(get_session)
 ):
@@ -442,7 +445,7 @@ def update_request(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("delete_requests"))])
 def delete_request(id: int, session: Session = Depends(get_session)):
     """
     Delete an Request by ID

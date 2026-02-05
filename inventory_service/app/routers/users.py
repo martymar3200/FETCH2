@@ -32,11 +32,13 @@ from app.schemas.users import (
 
 import traceback
 
+from app.auth.dependencies import RequiresPermission
 from app.sorting import BaseSorter, UserSorter
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
+    dependencies=[Depends(RequiresPermission("can_manage_groups_and_permissions"))],
 )
 
 
@@ -91,7 +93,11 @@ def get_user_groups(id: int, session: Session = Depends(get_session)):
 
 
 @router.post("/", response_model=UserDetailWriteOutput, status_code=201)
-def create_user(user_input: UserInput, session: Session = Depends(get_session)):
+def create_user(
+    user_input: UserInput, 
+    session: Session = Depends(get_session),
+    _: bool = Depends(RequiresPermission("can_manage_groups_and_permissions"))
+):
     """
     Create a new user.
     """
@@ -106,7 +112,10 @@ def create_user(user_input: UserInput, session: Session = Depends(get_session)):
 
 @router.patch("/{id}", response_model=UserDetailWriteOutput)
 def update_user(
-    id: int, user: UserUpdateInput, session: Session = Depends(get_session)
+    id: int, 
+    user: UserUpdateInput, 
+    session: Session = Depends(get_session),
+    _: bool = Depends(RequiresPermission("can_manage_groups_and_permissions"))
 ):
     """
     Updates a user with the given ID using the provided user data.
@@ -132,7 +141,11 @@ def update_user(
 
 
 @router.delete("/{id}")
-def delete_user(id: int, session: Session = Depends(get_session)):
+def delete_user(
+    id: int, 
+    session: Session = Depends(get_session),
+    _: bool = Depends(RequiresPermission("can_manage_groups_and_permissions"))
+):
     """
     Delete a user with the given id.
     """

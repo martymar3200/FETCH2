@@ -24,9 +24,12 @@ from app.schemas.item_retrieval_events import (
 from app.config.exceptions import NotFound
 
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/item-retrieval-events",
     tags=["Item retrieval events"],
+    dependencies=[Depends(RequiresPermission("can_access_reports"))],
 )
 
 

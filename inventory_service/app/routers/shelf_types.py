@@ -44,9 +44,12 @@ from app.sorting import BaseSorter
 LOGGER = logging.getLogger(__name__)
 # --- END: NEW LOGGER ---
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/shelf-types",
     tags=["shelf types"],
+    dependencies=[Depends(RequiresPermission("can_manage_list_configurations"))],
 )
 
 

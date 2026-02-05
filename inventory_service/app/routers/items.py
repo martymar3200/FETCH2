@@ -50,9 +50,12 @@ from app.config.exceptions import (
 from app.sorting import ItemSorter
 from app.tasks import process_tray_item_move
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/items",
     tags=["items"],
+    dependencies=[Depends(RequiresPermission("can_access_item_detail"))],
 )
 
 

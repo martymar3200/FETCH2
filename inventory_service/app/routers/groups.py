@@ -29,9 +29,12 @@ from app.schemas.groups import (
 )
 from app.sorting import BaseSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/groups",
     tags=["groups"],
+    dependencies=[Depends(RequiresPermission("can_manage_groups_and_permissions"))],
 )
 
 
@@ -74,6 +77,14 @@ def create_group(group_input: GroupInput, session: Session = Depends(get_session
     """
     Create a new group
     """
+    # Check if a group with the same name already exists
+    existing_group = session.execute(select(Group).where(Group.name == group_input.name)).scalars().first()
+    if existing_group:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Group with name '{group_input.name}' already exists"
+        )
+
     new_group = Group(**group_input.model_dump())
     session.add(new_group)
     session.commit()

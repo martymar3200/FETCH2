@@ -44,9 +44,12 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter, ItemSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/trays",
     tags=["trays"],
+    dependencies=[Depends(RequiresPermission("can_access_tray_detail"))],
 )
 
 
@@ -181,7 +184,7 @@ def create_tray(tray_input: TrayInput, session: Session = Depends(get_session)):
 
 # In trays.py, replace the existing update_tray function with this one
 
-@router.patch("/{id}", response_model=TrayDetailWriteOutput)
+@router.patch("/{id}", response_model=TrayDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_edit_tray"))])
 def update_tray(
     id: int,
     tray: TrayUpdateInput,

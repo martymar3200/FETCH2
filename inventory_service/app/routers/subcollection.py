@@ -29,9 +29,12 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/subcollections",
     tags=["subcollections"],
+    dependencies=[Depends(RequiresPermission("can_manage_list_configurations"))],
 )
 
 

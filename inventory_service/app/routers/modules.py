@@ -27,9 +27,12 @@ from app.sorting import BaseSorter
 
 LOGGER = logging.getLogger("router.modules")
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/modules",
     tags=["modules"],
+    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
 )
 
 

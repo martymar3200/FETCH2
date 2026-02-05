@@ -46,9 +46,12 @@ from app.tasks import (
     manage_verification_job_transition, manage_verification_job_change_action,
 )
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/verification-jobs",
     tags=["verification jobs"],
+    dependencies=[Depends(RequiresPermission("can_access_verification"))],
 )
 
 
@@ -257,7 +260,8 @@ def get_verification_job_detail_by_workflow(
     raise NotFound(detail=f"Verification Job ID {id} Not Found")
 
 
-@router.post("/", response_model=VerificationJobDetailOutput, status_code=201)
+@router.post("/", response_model=VerificationJobDetailOutput, status_code=201,
+             dependencies=[Depends(RequiresPermission("create_verification_jobs"))])
 def create_verification_job(
     verification_job_input: VerificationJobInput,
     session: Session = Depends(get_session),
@@ -278,7 +282,8 @@ def create_verification_job(
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=VerificationJobDetailOutput)
+@router.patch("/{id}", response_model=VerificationJobDetailOutput,
+              dependencies=[Depends(RequiresPermission("process_verification_jobs"))])
 def update_verification_job(
     id: int,
     verification_job: VerificationJobUpdateInput,
@@ -345,7 +350,7 @@ def update_verification_job(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("delete_verification_jobs"))])
 def delete_verification_job(id: int, session: Session = Depends(get_session)):
     """
     Delete a verification job by its ID.
@@ -409,7 +414,8 @@ def delete_verification_job(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Verification Job ID {id} Not Found")
 
 
-@router.patch("/{id}/add", response_model=VerificationJobDetailOutput)
+@router.patch("/{id}/add", response_model=VerificationJobDetailOutput,
+              dependencies=[Depends(RequiresPermission("process_verification_jobs"))])
 def add_item_to_verification_job(
     id: int,
     input: VerificationJobAddInput,
@@ -503,7 +509,8 @@ def add_item_to_verification_job(
     return verification_job
 
 
-@router.patch("/{id}/remove", response_model=VerificationJobDetailOutput)
+@router.patch("/{id}/remove", response_model=VerificationJobDetailOutput,
+              dependencies=[Depends(RequiresPermission("process_verification_jobs"))])
 def remove_item_from_verification_job(
     id: int,
     input: VerificationJobRemoveInput,

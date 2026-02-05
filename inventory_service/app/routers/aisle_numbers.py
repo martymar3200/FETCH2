@@ -27,9 +27,12 @@ from app.schemas.aisle_numbers import (
 )
 from app.sorting import BaseSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/aisles",
     tags=["aisles"],
+    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
 )
 
 

@@ -35,9 +35,12 @@ from app.sorting import RefileQueueSorter
 from app.utilities import get_refile_queue
 from app.filter_params import RefileQueueParams, SortParams
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/refile-queue",
     tags=["refile-queue"],
+    dependencies=[Depends(RequiresPermission("can_add_refile_item_to_queue"))],
 )
 
 

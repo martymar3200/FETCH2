@@ -108,7 +108,7 @@ def generate_token(user_object, session: Session):
         "email": user_object.email
         # 'exp': datetime.now(timezone.utc) + timedelta(minutes=15)  # Token expires in 15 minutes
     }
-    token = jwt.encode(payload, "your-secret-key", algorithm="HS256")
+    token = jwt.encode(payload, get_settings().SECRET_KEY, algorithm="HS256")
 
     setattr(user_object, "fetch_auth_token", token)
     setattr(user_object, "fetch_auth_expiration", datetime.now(timezone.utc) + timedelta(minutes=15))

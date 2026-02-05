@@ -29,9 +29,12 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter
 
+from app.auth.dependencies import RequiresPermission
+
 router = APIRouter(
     prefix="/container-types",
     tags=["container types"],
+    dependencies=[Depends(RequiresPermission("can_manage_list_configurations"))],
 )
 
 

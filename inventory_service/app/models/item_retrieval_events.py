@@ -22,7 +22,7 @@ class ItemRetrievalEvent(Base): # <--- Inherit from Base
     __tablename__ = "items_retrieval_events"
 
     # Primary Key
-    id: Mapped[Optional[int]] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     
     # Foreign Keys
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), nullable=False)
