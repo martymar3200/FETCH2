@@ -179,6 +179,17 @@ async def lifespan(app: FastAPI):
     # Run migrations on startup
     alembic_context()
     
+    # Seed permissions if any are missing (idempotent)
+    from app.seed.seed_permissions_adhoc import seed_new_permissions
+    try:
+        print("Checking for new permissions...")
+        seed_new_permissions()
+        print("Permission check complete.")
+    except Exception as e:
+        # Non-fatal - log and continue
+        print(f"Warning: Permission seeding encountered an error: {e}")
+        print("Continuing with application startup...")
+    
     # Mount schema docs if they exist
     if get_settings().APP_ENVIRONMENT not in ["debug", "production"]:
         # Only mount if directory exists to avoid errors

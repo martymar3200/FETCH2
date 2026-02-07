@@ -20,7 +20,7 @@ class ConveyanceBin(Base): # <--- Inherit from Base
     """
 
     # NOTE: __tablename__ is handled by Base.
-    # __tablename__ = "conveyance_bins"
+    __tablename__ = "conveyance_bins"
 
     # Primary Key
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True)

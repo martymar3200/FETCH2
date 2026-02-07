@@ -42,7 +42,7 @@ from app.config.exceptions import (
     InternalServerError,
 )
 from app.sorting import RequestSorter
-from app.utilities import get_module_shelf_position
+from app.utilities import get_module_shelf_position, check_batch_completion
 
 from app.auth.dependencies import RequiresPermission
 
@@ -438,6 +438,10 @@ def update_request(
         session.add(existing_request)
         session.commit()
         session.refresh(existing_request)
+
+        # Check for batch completion
+        if existing_request.status == RequestStatus.Completed and existing_request.batch_upload_id:
+            check_batch_completion(session, existing_request.batch_upload_id)
 
         return existing_request
 

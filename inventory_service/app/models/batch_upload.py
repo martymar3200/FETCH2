@@ -19,6 +19,8 @@ class BatchUploadStatus(str, Enum):
     Processing = "Processing"
     Cancelled = "Cancelled"
     Failed = "Failed"
+
+    Uploaded = "Uploaded"
     Completed = "Completed"
 
 
@@ -27,8 +29,8 @@ class BatchUpload(Base): # <--- Inherit from Base
     Model represents the batch_uploads table.
     """
 
-    # NOTE: __tablename__ is handled by Base.
-    # __tablename__ = "batch_uploads"
+    # NOTE: __tablename__ is handled by Base, BUT we need snake_case for multi-word models
+    __tablename__ = "batch_uploads"
 
     # Primary Key
     id: Mapped[Optional[int]] = mapped_column(BigInteger, primary_key=True)

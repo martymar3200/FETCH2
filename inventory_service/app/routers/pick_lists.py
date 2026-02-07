@@ -37,7 +37,7 @@ from app.config.exceptions import (
     InternalServerError,
 )
 from app.sorting import PickListSorter
-from app.utilities import get_location, manage_transition
+from app.utilities import get_location, manage_transition, check_batch_completion
 
 from app.auth.dependencies import RequiresPermission
 
@@ -331,6 +331,21 @@ def update_pick_list(
                     )
                 )
 
+                # Check for batch completion
+                batch_ids = (
+                    session.execute(
+                        select(Request.batch_upload_id)
+                        .where(Request.id.in_(request_ids))
+                        .where(Request.batch_upload_id.isnot(None))
+                        .distinct()
+                    )
+                    .scalars()
+                    .all()
+                )
+
+                for batch_id in batch_ids:
+                    check_batch_completion(session, batch_id)
+
                 existing_withdraw_job = (
                     session.execute(select(WithdrawJob).filter(WithdrawJob.pick_list_id == id))
                     .scalars()
@@ -510,6 +525,11 @@ def update_request_for_pick_list(
 
     session.commit()
     session.refresh(existing_pick_list)
+
+    # Check for batch completion for the single request
+    request = session.get(Request, request_id)
+    if request and request.batch_upload_id:
+        check_batch_completion(session, request.batch_upload_id)
 
     return sort_order_priority(session, existing_pick_list, existing_pick_list.requests)
 

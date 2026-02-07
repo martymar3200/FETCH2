@@ -99,7 +99,7 @@ class BatchUploadDetailOutput(BatchUploadBaseOutput):
     withdraw_job_id: Optional[int] = None
     requests: Optional[List[RequestListOutput]] = None
     withdraw_job: Optional[WithdrawJobBaseOutput] = None
-    user: Optional[object] = None
+    user: Optional[UserDetailWriteOutput] = None
     create_dt: datetime
     update_dt: datetime
 

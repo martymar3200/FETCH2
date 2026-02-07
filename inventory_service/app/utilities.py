@@ -903,15 +903,71 @@ def validate_request_data(session, request_data: pd.DataFrame):
         barcodes_errored_indices.add(index)
         errored_indices.add(index)
 
+    # --- OPTIMIZED BULK FETCHING ---
+    # 1. Fetch all Barcodes
+    barcode_values = request_data["Item Barcode"].astype(str).tolist()
     barcodes = _fetch_existing_data(
         session,
         Barcode,
-        request_data["Item Barcode"].astype(str).tolist(),
+        barcode_values,
         Barcode.value,
     )
+    barcode_dict = {b.value: b.id for b in barcodes}
+
+    # 2. Fetch all Items and NonTrayItems with eager loading
+    item_ids = [b.id for b in barcodes]
+    
+    # Fetch Items with their Trays and ShelfPositions (limit round trips)
+    items = (
+        session.query(Item)
+        .options(
+            joinedload(Item.tray).joinedload(Tray.shelf_position)
+        )
+        .filter(Item.barcode_id.in_(item_ids))
+        .all()
+    )
+    item_map = {item.barcode_id: item for item in items}
+
+    # Fetch NonTrayItems with ShelfPositions
+    non_tray_items = (
+        session.query(NonTrayItem)
+        .options(joinedload(NonTrayItem.shelf_position))
+        .filter(NonTrayItem.barcode_id.in_(item_ids))
+        .all()
+    )
+    non_tray_item_map = {nti.barcode_id: nti for nti in non_tray_items}
+
+    # 3. Fetch all Active Requests for these items
+    # Collect all relevant Item / NonTrayItem IDs
+    found_item_ids = [i.id for i in items]
+    found_non_tray_ids = [nti.id for nti in non_tray_items]
+
+    active_requests = (
+        session.query(Request)
+        .filter(
+            or_(
+                Request.item_id.in_(found_item_ids),
+                Request.non_tray_item_id.in_(found_non_tray_ids)
+            )
+        )
+        .filter(Request.fulfilled == False)
+        .all()
+    )
+    
+    # Create sets of "requested" IDs for O(1) lookup
+    requested_item_ids = {r.item_id for r in active_requests if r.item_id}
+    requested_non_tray_ids = {r.non_tray_item_id for r in active_requests if r.non_tray_item_id}
 
     barcodes_errored_indices.update(
-        _validate_items(session, barcodes, request_data, errors)
+        _validate_items(
+            request_data, 
+            barcode_dict, 
+            item_map, 
+            non_tray_item_map, 
+            requested_item_ids, 
+            requested_non_tray_ids, 
+            errors
+        )
     )
     errored_indices.update(barcodes_errored_indices)
 
@@ -923,30 +979,186 @@ def validate_request_data(session, request_data: pd.DataFrame):
     return good_df, errored_df, {"errors": errors}
 
 
+def _validate_items(
+    request_data,
+    barcode_dict,
+    item_map,
+    non_tray_item_map,
+    requested_item_ids,
+    requested_non_tray_ids,
+    errors
+):
+    errored_indices = set()
+    barcode_values = set(request_data["Item Barcode"].astype(str))
+    missing_barcodes = barcode_values - barcode_dict.keys()
+
+    if missing_barcodes:
+        for barcode in missing_barcodes:
+            index = request_data[
+                request_data["Item Barcode"].astype(str) == barcode
+            ].index[0]
+            errors.append(
+                {
+                    "line": int(index) + 2,
+                    "barcode_value": barcode,
+                    "error": f"""Item with Barcode {barcode} not found"""
+                }
+            )
+            errored_indices.add(index)
+
+    # Validate existing barcodes
+    for barcode_value, barcode_id in barcode_dict.items():
+        # We only care about barcodes present in this upload file
+        if barcode_value not in barcode_values:
+            continue
+
+        row_index = request_data[
+            request_data["Item Barcode"].astype(str) == barcode_value
+        ].index[0]
+        
+        item = item_map.get(barcode_id)
+        non_tray_item = non_tray_item_map.get(barcode_id)
+
+        if item:
+            _validate_item(
+                item,
+                row_index,
+                barcode_value,
+                errors,
+                errored_indices,
+                "Items",
+                requested_item_ids
+            )
+        elif non_tray_item:
+            _validate_item(
+                non_tray_item,
+                row_index,
+                barcode_value,
+                errors,
+                errored_indices,
+                "Non tray item",
+                requested_non_tray_ids
+            )
+        else:
+            errors.append(
+                {
+                    "line": int(row_index) + 2,
+                    "barcode_value": barcode_value,
+                    "error": f"No items or non_trays found with barcode.",
+                }
+            )
+            errored_indices.add(row_index)
+
+    return errored_indices
+
+
+def _validate_item(
+    item, 
+    row_index, 
+    barcode_value, 
+    errors, 
+    errored_indices, 
+    item_type,
+    requested_ids  # Set of IDs that have active requests
+):
+    if item.status == "Out":
+        errors.append(
+            {
+                "line": int(row_index) + 2,
+                "barcode_value": barcode_value,
+                "error": f"{item_type} {barcode_value} status is not shelved",
+            }
+        )
+        errored_indices.add(row_index)
+        return
+    if item.status == "PickList":
+        errors.append(
+            {
+                "line": int(row_index) + 2,
+                "barcode_value": barcode_value,
+                "error": f"{item_type} {barcode_value} is already in pick list and cannot be requested",
+            }
+        )
+        errored_indices.add(row_index)
+        return
+    if item.status == "Withdrawn":
+        errors.append(
+            {
+                "line": int(row_index) + 2,
+                "barcode_value": barcode_value,
+                "error": f"{item_type} {barcode_value} has already been withdrawn",
+            }
+        )
+        errored_indices.add(row_index)
+        return
+
+    # Check overlap with existing requests using passed set (no separate query)
+    is_already_requested = item.id in requested_ids
+
+    if is_already_requested or item.status == "Requested":
+        errors.append(
+            {
+                "line": int(row_index) + 2,
+                "barcode_value": barcode_value,
+                "error": f"{item_type} {barcode_value} is already requested",
+            }
+        )
+        errored_indices.add(row_index)
+        return
+
+    if item_type == "Items":
+        # Access pre-fetched relationship (no separate query)
+        tray = item.tray
+        shelf_position = tray.shelf_position if tray else None
+
+        if (
+            not shelf_position
+            or not tray.scanned_for_shelving
+            or not tray.shelf_position_id
+        ):
+            errors.append(
+                {
+                    "line": int(row_index) + 2,
+                    "barcode_value": barcode_value,
+                    "error": f"{item_type} {barcode_value} is not shelved",
+                }
+            )
+            errored_indices.add(row_index)
+    else:
+        if not item.scanned_for_shelving or not item.shelf_position_id:
+            errors.append(
+                {
+                    "line": int(row_index) + 2,
+                    "barcode_value": barcode_value,
+                    "error": f"{item_type} {barcode_value} is not shelved",
+                }
+            )
+            errored_indices.add(row_index)
+
+
 def process_request_data(session, request_df: pd.DataFrame, batch_upload_id, requested_by_id):
     building_id = None
-    barcodes = _fetch_existing_data(
-        session, Barcode, request_df["Item Barcode"].astype(str).tolist(), Barcode.value
-    )
-    barcode_dict = _map_values_to_ids(barcodes, "value", "id")
-    items = _fetch_existing_data(session, Item, barcode_dict.values(), Item.barcode_id)
-    non_tray_items = _fetch_existing_data(
-        session, NonTrayItem, barcode_dict.values(), NonTrayItem.barcode_id
-    )
+    barcodes = request_df["Item Barcode"].tolist()
+    barcode_objs = _fetch_existing_data(session, Barcode, barcodes, Barcode.value)
+    barcode_dict = {b.value: str(b.id) for b in barcode_objs}
+    items = session.query(Item).filter(Item.barcode_id.in_(
+        session.query(Barcode.id).filter(Barcode.value.in_(barcodes))
+    )).all()
+    non_tray_items = session.query(NonTrayItem).filter(NonTrayItem.barcode_id.in_(
+        session.query(Barcode.id).filter(Barcode.value.in_(barcodes))
+    )).all()
 
     if items:
-        items_ids = [item.id for item in items]
-        session.query(Item).filter(Item.id.in_(items_ids)).update(
+        item_ids = [item.id for item in items]
+        session.query(Item).filter(Item.id.in_(item_ids)).update(
             {"status": "Requested"}, synchronize_session=False
         )
-        session.commit()
 
     if non_tray_items:
         non_tray_items_ids = [item.id for item in non_tray_items]
         session.query(NonTrayItem).filter(
             NonTrayItem.id.in_(non_tray_items_ids)
         ).update({"status": "Requested"}, synchronize_session=False)
-        session.commit()
 
     priorities = _fetch_existing_data(
         session, Priority, request_df["Priority"].tolist(), Priority.value
@@ -965,8 +1177,8 @@ def process_request_data(session, request_df: pd.DataFrame, batch_upload_id, req
     request_type_dict = _map_values_to_ids(request_types, "type", "id")
     delivery_location_dict = _map_values_to_ids(delivery_locations, "name", "id")
 
-    item_dict = _map_values_to_ids(items, "barcode_id", "id")
-    non_tray_item_dict = _map_values_to_ids(non_tray_items, "barcode_id", "id")
+    item_dict = {str(item.barcode_id): item.id for item in items}
+    non_tray_item_dict = {str(item.barcode_id): item.id for item in non_tray_items}
 
     request_df["priority_id"] = request_df["Priority"].map(priority_dict)
     request_df["request_type_id"] = request_df["Request Type"].map(request_type_dict)
@@ -1368,3 +1580,31 @@ def get_sorted_query(model, query, sort_params):
 def is_tz_naive(dt: datetime) -> bool:
     """Checks if a date is timezone naive"""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
+
+
+def check_batch_completion(session: Session, batch_upload_id: int):
+    """
+    Checks if all requests in a batch are completed.
+    If so, updates the batch status to 'Completed'.
+    Uses an optimized EXISTS query for performance.
+    """
+    from app.models.batch_upload import BatchUpload, BatchUploadStatus
+    from sqlalchemy import update, select
+
+    # Check if there are ANY requests in this batch that are NOT completed
+    # effectively: if exists(select 1 from requests where batch_id=X and status != 'Completed')
+    has_incomplete_requests = session.execute(
+        select(1).select_from(Request).where(
+            Request.batch_upload_id == batch_upload_id,
+            Request.status != "Completed"
+        ).limit(1)
+    ).scalar()
+
+    if not has_incomplete_requests:
+        # All requests are completed (or there are no requests), mark batch as Completed
+        session.execute(
+            update(BatchUpload)
+            .where(BatchUpload.id == batch_upload_id)
+            .values(status=BatchUploadStatus.Completed, update_dt=datetime.now(timezone.utc))
+        )
+        session.commit()

@@ -25,7 +25,7 @@ from app.filter_params import SortParams, BatchUploadParams
 from app.logger import inventory_logger
 from app.models.barcode_types import BarcodeType
 from app.models.barcodes import Barcode
-from app.models.batch_upload import BatchUpload
+from app.models.batch_upload import BatchUpload, BatchUploadStatus
 from app.models.container_types import ContainerType
 from app.models.ladder_numbers import LadderNumber
 from app.models.ladders import Ladder
@@ -123,10 +123,16 @@ async def get_batch_upload_detail(id: int, session: Session = Depends(get_sessio
     return batch_upload
 
 
-@router.delete("/{id}", response_model=BatchUploadDetailOutput)
+@router.delete("/{id}", status_code=204, dependencies=[Depends(RequiresPermission("delete_requests"))])
 async def delete_batch_upload(id: int, session: Session = Depends(get_session)):
     """
-    Batch upload endpoint to process barcodes for different operations.
+    Delete a batch upload and all associated requests.
+    
+    Business Rules:
+    - Status must be New, Processing, or Uploaded
+    - No requests can be on a pick list
+    - Cascades to delete all requests
+    - Items return to 'In' status
     """
     if not id:
         raise BadRequest(detail="Batch Upload ID is required")
@@ -136,13 +142,62 @@ async def delete_batch_upload(id: int, session: Session = Depends(get_session)):
     if not batch_upload:
         raise NotFound(detail=f"Batch Upload ID {id} not found")
 
+    # Validation 1: Check status
+    allowed_statuses = [BatchUploadStatus.New, BatchUploadStatus.Processing, BatchUploadStatus.Uploaded]
+    if batch_upload.status not in allowed_statuses:
+        raise BadRequest(
+            detail=f"Cannot delete batch upload with status '{batch_upload.status}'. Only 'New', 'Processing', or 'Uploaded' batches can be deleted."
+        )
+
+    # Validation 2: Check if any requests are on a pick list
+    requests_on_picklist = session.execute(
+        select(Request).where(
+            Request.batch_upload_id == id,
+            Request.pick_list_id.isnot(None)
+        )
+    ).scalars().all()
+
+    if requests_on_picklist:
+        raise BadRequest(
+            detail=f"Cannot delete batch upload. {len(requests_on_picklist)} request(s) are already added to a pick list."
+        )
+
+    # Get all requests for this batch
+    batch_requests = session.execute(
+        select(Request).where(Request.batch_upload_id == id)
+    ).scalars().all()
+
+    # Get all items from these requests and reset status to "In"
+    from app.models.items import Item
+    from app.models.non_tray_items import NonTrayItem
+    
+    for request in batch_requests:
+        # Handle tray items
+        if request.item_id:
+            item = session.get(Item, request.item_id)
+            if item and item.status != "In":
+                item.status = "In"
+                session.add(item)
+        
+        # Handle non-tray items
+        if request.non_tray_item_id:
+            non_tray_item = session.get(NonTrayItem, request.non_tray_item_id)
+            if non_tray_item and non_tray_item.status != "In":
+                non_tray_item.status = "In"
+                session.add(non_tray_item)
+        
+        # Delete the request
+        session.delete(request)
+
+    # Delete the batch upload
     session.delete(batch_upload)
     session.commit()
 
     return JSONResponse(
         status_code=status.HTTP_204_NO_CONTENT,
-        content=f"Batch Upload ID {id} has been successfully deleted",
+        content=f"Batch Upload ID {id} and {len(batch_requests)} associated request(s) have been successfully deleted",
     )
+
 
 
 @router.patch("/{id}", response_model=BatchUploadDetailOutput)
@@ -321,7 +376,7 @@ async def batch_upload_request(
         session.execute(
             update(BatchUpload)
             .where(BatchUpload.id == new_batch_upload.id)
-            .values(status="Completed", update_dt=datetime.now(timezone.utc))
+            .values(status=BatchUploadStatus.Uploaded, update_dt=datetime.now(timezone.utc))
         )
         session.commit()
         return JSONResponse(

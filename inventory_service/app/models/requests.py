@@ -69,7 +69,7 @@ class Request(Base):
     pick_list_id: Mapped[Optional[int]] = mapped_column(ForeignKey(PickList.__table__.c.id), nullable=True)
     item_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Item.__table__.c.id), nullable=True)
     non_tray_item_id: Mapped[Optional[int]] = mapped_column(ForeignKey(NonTrayItem.__table__.c.id), nullable=True)
-    batch_upload_id: Mapped[Optional[int]] = mapped_column(ForeignKey(BatchUpload.__table__.c.id), nullable=True)
+    batch_upload_id: Mapped[Optional[int]] = mapped_column(ForeignKey(BatchUpload.__table__.c.id), nullable=True, index=True)
     requested_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey(User.__table__.c.id), nullable=True)
     
     # Fields
