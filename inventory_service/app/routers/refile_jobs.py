@@ -34,7 +34,8 @@ from app.config.exceptions import BadRequest, NotFound
 from app.sorting import RefileJobSorter
 from app.utilities import manage_transition, get_location
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
 
 router = APIRouter(
     prefix="/refile-jobs",
@@ -330,15 +331,42 @@ def create_refile_job(
 
 @router.patch("/{id}", response_model=RefileJobDetailOutput, dependencies=[Depends(RequiresPermission("process_refile_jobs"))])
 def update_refile_job(
-    id: int, refile_job: RefileJobUpdateInput, session: Session = Depends(get_session)
+    id: int, 
+    refile_job: RefileJobUpdateInput, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Update an existing refile job.
+    
+    Includes auto-assignment logic:
+    - When a user starts a job (status → Running), auto-assign to them if unassigned
+    - Prevent users from starting jobs assigned to others
+    - When manager assigns a user, auto-update status to Assigned
     """
     existing_refile_job = session.get(RefileJob, id)
 
     if not existing_refile_job:
         raise NotFound(detail=f"Refile Job ID {id} Not Found")
+    
+    # Capture original status before changes
+    original_status = existing_refile_job.status
+    
+    # Handle auto-assignment when user starts job
+    if refile_job.status:
+        auto_assign_on_start(
+            existing_refile_job, 
+            refile_job.status, 
+            current_user.id
+        )
+    
+    # Handle status update when manager assigns user
+    if refile_job.assigned_user_id is not None and not refile_job.status:
+        update_status_on_assignment(
+            existing_refile_job,
+            refile_job.assigned_user_id,
+            original_status
+        )
 
     if refile_job.status and refile_job.run_timestamp:
         existing_refile_job = manage_transition(existing_refile_job, refile_job)

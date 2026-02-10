@@ -90,7 +90,7 @@ defineEmits([
   'complete'
 ])
 
-const showStart = computed(() => props.status === 'Created')
+const showStart = computed(() => props.status === 'Created' || props.status === 'Assigned')
 const showPause = computed(() => props.status === 'Running')
 const showResume = computed(() => props.status === 'Paused')
 const showComplete = computed(() => props.status === 'Running' && props.canComplete)

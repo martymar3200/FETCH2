@@ -193,6 +193,7 @@ const columnFilters = ref({
   id: null,
   status: [
     'Created',
+    'Assigned',
     'Paused',
     'Running'
   ]
@@ -252,6 +253,7 @@ const statusOptions = computed(() => {
   // Add all possible statuses
   const allStatuses = [
     'Created',
+    'Assigned',
     'Running',
     'Paused',
     'Completed',
@@ -268,6 +270,7 @@ const statusOptions = computed(() => {
 const getStatusBadgeClass = (status) => {
   const statusMap = {
     Created: 'status-badge--created',
+    Assigned: 'status-badge--assigned',
     Running: 'status-badge--running',
     Paused: 'status-badge--paused',
     Completed: 'status-badge--completed',
@@ -279,6 +282,7 @@ const getStatusBadgeClass = (status) => {
 const getStatusIcon = (status) => {
   const iconMap = {
     Created: 'schedule',
+    Assigned: 'mdi-account-check',
     Running: 'play_arrow',
     Paused: 'pause',
     Completed: 'check_circle',

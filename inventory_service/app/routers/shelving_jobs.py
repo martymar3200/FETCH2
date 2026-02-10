@@ -58,7 +58,8 @@ from app.helpers.system_setting_helpers import get_setting_value
 
 logger = logging.getLogger(__name__)
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
 
 router = APIRouter(
     prefix="/shelving-jobs",
@@ -182,8 +183,8 @@ def get_shelving_job_list(
             query = query.where(ShelvingJob.status.in_(params.status))
         if params.workflow_id:
             query = query.where(ShelvingJob.id == params.workflow_id)
-        if params.user_id:
-            query = query.where(ShelvingJob.user_id.in_(params.user_id))
+        if params.assigned_user_id:
+            query = query.where(ShelvingJob.assigned_user_id == params.assigned_user_id)
         if params.assigned_user:
             assigned_user_subquery = (
                 select(User.id)
@@ -194,7 +195,7 @@ def get_shelving_job_list(
                 )
                 .distinct().scalar_subquery()
             )
-            query = query.where(ShelvingJob.user_id.in_(assigned_user_subquery))
+            query = query.where(ShelvingJob.assigned_user_id.in_(assigned_user_subquery))
         if params.created_by_id:
             query = query.where(ShelvingJob.created_by_id == params.created_by_id)
         if params.from_dt:
@@ -245,7 +246,7 @@ def create_shelving_job(
             mode=ShelvingMode[shelving_job_input.mode] if shelving_job_input.mode else ShelvingMode.Manual,
             building_id=shelving_job_input.building_id,
             created_by_id=shelving_job_input.created_by_id,
-            user_id=shelving_job_input.user_id,
+            assigned_user_id=shelving_job_input.assigned_user_id,
             allow_unassigned_size=shelving_job_input.allow_unassigned_size,
             allow_unassigned_owner=shelving_job_input.allow_unassigned_owner,
             allow_tiered_owner=shelving_job_input.allow_tiered_owner,
@@ -370,15 +371,40 @@ def update_shelving_job(
     shelving_job: ShelvingJobUpdateInput,
     session: Session = Depends(get_session),
     background_tasks: BackgroundTasks = None,
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Update an existing shelving job with the provided data.
+    
+    Includes auto-assignment logic:
+    - When a user starts a job (status → Running), auto-assign to them if unassigned
+    - Prevent users from starting jobs assigned to others
+    - When manager assigns a user, auto-update status to Assigned
     """
     try:
         existing_shelving_job = session.get(ShelvingJob, id)
 
         if not existing_shelving_job:
             raise NotFound(detail=f"Shelving Job ID {id} Not Found")
+
+        # Capture original status before changes
+        original_status = existing_shelving_job.status
+        
+        # Handle auto-assignment when user starts job
+        if shelving_job.status:
+            auto_assign_on_start(
+                existing_shelving_job, 
+                shelving_job.status, 
+                current_user.id
+            )
+        
+        # Handle status update when manager assigns user
+        if shelving_job.assigned_user_id is not None and not shelving_job.status:
+            update_status_on_assignment(
+                existing_shelving_job,
+                shelving_job.assigned_user_id,
+                original_status
+            )
 
         if shelving_job.status and shelving_job.run_timestamp:
             existing_shelving_job = manage_transition(
@@ -813,7 +839,7 @@ def reassign_container_location(
             shelving_job_id=id,
             tray_id=discrepancy_tray_id,
             non_tray_item_id=discrepancy_non_tray_id,
-            assigned_user_id=shelving_job.user_id,
+            assigned_user_id=shelving_job.assigned_user_id,
             owner_id=shelf.owner_id,
             size_class_id=shelf_type.size_class_id,
             assigned_location=shelf.location,
@@ -839,7 +865,7 @@ def reassign_container_location(
             shelving_job_id=id,
             tray_id=discrepancy_tray_id,
             non_tray_item_id=discrepancy_non_tray_id,
-            assigned_user_id=shelving_job.user_id,
+            assigned_user_id=shelving_job.assigned_user_id,
             owner_id=shelf.owner_id,
             size_class_id=shelf_type.size_class_id,
             assigned_location=shelf.location,
@@ -856,7 +882,7 @@ def reassign_container_location(
             shelving_job_id=id,
             tray_id=discrepancy_tray_id,
             non_tray_item_id=discrepancy_non_tray_id,
-            assigned_user_id=shelving_job.user_id,
+            assigned_user_id=shelving_job.assigned_user_id,
             owner_id=shelf.owner_id,
             size_class_id=shelf_type.size_class_id,
             assigned_location=shelf.location,
@@ -875,7 +901,7 @@ def reassign_container_location(
             shelving_job_id=id,
             tray_id=discrepancy_tray_id,
             non_tray_item_id=discrepancy_non_tray_id,
-            assigned_user_id=shelving_job.user_id,
+            assigned_user_id=shelving_job.assigned_user_id,
             owner_id=shelf.owner_id,
             size_class_id=shelf_type.size_class_id,
             assigned_location=shelf_position.location,
@@ -990,7 +1016,7 @@ def reassign_container_location(
                 shelving_job_id=id,
                 tray_id=discrepancy_tray_id,
                 non_tray_item_id=discrepancy_non_tray_id,
-                assigned_user_id=shelving_job.user_id,
+                assigned_user_id=shelving_job.assigned_user_id,
                 owner_id=shelf.owner_id,
                 size_class_id=shelf_type.size_class_id,
                 assigned_location=shelf_position.location,
@@ -1190,7 +1216,7 @@ def reassign_container_proposed_location(
             shelving_job_id=id,
             tray_id=tray_container.id if tray_container else None,
             non_tray_item_id=non_tray_container.id if non_tray_container else None,
-            assigned_user_id=shelving_job.user_id,
+            assigned_user_id=shelving_job.assigned_user_id,
             owner_id=shelf.owner_id,
             size_class_id=shelf_type.size_class_id,
             assigned_location=shelf_position.location,
@@ -1209,7 +1235,7 @@ def reassign_container_proposed_location(
             shelving_job_id=id,
             tray_id=tray_container.id if tray_container else None,
             non_tray_item_id=non_tray_container.id if non_tray_container else None,
-            assigned_user_id=shelving_job.user_id,
+            assigned_user_id=shelving_job.assigned_user_id,
             owner_id=shelf.owner_id,
             size_class_id=shelf_type.size_class_id,
             assigned_location=shelf.location,
@@ -1322,7 +1348,7 @@ def reassign_container_proposed_location(
                 shelving_job_id=id,
                 tray_id=discrepancy_tray_id,
                 non_tray_item_id=discrepancy_non_tray_id,
-                assigned_user_id=shelving_job.user_id,
+                assigned_user_id=shelving_job.assigned_user_id,
                 owner_id=shelf.owner_id,
                 size_class_id=shelf_type.size_class_id,
                 assigned_location=shelf_position.location,

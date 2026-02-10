@@ -39,7 +39,8 @@ from app.config.exceptions import (
 from app.sorting import PickListSorter
 from app.utilities import get_location, manage_transition, check_batch_completion
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
 
 router = APIRouter(
     prefix="/pick-lists",
@@ -150,15 +151,15 @@ def get_pick_list_list(
             query = query.where(PickList.status.in_(params.status))
         if params.workflow_id:
             query = query.where(PickList.id == params.workflow_id)
-        if params.user_id:
-            query = query.where(PickList.user_id.in_(params.user_id))
+        if params.assigned_user_id:
+            query = query.where(PickList.assigned_user_id == params.assigned_user_id)
         if params.assigned_user:
             assigned_user_subquery = select(User.id).where(
                 func.concat(User.first_name, " ", User.last_name).in_(
                     params.assigned_user
                 )
             ).scalar_subquery()
-            query = query.where(PickList.user_id.in_(assigned_user_subquery))
+            query = query.where(PickList.assigned_user_id.in_(assigned_user_subquery))
         if params.created_by_id:
             query = query.where(PickList.created_by_id == params.created_by_id)
         if params.from_dt:
@@ -267,16 +268,43 @@ def create_pick_list(
 
 @router.patch("/{id}", response_model=PickListDetailOutput, dependencies=[Depends(RequiresPermission("process_pick_lists"))])
 def update_pick_list(
-    id: int, pick_list: PickListUpdateInput, session: Session = Depends(get_session)
+    id: int, 
+    pick_list: PickListUpdateInput, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Update an existing pick list.
+    
+    Includes auto-assignment logic:
+    - When a user starts a job (status → Running), auto-assign to them if unassigned
+    - Prevent users from starting jobs assigned to others
+    - When manager assigns a user, auto-update status to Assigned
     """
     try:
         existing_pick_list = session.get(PickList, id)
 
         if not existing_pick_list:
             raise NotFound(detail=f"Pick List ID {id} Not Found")
+        
+        # Capture original status before changes
+        original_status = existing_pick_list.status
+        
+        # Handle auto-assignment when user starts job
+        if pick_list.status:
+            auto_assign_on_start(
+                existing_pick_list, 
+                pick_list.status, 
+                current_user.id
+            )
+        
+        # Handle status update when manager assigns user
+        if pick_list.assigned_user_id is not None and not pick_list.status:
+            update_status_on_assignment(
+                existing_pick_list,
+                pick_list.assigned_user_id,
+                original_status
+            )
 
         if pick_list.status == "Completed":
             request_ids = [

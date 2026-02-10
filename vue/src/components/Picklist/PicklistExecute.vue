@@ -10,8 +10,31 @@
       :menu-options="menuOptions"
     >
       <template #actions>
+        <div
+          v-if="editJob"
+          class="row q-gutter-x-sm"
+        >
+          <q-btn
+            no-caps
+            unelevated
+            color="accent"
+            label="Save Edits"
+            class="btn-modern"
+            :loading="actionLoading"
+            @click="updateUserAssignment"
+          />
+          <q-btn
+            no-caps
+            unelevated
+            outline
+            color="accent"
+            label="Cancel"
+            class="btn-modern-outline"
+            @click="editJob = false"
+          />
+        </div>
         <JobActionButtons
-          v-if="job?.status !== 'Completed'"
+          v-else-if="job?.status !== 'Completed'"
           :status="job?.status || 'Created'"
           :can-complete="allItemsRetrieved"
           :loading="actionLoading"
@@ -22,6 +45,32 @@
         />
       </template>
     </JobPageHeader>
+
+    <!-- Quick Edit Card -->
+    <q-card
+      v-if="editJob"
+      flat
+      bordered
+      class="details-card q-mb-lg"
+    >
+      <q-card-section class="q-pa-md">
+        <div class="row q-col-gutter-md items-center">
+          <div class="col-12 col-sm-6">
+            <div class="detail-item">
+              <label class="detail-label">Assigned User</label>
+              <SelectInput
+                v-model="job.assigned_user_id"
+                :options="users"
+                option-type="users"
+                option-value="id"
+                option-label="name"
+                class="q-mt-xs"
+              />
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
 
     <!-- Progress Bar -->
     <JobProgressBar
@@ -213,9 +262,11 @@ import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePicklistStore } from '@/stores/picklist-store'
 import { useUserStore } from '@/stores/user-store'
+import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
 import { Notify } from 'quasar'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
+import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 
 // Shared Components
@@ -225,6 +276,7 @@ import JobActionButtons from '@/components/Job/JobActionButtons.vue'
 import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
 import PicklistBatchSheet from '@/components/Picklist/PicklistBatchSheet.vue'
+import SelectInput from '@/components/SelectInput.vue'
 import PicklistItemDetailModal from '@/components/Picklist/PicklistItemDetailModal.vue'
 
 const route = useRoute()
@@ -234,11 +286,13 @@ const picklistStore = usePicklistStore()
 
 // Composables
 const { compiledBarCode } = useBarcodeScanHandler()
+const { checkUserPermission } = usePermissionHandler()
 const { addDataToIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
 
 // Store Refs
 const { picklistJob, picklistItems, allItemsRetrieved } = storeToRefs(picklistStore)
 const { userData } = storeToRefs(useUserStore())
+const { users } = storeToRefs(useOptionStore())
 
 // Local State
 const jobId = computed(() => route.params.id || route.params.jobId)
@@ -250,6 +304,7 @@ const scanning = ref(false)
 const showCompleteDialog = ref(false)
 const showCancelDialog = ref(false)
 const showAuditTrailModal = ref(false)
+const editJob = ref(false)
 const showItemDetailModal = ref(false)
 const batchSheetComponent = ref(null)
 const scanInput = ref(null)
@@ -279,6 +334,16 @@ const filteredItems = computed(() => {
 })
 
 const menuOptions = computed(() => [
+  {
+    label: 'Assign User',
+    icon: 'person_add',
+    color: 'grey',
+    hidden: !checkUserPermission('can_assign_jobs'),
+    disabled: editJob.value || job.value?.status === 'Paused' || job.value?.status === 'Completed',
+    action: () => {
+      editJob.value = true
+    }
+  },
   {
     label: 'View History',
     icon: 'history',
@@ -363,7 +428,7 @@ const startJob = async () => {
     const payload = {
       id: jobId.value,
       status: 'Running',
-      user_id: userData.value.user_id,
+      assigned_user_id: userData.value.user_id,
       run_timestamp: currentIsoDate()
     }
     await picklistStore.patchPicklistJob(payload)
@@ -520,6 +585,31 @@ const completeJob = async (print) => {
   } finally {
     actionLoading.value = false
     showCompleteDialog.value = false
+  }
+}
+
+const updateUserAssignment = async () => {
+  try {
+    actionLoading.value = true
+    const payload = {
+      id: job.value.id,
+      assigned_user_id: job.value.assigned_user_id,
+      run_timestamp: new Date().toISOString()
+    }
+    await picklistStore.patchPicklistJob(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'User assigned successfully'
+    })
+    editJob.value = false
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to assign user'
+    })
+  } finally {
+    actionLoading.value = false
   }
 }
 

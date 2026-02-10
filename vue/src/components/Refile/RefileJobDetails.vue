@@ -35,7 +35,7 @@
           />
         </div>
         <q-btn
-          v-else-if="refileJob.status === 'Created'"
+          v-else-if="refileJob.status === 'Created' || refileJob.status === 'Assigned'"
           no-caps
           unelevated
           color="accent"
@@ -59,15 +59,7 @@
         <div class="row q-col-gutter-md items-center">
           <div class="col-12 col-sm-6">
             <div class="detail-item">
-              <label class="detail-label">Building</label>
-              <div class="detail-value">
-                {{ refileJob.building?.name || '-' }}
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-sm-6">
-            <div class="detail-item">
-              <label class="detail-label">Assigned User</label>
+              <label class="form-group-label">Assigned User</label>
               <SelectInput
                 v-model="refileJob.assigned_user_id"
                 :options="users"
@@ -524,7 +516,7 @@ const headerSubtitle = computed(() => {
 const headerMenuOptions = computed(() => [
   {
     label: 'Assign User',
-    hidden: !checkUserPermission('can_assign_and_reassign_refile_job'),
+    hidden: !checkUserPermission('can_assign_jobs'),
     disabled: appIsOffline.value || editJobInfo.value || editItems.value || refileJob.value.status == 'Paused' || refileJob.value.status == 'Completed',
     action: () => {
       editJobInfo.value = true

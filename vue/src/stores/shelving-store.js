@@ -118,7 +118,7 @@ export const useShelvingStore = defineStore('shelving-store', {
         user: {
           name: ''
         },
-        user_id: null,
+        assigned_user_id: null,
         building_id: null,
         building: null,
         create_dt: null,

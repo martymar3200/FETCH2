@@ -21,7 +21,7 @@ class ShelvingJobInput(BaseModel):
     mode: Optional[str] = "Manual"  # ShelvingMode: "Manual" or "PreAssigned"
     building_id: int  # Required for all job types
     created_by_id: Optional[int] = None
-    user_id: Optional[int] = None  # For job assignment
+    assigned_user_id: Optional[int] = None  # For job assignment
     # Verification jobs to populate container list (for List origin)
     verification_job_ids: Optional[List[int]] = None
     # Pre-assignment configuration flags
@@ -66,7 +66,7 @@ class ShelvingJobInput(BaseModel):
 
 class ShelvingJobUpdateInput(BaseModel):
     status: Optional[str] = None
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     building_id: Optional[int] = None
     run_timestamp: Optional[datetime] = None
 
@@ -83,7 +83,7 @@ class ShelvingJobUpdateInput(BaseModel):
         json_schema_extra={
             "example": {
                 "status": "Created",
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "building_id": 1,
                 "run_timestamp": "2023-10-08T20:46:56.764426"
             }
@@ -99,7 +99,7 @@ class ShelvingJobBaseOutput(BaseModel):
     building_id: Optional[int] = None
     last_transition: Optional[datetime] = None
     run_time: Optional[timedelta] = None
-    user: Optional[UserDetailReadOutput] = None
+    assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     # NEW: Pre-assignment configuration flags
     allow_unassigned_size: Optional[bool] = None
@@ -136,7 +136,7 @@ class ShelvingJobListOutput(ShelvingJobBaseOutput):
                 "status": "Created",
                 "origin": "Verification",
                 "building_id": 1,
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "first_name": "Frodo",
                     "last_name": "Baggins",
@@ -272,7 +272,7 @@ class ShelvingJobContainerDetailOutput(BaseModel):
         return None
 
 class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     verification_jobs: Optional[List[VerificationJobNestedForShelvingJob]] = []
     trays: List[TrayNestedForShelvingJob]
@@ -303,9 +303,9 @@ class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
                     "id": 1,
                     "name": "Fort Meade"
                 },
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "first_name": "Frodo",
                     "last_name": "Baggins",

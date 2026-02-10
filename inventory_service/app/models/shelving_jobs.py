@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 class ShelvingJobStatus(str, Enum):
     Created = "Created"
+    Assigned = "Assigned"
     Paused = "Paused"
     Running = "Running"
     Cancelled = "Cancelled"
@@ -96,7 +97,7 @@ class ShelvingJob(Base): # <--- Inherit from Base
 
     # Foreign Keys
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=False)
-    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    assigned_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     # Run Time (timedelta -> Interval)
@@ -114,9 +115,9 @@ class ShelvingJob(Base): # <--- Inherit from Base
     # --- RELATIONSHIPS ---
 
     # User Relationships (Custom primaryjoin)
-    user: Mapped[Optional[User]] = relationship(
+    assigned_user: Mapped[Optional[User]] = relationship(
         back_populates="shelving_jobs",
-        primaryjoin="ShelvingJob.user_id==User.id",
+        primaryjoin="ShelvingJob.assigned_user_id==User.id",
         lazy="selectin"
     )
     created_by: Mapped[Optional[User]] = relationship(

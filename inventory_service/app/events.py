@@ -70,7 +70,7 @@ def check_for_tray_shelving_discrepancy(mapper, connection, target):
                         new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
                             shelving_job_id=refreshed_target.shelving_job_id,
                             tray_id=refreshed_target.id,
-                            assigned_user_id=shelving_job.user_id,
+                            assigned_user_id=shelving_job.assigned_user_id,
                             error=f"""Location Discrepancy -
                             Proposed: {proposed_position.location} -
                             Actual: {actual_shelf_position.location}"""
@@ -81,7 +81,7 @@ def check_for_tray_shelving_discrepancy(mapper, connection, target):
                     new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
                         shelving_job_id=refreshed_target.shelving_job_id,
                         tray_id=refreshed_target.id,
-                        assigned_user_id=shelving_job.user_id,
+                        assigned_user_id=shelving_job.assigned_user_id,
                         error=f"""Owner Discrepancy -
                         Tray owner_id: {refreshed_target.owner_id} -
                         Shelf owner_id: {shelf.owner_id}"""
@@ -92,7 +92,7 @@ def check_for_tray_shelving_discrepancy(mapper, connection, target):
                     new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
                         shelving_job_id=refreshed_target.shelving_job_id,
                         tray_id=refreshed_target.id,
-                        assigned_user_id=shelving_job.user_id,
+                        assigned_user_id=shelving_job.assigned_user_id,
                         error=f"""Size Discrepancy -
                         Tray size_class_id: {refreshed_target.size_class_id} -
                         Shelf size_class_id: {shelf_type.size_class_id}"""
@@ -126,7 +126,7 @@ def check_for_non_tray_shelving_discrepancy(mapper, connection, target):
                         new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
                             shelving_job_id=refreshed_target.shelving_job_id,
                             non_tray_item_id=refreshed_target.id,
-                            assigned_user_id=shelving_job.user_id,
+                            assigned_user_id=shelving_job.assigned_user_id,
                             error=f"""Location Discrepancy -
                             Proposed: {proposed_position.location} -
                             Actual: {actual_shelf_position.location}"""
@@ -137,7 +137,7 @@ def check_for_non_tray_shelving_discrepancy(mapper, connection, target):
                     new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
                         shelving_job_id=refreshed_target.shelving_job_id,
                         non_tray_item_id=refreshed_target.id,
-                        assigned_user_id=shelving_job.user_id,
+                        assigned_user_id=shelving_job.assigned_user_id,
                         error=f"""Owner Discrepancy -
                         Tray owner_id: {refreshed_target.owner_id} -
                         Shelf owner_id: {shelf.owner_id}"""
@@ -148,7 +148,7 @@ def check_for_non_tray_shelving_discrepancy(mapper, connection, target):
                     new_shelving_job_discrepancy = ShelvingJobDiscrepancy(
                         shelving_job_id=refreshed_target.shelving_job_id,
                         non_tray_item_id=refreshed_target.id,
-                        assigned_user_id=shelving_job.user_id,
+                        assigned_user_id=shelving_job.assigned_user_id,
                         error=f"""Size Discrepancy -
                         Tray size_class_id: {refreshed_target.size_class_id} -
                         Shelf size_class_id: {shelf_type.size_class_id}"""

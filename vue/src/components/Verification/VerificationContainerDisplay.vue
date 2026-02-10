@@ -8,17 +8,7 @@
           <div class="row items-center">
             <!-- Three-dot menu -->
             <MoreOptionsMenu
-              :options="!route.params.containerId ? [
-                { text: 'Edit', disabled: verificationJob.status == 'Completed' },
-                { text: 'Print Job' },
-                { text: 'Cancel Job', optionClass: 'text-negative', disabled: verificationJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_verification_job')},
-                { text: 'View History'}
-              ] : [
-                { text: 'Edit', disabled: verificationJob.status == 'Completed' },
-                { text: 'Print Job' },
-                { text: 'Cancel Job', optionClass: 'text-negative', disabled: verificationJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_verification_job')},
-                { text: 'View History'}
-              ]"
+              :options="menuOptions"
               class="q-mr-sm"
               @click="handleOptionMenu"
             />
@@ -37,38 +27,94 @@
           </p>
         </div>
         <div class="col-auto">
-          <!-- Resume button (only when paused) -->
-          <q-btn
-            v-if="verificationJob.status === 'Paused'"
-            no-caps
-            unelevated
-            color="accent"
-            label="Resume"
-            class="btn-modern q-mr-sm"
-            @click="updateVerificationJobStatus('Running')"
-          />
-          <!-- Complete Job button - always visible when running, disabled if not ready -->
-          <q-btn
-            v-if="verificationJob.status !== 'Completed'"
-            no-caps
-            unelevated
-            color="positive"
-            label="Complete Job"
-            class="btn-modern"
-            :disabled="!allItemsVerified || !allTraysCompleted || verificationJob.status === 'Paused'"
-            @click="
-              showConfirmation = {
-                type: 'completeJob',
-                text: 'Are you sure you want to complete the job?',
-              }
-            "
-          />
+          <!-- Edit buttons -->
+          <div
+            v-if="editJob"
+            class="row q-gutter-x-sm"
+          >
+            <q-btn
+              no-caps
+              unelevated
+              color="accent"
+              label="Save Edits"
+              class="btn-modern"
+              :loading="actionLoading"
+              @click="updateUserAssignment"
+            />
+            <q-btn
+              no-caps
+              unelevated
+              outline
+              color="accent"
+              label="Cancel"
+              class="btn-modern-outline"
+              @click="editJob = false"
+            />
+          </div>
+          <!-- Normal buttons -->
+          <div
+            v-else
+            class="row q-gutter-x-sm"
+          >
+            <!-- Resume button (only when paused) -->
+            <q-btn
+              v-if="verificationJob.status === 'Paused'"
+              no-caps
+              unelevated
+              color="accent"
+              label="Resume"
+              class="btn-modern"
+              @click="updateVerificationJobStatus('Running')"
+            />
+            <!-- Complete Job button - always visible when running, disabled if not ready -->
+            <q-btn
+              v-if="verificationJob.status !== 'Completed'"
+              no-caps
+              unelevated
+              color="positive"
+              label="Complete Job"
+              class="btn-modern"
+              :disabled="!allItemsVerified || !allTraysCompleted || verificationJob.status === 'Paused'"
+              @click="
+                showConfirmation = {
+                  type: 'completeJob',
+                  text: 'Are you sure you want to complete the job?',
+                }
+              "
+            />
+          </div>
         </div>
       </div>
 
+      <!-- Quick Edit Card -->
+      <q-card
+        v-if="editJob"
+        flat
+        bordered
+        class="details-card q-mb-lg"
+      >
+        <q-card-section class="q-pa-md">
+          <div class="row q-col-gutter-md items-center">
+            <div class="col-12 col-sm-6">
+              <div class="detail-item">
+                <label class="form-group-label">Assigned User</label>
+                <SelectInput
+                  v-model="verificationJob.assigned_user_id"
+                  :options="users"
+                  option-type="users"
+                  option-value="id"
+                  option-label="name"
+                  class="q-mt-xs"
+                />
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+
       <!-- Scan Section Card -->
       <q-card
-        v-if="['Running', 'Created'].includes(verificationJob.status)"
+        v-if="['Running', 'Created', 'Assigned'].includes(verificationJob.status)"
         class="q-mb-lg"
       >
         <q-card-section>
@@ -681,6 +727,7 @@ import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 
+import SelectInput from '@/components/SelectInput.vue'
 import TextInput from '@/components/TextInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
@@ -697,12 +744,17 @@ const { compiledBarCode } = useBarcodeScanHandler({ waitForEnterKey: true })
 const { currentScreenSize } = useCurrentScreenSize()
 const { checkUserPermission } = usePermissionHandler()
 
+
+
 // Store Data
 const { appIsLoadingData, appActionIsLoadingData } = storeToRefs(useGlobalStore())
 const { userData } = storeToRefs(useUserStore())
 const { verifyBarcode, deleteBarcode, patchBarcode } = useBarcodeStore()
 const { barcodeDetails } = storeToRefs(useBarcodeStore())
-const { mediaTypes } = storeToRefs(useOptionStore())
+const {
+  getOptions
+} = useOptionStore()
+const { mediaTypes, users } = storeToRefs(useOptionStore())
 const {
   resetVerificationContainer,
   patchVerificationJob,
@@ -745,6 +797,22 @@ const editTrayBarcodeInput = ref('')
 const selectedMediaType = ref(null)
 const showConfirmation = ref(null)
 const selectedItems = ref([])
+const editJob = ref(false)
+const actionLoading = ref(false)
+
+watch(editJob, async (newVal) => {
+  if (newVal) {
+    try {
+      appActionIsLoadingData.value = true
+      await getOptions('users')
+    } catch (error) {
+      console.error('Failed to load users', error)
+    } finally {
+      appActionIsLoadingData.value = false
+    }
+  }
+})
+
 // renderIsEditMode removed
 
 // Logic
@@ -760,6 +828,10 @@ const isNextTrayEnabled = computed(() => {
          verificationJob.value.status !== 'Completed' &&
          allItemsVerified.value &&
          !allTraysCompleted.value
+})
+
+const isAssignedToOtherUser = computed(() => {
+  return verificationJob.value.assigned_user_id && verificationJob.value.assigned_user_id !== userData.value.user_id
 })
 
 const getStatusColor = (status) => {
@@ -850,6 +922,16 @@ watch(compiledBarCode, (barcode_value) => {
 })
 
 const handleTrayScan = async (barcode_value) => {
+  // Prevent scan if assigned to another user
+  if (isAssignedToOtherUser.value) {
+    Notify.create({
+      type: 'negative',
+      message: 'This job is assigned to another user. You cannot verify items.'
+    })
+    scanBarcodeInput.value = ''
+    return
+  }
+
   try {
     if (verificationJob.value.trays && !verificationJob.value.trays.some(tray => tray.barcode.value == barcode_value)) {
       Notify.create({
@@ -896,6 +978,16 @@ const handleTrayScan = async (barcode_value) => {
 }
 
 const triggerItemScan = async (barcode_value) => {
+  // Prevent scan if assigned to another user
+  if (isAssignedToOtherUser.value) {
+    Notify.create({
+      type: 'negative',
+      message: 'This job is assigned to another user. You cannot verify items.'
+    })
+    scanBarcodeInput.value = ''
+    return
+  }
+
   try {
     appActionIsLoadingData.value = true
     await verifyBarcode(barcode_value, 'Item', true)
@@ -1243,6 +1335,10 @@ const setNextVerificationTray = async () => {
 }
 
 const handleOptionMenu = (option) => {
+  if (option.action) {
+    option.action()
+    return
+  }
   if (option.text === 'Edit') {
     selectedMediaType.value = verificationJob.value.media_type
     showEditJobModal.value = true
@@ -1269,12 +1365,68 @@ const handleOptionMenu = (option) => {
   }
 }
 
+const menuOptions = computed(() => {
+  const commonOptions = [
+    {
+      text: 'Assign User',
+      icon: 'person_add',
+      color: 'grey',
+      hidden: !checkUserPermission('can_assign_jobs'),
+      disabled: editJob.value || verificationJob.value.status === 'Completed' || verificationJob.value.status === 'Paused',
+      action: () => {
+        editJob.value = true
+      }
+    },
+    {
+      text: 'Edit',
+      disabled: verificationJob.value.status === 'Completed'
+    },
+    { text: 'Print Job' },
+    {
+      text: 'Cancel Job',
+      optionClass: 'text-negative',
+      disabled: verificationJob.value.status === 'Completed',
+      hidden: !checkUserPermission('can_cancel_verification_job')
+    },
+    { text: 'View History' }
+  ]
+  return commonOptions
+})
+
+const updateUserAssignment = async () => {
+  actionLoading.value = true
+  try {
+    const payload = {
+      id: verificationJob.value.id,
+      assigned_user_id: verificationJob.value.assigned_user_id,
+      run_timestamp: new Date().toISOString()
+    }
+    await patchVerificationJob(payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'User assigned successfully'
+    })
+    editJob.value = false
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || 'Failed to update user assignment'
+    })
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+
+
 const updateVerificationJobStatus = async (status) => {
   try {
     appIsLoadingData.value = true
     const payload = {
       id: verificationJob.value.id,
       status,
+      assigned_user_id: verificationJob.value.assigned_user_id || userData.value.user_id,
       run_timestamp: currentIsoDate()
     }
     await patchVerificationJob(payload)

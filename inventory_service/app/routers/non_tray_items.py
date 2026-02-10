@@ -400,7 +400,7 @@ def update_non_tray_item(
                 change_type=(
                     "MediaTypeEdit" if key == "media_type_id" else "SizeClassEdit"
                 ),
-                completed_by_id=verification_job.user_id,
+                completed_by_id=verification_job.assigned_user_id,
             )
 
             session.add(new_verification_change)

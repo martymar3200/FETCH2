@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 class RefileJobStatus(str, Enum):
     Created = "Created"
+    Assigned = "Assigned"
     Paused = "Paused"
     Running = "Running"
     Completed = "Completed"

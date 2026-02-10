@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 class VerificationJobStatus(str, Enum):
     Created = "Created"
+    Assigned = "Assigned"
     Paused = "Paused"
     Running = "Running"
     Completed = "Completed"
@@ -44,7 +45,7 @@ class VerificationJob(Base):
 
     # Foreign Keys (CRITICAL FIX: Absolute Foreign Keys)
     workflow_id: Mapped[Optional[int]] = mapped_column(ForeignKey("workflow.id"), nullable=True)
-    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    assigned_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     accession_job_id: Mapped[int] = mapped_column(ForeignKey(AccessionJob.__table__.c.id), nullable=False) # FK to AccessionJob
 
@@ -113,9 +114,9 @@ class VerificationJob(Base):
     )
     
     # User Relationships (Custom primaryjoin)
-    user: Mapped[Optional["User"]] = relationship(
+    assigned_user: Mapped[Optional["User"]] = relationship(
         back_populates="verification_jobs",
-        primaryjoin="VerificationJob.user_id==User.id",
+        primaryjoin="VerificationJob.assigned_user_id==User.id",
         lazy="selectin"
     )
     created_by: Mapped[Optional["User"]] = relationship(

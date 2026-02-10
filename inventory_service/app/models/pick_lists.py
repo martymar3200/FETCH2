@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 class PickListStatus(str, Enum):
     Created = "Created"
+    Assigned = "Assigned"
     Paused = "Paused"
     Running = "Running"
     Completed = "Completed"
@@ -39,7 +40,7 @@ class PickList(Base):
     id: Mapped[Optional[int]] = mapped_column(BigInteger, primary_key=True)
 
     # Foreign Keys to User and Building
-    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    assigned_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     building_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Building.__table__.c.id), nullable=True)
     
@@ -58,9 +59,9 @@ class PickList(Base):
     # --- RELATIONSHIPS ---
     
     # User Relationships
-    user: Mapped[Optional["User"]] = relationship(
+    assigned_user: Mapped[Optional["User"]] = relationship(
         back_populates="pick_lists",
-        primaryjoin="PickList.user_id==User.id",
+        primaryjoin="PickList.assigned_user_id==User.id",
         lazy="selectin"
     )
 

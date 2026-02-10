@@ -27,7 +27,7 @@ class PickListInput(BaseModel):
 
 
 class PickListUpdateInput(BaseModel):
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     status: Optional[str] = None
     building_id: Optional[int] = None
@@ -47,7 +47,7 @@ class PickListUpdateInput(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "status": "Created",
                 "building_id": 1,
@@ -66,7 +66,7 @@ class PickListUpdateRequestInput(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "building_id": 1,
                 "status": "Out",
@@ -88,7 +88,7 @@ class PickListUpdateRequestInput(BaseModel):
 
 class PickListBaseOutput(BaseModel):
     id: int
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     user: Optional[UserListOutput] = None
     created_by: Optional[UserListOutput] = None
@@ -122,7 +122,7 @@ class PickListBaseOutput(BaseModel):
         json_schema_extra={
             "example": {
                 "id": 1,
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "user": {
                     "id": 1,
@@ -152,7 +152,7 @@ class PickListListOutput(PickListBaseOutput):
         json_schema_extra={
             "example": {
                 "id": 1,
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "user": {
                     "id": 1,
@@ -206,7 +206,7 @@ class PickListDetailOutput(PickListBaseOutput):
                 "id": 1,
                 "status": "Created",
                 "request_count": 1,
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "user": {
                     "id": 1,

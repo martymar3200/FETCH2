@@ -411,7 +411,7 @@ const headerSubtitle = computed(() => {
 const headerMenuOptions = computed(() => [
   {
     label: 'Assign User',
-    hidden: !checkUserPermission('can_assign_and_reassign_picklist_job'),
+    hidden: !checkUserPermission('can_assign_jobs'),
     disabled: appIsOffline.value || editJob.value || picklistJob.value.status == 'Paused' || picklistJob.value.status == 'Completed',
     action: () => {
       editJob.value = true

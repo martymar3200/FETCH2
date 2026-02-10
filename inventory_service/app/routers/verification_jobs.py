@@ -46,7 +46,8 @@ from app.tasks import (
     manage_verification_job_transition, manage_verification_job_change_action,
 )
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
 
 router = APIRouter(
     prefix="/verification-jobs",
@@ -67,7 +68,7 @@ def get_verification_job_list(
     """
     # Use selectinload to fetch related user data in a single, efficient second query.
     query = select(VerificationJob).options(
-        selectinload(VerificationJob.user),
+        selectinload(VerificationJob.assigned_user),
         selectinload(VerificationJob.created_by)
     )
 
@@ -114,8 +115,8 @@ def get_verification_job_list(
 
     if params.workflow_id:
         query = query.where(VerificationJob.workflow_id == params.workflow_id)
-    if params.user_id:
-        query = query.where(VerificationJob.user_id.in_(params.user_id))
+    if params.assigned_user_id:
+        query = query.where(VerificationJob.assigned_user_id == params.assigned_user_id)
     if params.assigned_user:
         assigned_user_subquery = (
             select(User.id)
@@ -126,7 +127,7 @@ def get_verification_job_list(
             )
             .distinct().scalar_subquery()
         )
-        query = query.where(VerificationJob.user_id.in_(assigned_user_subquery))
+        query = query.where(VerificationJob.assigned_user_id.in_(assigned_user_subquery))
     if params.container_type:
         subquery = (
             select(ContainerType.id)
@@ -289,22 +290,46 @@ def update_verification_job(
     verification_job: VerificationJobUpdateInput,
     session: Session = Depends(get_session),
     background_tasks: BackgroundTasks = None,
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
-    Update a verification job:
+    Update a verification job.
+    
+    Includes auto-assignment logic:
+    - When a user starts a job (status → Running), auto-assign to them if unassigned
+    - Prevent users from starting jobs assigned to others
+    - When manager assigns a user, auto-update status to Assigned
     """
     try:
         existing_verification_job = session.get(VerificationJob, id)
-
-        # capture original status for process check
-        original_status = existing_verification_job.status
 
         # Check if the tray record exists
         if not existing_verification_job:
             raise NotFound(detail=f"Verification Job ID {id} Not Found")
 
+        # capture original status for process check
+        original_status = existing_verification_job.status
+
         # Update the tray record with the mutated data
         mutated_data = verification_job.model_dump(exclude_unset=True)
+        
+        # Handle auto-assignment when user starts job
+        new_status = mutated_data.get("status")
+        if new_status:
+            auto_assign_on_start(
+                existing_verification_job, 
+                new_status, 
+                current_user.id
+            )
+        
+        # Handle status update when manager assigns user
+        new_assigned_user_id = mutated_data.get("assigned_user_id")
+        if new_assigned_user_id is not None and "status" not in mutated_data:
+            update_status_on_assignment(
+                existing_verification_job,
+                new_assigned_user_id,
+                original_status
+            )
 
         for key, value in mutated_data.items():
             if (key in ["media_type_id", "size_class_id"] and

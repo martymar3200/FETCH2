@@ -31,7 +31,7 @@
 
     <!-- Not Started Message -->
     <q-card
-      v-if="job?.status === 'Created'"
+      v-if="job?.status === 'Created' || job?.status === 'Assigned'"
       class="q-mt-md bg-accent-1 text-center q-pa-xl"
     >
       <q-card-section>

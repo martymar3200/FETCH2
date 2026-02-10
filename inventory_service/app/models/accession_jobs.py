@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
 class AccessionJobStatus(str, Enum):
     Created = "Created"
+    Assigned = "Assigned"
     Paused = "Paused"
     Running = "Running"
     Cancelled = "Cancelled"
@@ -48,10 +49,10 @@ class AccessionJob(Base):
     id: Mapped[Optional[int]] = mapped_column(BigInteger, primary_key=True)
 
     # Foreign Keys (CRITICAL FIX: Absolute Foreign Keys)
-    workflow_id: Mapped[Optional[int]] = mapped_column(ForeignKey("workflow.id"), nullable=True)
+    workflow_id: Mapped[int] = mapped_column(ForeignKey("workflow.id"))
     media_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey(MediaType.__table__.c.id), nullable=True)
-    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    assigned_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
     size_class_id: Mapped[Optional[int]] = mapped_column(ForeignKey(SizeClass.__table__.c.id), nullable=True)
     owner_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Owner.__table__.c.id), nullable=True)
     container_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey(ContainerType.__table__.c.id), nullable=True)
@@ -81,24 +82,24 @@ class AccessionJob(Base):
     
     container_type: Mapped[Optional["ContainerType"]] = relationship(
         back_populates="accession_jobs",
-        foreign_keys=[container_type_id]
+        foreign_keys="AccessionJob.container_type_id"
     )
     media_type: Mapped[Optional["MediaType"]] = relationship(
         back_populates="accession_jobs",
-        foreign_keys=[media_type_id]
+        foreign_keys="AccessionJob.media_type_id"
     )
     size_class: Mapped[Optional["SizeClass"]] = relationship(
-        uselist=False, foreign_keys=[size_class_id]
+        uselist=False, foreign_keys="AccessionJob.size_class_id"
     )
     owner: Mapped[Optional[Owner]] = relationship(
         back_populates="accession_jobs",
-        foreign_keys=[owner_id]
+        foreign_keys="AccessionJob.owner_id"
     )
     
     # User Relationships (Custom primaryjoin)
-    user: Mapped[Optional["User"]] = relationship(
+    assigned_user: Mapped[Optional["User"]] = relationship(
         back_populates="accession_jobs",
-        primaryjoin="AccessionJob.user_id==User.id",
+        primaryjoin="AccessionJob.assigned_user_id==User.id",
         lazy="selectin"
     )
     created_by: Mapped[Optional["User"]] = relationship(
@@ -121,4 +122,7 @@ class AccessionJob(Base):
         primaryjoin="NonTrayItem.accession_job_id==AccessionJob.id"
     )
     verification_jobs: Mapped[List["VerificationJob"]] = relationship(back_populates="accession_job")
-    workflow: Mapped[Optional["Workflow"]] = relationship(back_populates="accession_job")
+    workflow: Mapped[Optional["Workflow"]] = relationship(
+        back_populates="accession_job",
+        foreign_keys="AccessionJob.workflow_id"
+    )

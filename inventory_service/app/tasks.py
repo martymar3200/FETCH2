@@ -77,7 +77,7 @@ def complete_accession_job(accession_job_id: int, original_status: str, audit_in
                 size_class_id=accession_job.size_class_id,
                 media_type_id=accession_job.media_type_id,
                 container_type_id=accession_job.container_type_id,
-                user_id=accession_job.user_id,
+                assigned_user_id=accession_job.assigned_user_id,
                 created_by_id=accession_job.created_by_id,
                 status="Created",
             )
@@ -399,7 +399,7 @@ def manage_verification_job_change_action(verification_job: VerificationJob, upd
                                 tray_barcode_value=tray_barcode.value,
                                 item_barcode_value=item_barcode.value,
                                 change_type=change_type,
-                                completed_by_id=verification_job.user_id
+                                completed_by_id=verification_job.assigned_user_id
                             )
                         )
             

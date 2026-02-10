@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 class WithdrawJobStatus(str, Enum):
     Created = "Created"
+    Assigned = "Assigned"
     Paused = "Paused"
     Running = "Running"
     Cancelled = "Cancelled"

@@ -57,14 +57,7 @@ export const PERMISSION_BUNDLES = [
       'can_access_shelf_detail'
     ]
   },
-  {
-    name: 'Shelving (Assign)',
-    description: 'Reassign users on shelving jobs.',
-    permissions: [
-      'can_assign_and_reassign_shelving_job',
-      'manage_shelving_assignments'
-    ]
-  },
+
   {
     name: 'Shelving (Delete)',
     description: 'Delete Shelving Jobs.',
@@ -106,14 +99,7 @@ export const PERMISSION_BUNDLES = [
       'can_edit_picklist_job'
     ]
   },
-  {
-    name: 'Picklist (Assign)',
-    description: 'Reassign Picklist Jobs.',
-    permissions: [
-      'can_assign_and_reassign_picklist_job',
-      'manage_picklist_assignments'
-    ]
-  },
+
   {
     name: 'Picklist (Delete)',
     description: 'Delete Picklist Jobs.',
@@ -137,14 +123,7 @@ export const PERMISSION_BUNDLES = [
       'can_execute_and_complete_refile_job'
     ]
   },
-  {
-    name: 'Refile (Assign)',
-    description: 'Reassign Refile Jobs.',
-    permissions: [
-      'can_assign_and_reassign_refile_job',
-      'manage_refile_assignments'
-    ]
-  },
+
   {
     name: 'Refile (Delete)',
     description: 'Delete Refile Jobs.',
@@ -159,6 +138,11 @@ export const PERMISSION_BUNDLES = [
     name: 'Withdraw (Core)',
     description: 'Create and process withdraw jobs.',
     permissions: ['can_access_withdraw']
+  },
+  {
+    name: 'Job Assignment (Manager)',
+    description: 'Manually assign and reassign jobs to users across all job types (does not affect auto-assignment when users start jobs).',
+    permissions: ['can_assign_jobs']
   },
   {
     name: 'Reporting',

@@ -9,9 +9,32 @@
       :menu-options="headerMenuOptions"
     >
       <template #actions>
-        <div v-if="job?.status !== 'Completed'">
+        <div
+          v-if="editJob"
+          class="row q-gutter-x-sm"
+        >
           <q-btn
-            v-if="job?.status === 'Created'"
+            no-caps
+            unelevated
+            color="accent"
+            label="Save Edits"
+            class="btn-modern"
+            :loading="actionLoading"
+            @click="updateUserAssignment"
+          />
+          <q-btn
+            no-caps
+            unelevated
+            outline
+            color="accent"
+            label="Cancel"
+            class="btn-modern-outline"
+            @click="editJob = false"
+          />
+        </div>
+        <div v-else-if="job?.status !== 'Completed'">
+          <q-btn
+            v-if="job?.status === 'Created' || job?.status === 'Assigned'"
             no-caps
             unelevated
             color="accent"
@@ -50,59 +73,38 @@
       </template>
     </JobPageHeader>
 
+    <!-- Quick Edit Card -->
+    <q-card
+      v-if="editJob"
+      flat
+      bordered
+      class="details-card q-mb-lg"
+    >
+      <q-card-section class="q-pa-md">
+        <div class="row q-col-gutter-md items-center">
+          <div class="col-12 col-sm-6">
+            <div class="detail-item">
+              <label class="form-group-label">Assigned User</label>
+              <SelectInput
+                v-model="job.assigned_user_id"
+                :options="users"
+                option-type="users"
+                option-value="id"
+                option-label="name"
+                class="q-mt-xs"
+              />
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
+
     <!-- Progress Bar -->
     <JobProgressBar
       :completed="shelvedCount"
       :total="totalCount"
       class="q-mb-lg"
     />
-
-    <!-- Quick User Assign Card -->
-    <q-card
-      v-if="editJob"
-      flat
-      bordered
-      class="q-mb-lg user-assign-card"
-    >
-      <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 text-bold">
-          Assign User
-        </div>
-        <q-space />
-        <q-btn
-          flat
-          round
-          dense
-          icon="close"
-          @click="editJob = false"
-        />
-      </q-card-section>
-
-      <q-card-section class="row q-col-gutter-md items-end">
-        <div class="col-12 col-md-4">
-          <label class="form-group-label">Select User</label>
-          <SelectInput
-            v-model="job.assigned_user_id"
-            :options="users"
-            option-type="users"
-            option-value="id"
-            option-label="name"
-            placeholder="Select a user"
-          />
-        </div>
-        <div class="col-auto">
-          <q-btn
-            no-caps
-            unelevated
-            color="accent"
-            label="Save Assignment"
-            class="btn-modern"
-            :loading="actionLoading"
-            @click="updateUserAssignment"
-          />
-        </div>
-      </q-card-section>
-    </q-card>
 
     <!-- Scan Section -->
     <q-card
@@ -522,7 +524,9 @@ const headerMenuOptions = computed(() => {
   const options = [
     {
       label: 'Assign User',
-      hidden: !checkUserPermission('can_assign_and_reassign_shelving_job'),
+      icon: 'person_add',
+      color: 'grey',
+      hidden: !checkUserPermission('can_assign_jobs'),
       disabled: editJob.value || job.value?.status === 'Completed',
       action: () => {
         editJob.value = true
@@ -620,10 +624,12 @@ const getStatusColor = (status) => {
 const updateUserAssignment = async () => {
   actionLoading.value = true
   try {
-    await shelvingStore.patchShelvingJob({
+    const payload = {
       id: jobId.value,
-      assigned_user_id: job.value.assigned_user_id
-    })
+      assigned_user_id: job.value.assigned_user_id,
+      run_timestamp: new Date().toISOString()
+    }
+    await shelvingStore.patchShelvingJob(payload)
     job.value = shelvingStore.shelvingJob
     Notify.create({
       type: 'positive',
@@ -633,7 +639,7 @@ const updateUserAssignment = async () => {
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: 'Failed to update user assignment'
+      message: error.response?.data?.detail || error.message || 'Failed to update user assignment'
     })
   } finally {
     actionLoading.value = false

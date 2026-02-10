@@ -126,7 +126,7 @@
 
                 <!-- Assigned User filter -->
                 <q-select
-                  v-else-if="col.name === 'user_id'"
+                  v-else-if="col.name === 'assigned_user_id'"
                   v-model="columnFilters.assigned_user"
                   dense
                   outlined
@@ -218,6 +218,7 @@ const columnFilters = ref({
   building_name: [],
   status: [
     'Created',
+    'Assigned',
     'Paused',
     'Running'
   ], // Default to show active jobs
@@ -229,6 +230,10 @@ const picklistStatusOptions = [
   {
     label: 'Created',
     value: 'Created'
+  },
+  {
+    label: 'Assigned',
+    value: 'Assigned'
   },
   {
     label: 'Paused',
@@ -310,6 +315,8 @@ const getStatusIcon = (status) => {
   switch (status) {
     case 'Created':
       return 'mdi-plus-circle'
+    case 'Assigned':
+      return 'mdi-account-check'
     case 'Running':
       return 'mdi-progress-clock'
     case 'Paused':
@@ -325,6 +332,8 @@ const getStatusBadgeClass = (status) => {
   switch (status) {
     case 'Created':
       return 'status-badge--created'
+    case 'Assigned':
+      return 'status-badge--assigned'
     case 'Running':
       return 'status-badge--running'
     case 'Paused':
@@ -342,7 +351,7 @@ const picklistTableVisibleColumns = ref([
   'building_name',
   'request_count',
   'status',
-  'user_id',
+  'assigned_user_id',
   'create_dt',
   'last_transition'
 ])
@@ -376,7 +385,7 @@ const picklistTableColumns = ref([
     sortable: true
   },
   {
-    name: 'user_id',
+    name: 'assigned_user_id',
     field: row => row.user ? row.user.name : '',
     label: 'Assigned User',
     align: 'left',
@@ -410,7 +419,7 @@ onBeforeMount(() => {
     picklistTableVisibleColumns.value = [
       'id',
       'status',
-      'user_id',
+      'assigned_user_id',
       'create_dt'
     ]
   }

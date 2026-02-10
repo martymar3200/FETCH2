@@ -11,7 +11,7 @@ export const usePicklistStore = defineStore('picklist-store', {
       id: null,
       building: null,
       user: null,
-      user_id: null,
+      assigned_user_id: null,
       create_dt: null,
       status: null,
       requests: []

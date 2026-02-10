@@ -319,8 +319,8 @@ const generateSearchTableFields = () => {
           sortable: true
         },
         {
-          name: 'user_id',
-          field: row => renderUserName(row.user),
+          name: 'assigned_user_id',
+          field: row => renderUserName(row.assigned_user),
           label: 'Completed By',
           align: 'left',
           sortable: true
@@ -331,14 +331,14 @@ const generateSearchTableFields = () => {
         'workflow_id',
         'status',
         'created_by_id',
-        'user_id'
+        'assigned_user_id'
       ]
       if (currentScreenSize.value == 'xs') {
         searchResultsTableVisibleColumns.value = [
           'create_dt',
           'workflow_id',
           'status',
-          'user_id'
+          'assigned_user_id'
         ]
       }
       break
@@ -373,8 +373,8 @@ const generateSearchTableFields = () => {
           sortable: true
         },
         {
-          name: 'user_id',
-          field: row => renderUserName(row.user),
+          name: 'assigned_user_id',
+          field: row => renderUserName(row.assigned_user),
           label: 'Completed By',
           align: 'left',
           sortable: true
@@ -385,14 +385,14 @@ const generateSearchTableFields = () => {
         'workflow_id',
         'status',
         'created_by_id',
-        'user_id'
+        'assigned_user_id'
       ]
       if (currentScreenSize.value == 'xs') {
         searchResultsTableVisibleColumns.value = [
           'create_dt',
           'workflow_id',
           'status',
-          'user_id'
+          'assigned_user_id'
         ]
       }
       break
@@ -614,8 +614,8 @@ const generateSearchTableFields = () => {
           sortable: true
         },
         {
-          name: 'user_id',
-          field: row => renderUserName(row.user),
+          name: 'assigned_user_id',
+          field: row => renderUserName(row.assigned_user),
           label: 'Completed By',
           align: 'left',
           sortable: true
@@ -626,14 +626,14 @@ const generateSearchTableFields = () => {
         'id',
         'status',
         'created_by_id',
-        'user_id'
+        'assigned_user_id'
       ]
       if (currentScreenSize.value == 'xs') {
         searchResultsTableVisibleColumns.value = [
           'create_dt',
           'id',
           'status',
-          'user_id'
+          'assigned_user_id'
         ]
       }
       break

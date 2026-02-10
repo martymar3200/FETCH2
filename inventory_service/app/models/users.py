@@ -56,29 +56,29 @@ class User(Base):
 
     # 1. Accession Jobs (Assigned User)
     accession_jobs: Mapped[List["AccessionJob"]] = relationship(
-        back_populates="user",
-        primaryjoin="AccessionJob.user_id==User.id", # Explicit primaryjoin kept
+        back_populates="assigned_user",
+        primaryjoin="AccessionJob.assigned_user_id==User.id",
         lazy="selectin"
     )
 
     # 2. Shelving Jobs (Assigned User)
     shelving_jobs: Mapped[List["ShelvingJob"]] = relationship(
-        back_populates="user",
-        primaryjoin="ShelvingJob.user_id==User.id",
+        back_populates="assigned_user",
+        primaryjoin="ShelvingJob.assigned_user_id==User.id",
         lazy="selectin"
     )
 
     # 3. Verification Jobs (Assigned User)
     verification_jobs: Mapped[List["VerificationJob"]] = relationship(
-        back_populates="user",
-        primaryjoin="VerificationJob.user_id==User.id",
+        back_populates="assigned_user",
+        primaryjoin="VerificationJob.assigned_user_id==User.id",
         lazy="selectin"
     )
 
     # 4. Pick Lists (Assigned User)
     pick_lists: Mapped[List["PickList"]] = relationship(
-        back_populates="user",
-        primaryjoin="PickList.user_id==User.id",
+        back_populates="assigned_user",
+        primaryjoin="PickList.assigned_user_id==User.id",
         lazy="selectin"
     )
 

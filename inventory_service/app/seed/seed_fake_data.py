@@ -233,7 +233,7 @@ fake_data = [
     ("types", "ladder_numbers.json"),
     ("types", "shelf_position_numbers.json"),
     ("types", "shelf_numbers.json"),
-    ("types", "permissions.json"),
+    # ("types", "permissions.json"),  # Removed - permissions are seeded automatically by API startup
     ("entities", "users.json"),
     ("entities", "groups.json"),
     ("entities", "group_permissions.json"),

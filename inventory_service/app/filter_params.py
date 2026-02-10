@@ -146,7 +146,6 @@ class JobFilterParams:
         building_name: List[str] = Query(
             default=None, description="Building name to filter by."
         ),
-        user_id: List[int] = Query(default=None, description="User ID to filter by."),
         assigned_user: List[str] = Query(
             default=None, description="Assigned user to filter by."
         ),
@@ -161,7 +160,6 @@ class JobFilterParams:
         self.trayed = trayed
         self.assigned_user_id = assigned_user_id
         self.building_name = building_name
-        self.user_id = user_id
         self.assigned_user = assigned_user
         self.status = status
         self.from_dt = from_dt
@@ -292,7 +290,6 @@ class ShelvingJobDiscrepancyParams(BaseModel):
     size_class_id: Optional[int] = None
     from_dt: Optional[datetime] = None
     to_dt: Optional[datetime] = None
-    user_id: Optional[int] = None
 
 
 class OpenLocationParams:

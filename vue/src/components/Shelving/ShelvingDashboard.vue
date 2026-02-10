@@ -605,6 +605,7 @@ const columnFilters = ref({
   id: null,
   status: [
     'Created',
+    'Assigned',
     'Paused',
     'Running'
   ]  // Default to showing active jobs
@@ -615,6 +616,10 @@ const statusOptions = [
   {
     label: 'Created',
     value: 'Created'
+  },
+  {
+    label: 'Assigned',
+    value: 'Assigned'
   },
   {
     label: 'Paused',
@@ -635,6 +640,8 @@ const getStatusIcon = (status) => {
   switch (status) {
     case 'Created':
       return 'mdi-plus-circle'
+    case 'Assigned':
+      return 'mdi-account-check'
     case 'Running':
       return 'mdi-play-circle'
     case 'Paused':
@@ -650,6 +657,8 @@ const getStatusBadgeClass = (status) => {
   switch (status) {
     case 'Created':
       return 'status-badge--created'
+    case 'Assigned':
+      return 'status-badge--assigned'
     case 'Running':
       return 'status-badge--running'
     case 'Paused':
@@ -666,7 +675,7 @@ const shelfTableVisibleColumns = ref([
   'origin',
   'container_count',
   'status',
-  'user_id',
+  'assigned_user_id',
   'create_dt',
   'last_transition'
 ])
@@ -704,7 +713,7 @@ const shelfTableColumns = ref([
     order: 3
   },
   {
-    name: 'user_id',
+    name: 'assigned_user_id',
     field: row => row.user ? row.user.name : '',
     label: 'Assigned User',
     align: 'left',
@@ -752,7 +761,7 @@ onBeforeMount(() => {
     shelfTableVisibleColumns.value = [
       'id',
       'status',
-      'user_id',
+      'assigned_user_id',
       'create_dt'
     ]
   }
@@ -857,6 +866,7 @@ const clearColumnFilters = () => {
     id: null,
     status: [
       'Created',
+      'Assigned',
       'Paused',
       'Running'
     ], // Reset to default active statuses
@@ -963,7 +973,7 @@ const submitDirectToShelfJob = async () => {
     const payload = {
       status: 'Created',
       building_id: shelvingJob.value.building_id,
-      user_id: userData.value.user_id,
+      assigned_user_id: userData.value.user_id,
       origin: 'Direct',
       created_by_id: userData.value.user_id
     }
@@ -999,7 +1009,7 @@ const submitShelvingMove = async (moveType) => {
       mode,
       building_id: userData.value.building_id || 1,
       created_by_id: userData.value.user_id,
-      user_id: userData.value.user_id
+      assigned_user_id: userData.value.user_id
     }
     const res = await createShelvingJob(payload)
     router.push({

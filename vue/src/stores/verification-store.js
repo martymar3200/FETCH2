@@ -163,7 +163,7 @@ export const useVerificationStore = defineStore('verification-store', {
         //pass an update to verification job to track which user added a new tray item
         await this.$api.patch(`${inventoryServiceApi.verificationJobs}${payload.verification_job_id}/add`, {
           barcode_value: payload.barcode_value,
-          user_id: payload.user_id
+          assigned_user_id: payload.assigned_user_id
         })
 
         this.verificationContainer.items = [
@@ -200,7 +200,7 @@ export const useVerificationStore = defineStore('verification-store', {
         await Promise.all(barcodeItemList.map(item => {
           return this.$api.patch(`${inventoryServiceApi.verificationJobs}${this.verificationJob.id}/remove`, {
             barcode_value: item.barcode.value,
-            user_id: item.user_id
+            assigned_user_id: item.assigned_user_id
           })
         }))
 
@@ -238,7 +238,7 @@ export const useVerificationStore = defineStore('verification-store', {
         //pass an update to verification job to track which user added a new tray item
         await this.$api.patch(`${inventoryServiceApi.verificationJobs}${payload.verification_job_id}/add`, {
           barcode_value: payload.barcode_value,
-          user_id: payload.user_id
+          assigned_user_id: payload.assigned_user_id
         })
 
         // set the item as the container since there is no tray container for non tray jobs
@@ -274,7 +274,7 @@ export const useVerificationStore = defineStore('verification-store', {
         await Promise.all(barcodeItemList.map(item => {
           return this.$api.patch(`${inventoryServiceApi.verificationJobs}${this.verificationJob.id}/remove`, {
             barcode_value: item.barcode.value,
-            user_id: item.user_id
+            assigned_user_id: item.assigned_user_id
           })
         }))
 

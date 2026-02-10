@@ -76,7 +76,7 @@
 
     <!-- Not Started Message -->
     <q-card
-      v-if="job?.status === 'Created'"
+      v-if="job?.status === 'Created' || job?.status === 'Assigned'"
       class="q-mb-lg"
     >
       <q-card-section class="text-center q-pa-lg">
@@ -392,7 +392,7 @@ const headerMenuOptions = computed(() => {
   options.push({
     label: 'Assign User',
     icon: 'person_add',
-    hidden: !checkUserPermission('can_assign_and_reassign_shelving_job'),
+    hidden: !checkUserPermission('can_assign_jobs'),
     disabled: editJob.value || job.value?.status === 'Completed',
     action: () => {
       editJob.value = true

@@ -21,7 +21,7 @@ class AccessionJobInput(BaseModel):
     workflow_id: Optional[int] = None
     status: str
     media_type_id: Optional[int] = None
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     run_time: Optional[timedelta] = None
     last_transition: Optional[datetime] = None
@@ -45,7 +45,7 @@ class AccessionJobInput(BaseModel):
                 "trayed": True,
                 "workflow_id": None,
                 "status": "Created",
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "run_time": "03:25:15",
                 "last_transition": "2023-11-27T12:34:56.789123Z",
@@ -60,7 +60,7 @@ class AccessionJobInput(BaseModel):
 class AccessionJobUpdateInput(BaseModel):
     trayed: Optional[bool] = None
     status: Optional[str] = None
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     owner_id: Optional[int] = None
     size_class_id: Optional[int] = None
     container_type_id: Optional[int] = None
@@ -81,7 +81,7 @@ class AccessionJobUpdateInput(BaseModel):
             "example": {
                 "trayed": True,
                 "status": "Paused",
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "owner_id": 1,
                 "size_class_id": 1,
@@ -97,7 +97,7 @@ class AccessionJobBaseOutput(BaseModel):
     workflow_id: Optional[int] = None
     trayed: bool
     status: Optional[str]
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     owner_id: Optional[int] = None
     container_type_id: Optional[int] = None
@@ -105,10 +105,12 @@ class AccessionJobBaseOutput(BaseModel):
     size_class_id: Optional[int] = None
 
 
+
+
 class AccessionJobListOutput(AccessionJobBaseOutput):
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
-    user: Optional[UserDetailReadOutput] = None
+    assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     create_dt: datetime
 
@@ -118,7 +120,7 @@ class AccessionJobListOutput(AccessionJobBaseOutput):
                 "id": 1,
                 "workflow_id": 1,
                 "trayed": True,
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "owner_id": 1,
                 "media_type_id": 1,
@@ -126,7 +128,7 @@ class AccessionJobListOutput(AccessionJobBaseOutput):
                 "container_type_id": 1,
                 "status": "Created",
                 "create_dt": "2023-10-08T20:46:56.764426",
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "first_name": "Frodo",
                     "last_name": "Baggins",
@@ -143,6 +145,7 @@ class AccessionJobListOutput(AccessionJobBaseOutput):
             }
         }
     )
+
 
 
 class ItemDetailNestedForAccessionJob(BaseModel):
@@ -219,7 +222,7 @@ class NonTrayItemDetailNestedForAccessionJob(BaseModel):
 
 
 class AccessionJobDetailOutput(AccessionJobBaseOutput):
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     run_time: Optional[timedelta]
     last_transition: Optional[datetime] = None
@@ -234,7 +237,7 @@ class AccessionJobDetailOutput(AccessionJobBaseOutput):
     items: List[ItemDetailNestedForAccessionJob]
     trays: List[TrayDetailNestedForAccessionJob]
     non_tray_items: List[NonTrayItemDetailNestedForAccessionJob]
-    user: Optional[UserDetailReadOutput] = None
+    assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     create_dt: datetime
     update_dt: datetime
@@ -260,7 +263,7 @@ class AccessionJobDetailOutput(AccessionJobBaseOutput):
                 "status": "Paused",
                 "user_id": 1,
                 "created_by_id": 2,
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "first_name": "Frodo",
                     "last_name": "Baggins",
@@ -320,7 +323,7 @@ class AccessionJobDetailOutput(AccessionJobBaseOutput):
                     {
                         "id": 1,
                         "status": "Created",
-                        "user_id": 1,
+                        "assigned_user_id": 1,
                         "last_transition": "2023-11-27T12:34:56.789123Z",
                         "run_time": "03:25:15",
                         "accession_job_id": 1,

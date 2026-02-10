@@ -50,7 +50,8 @@ from app.config.exceptions import (
     InternalServerError,
 )
 from app.utilities import manage_transition, get_module_shelf_position
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
 
 router = APIRouter(
     prefix="/withdraw-jobs",
@@ -103,8 +104,8 @@ def get_withdraw_job_list(
         query = query.where(WithdrawJob.status.in_(params.status))
     if params.workflow_id:
         query = query.where(WithdrawJob.id == params.workflow_id)
-    if params.user_id:
-        query = query.where(WithdrawJob.assigned_user_id.in_(params.user_id))
+    if params.assigned_user_id:
+        query = query.where(WithdrawJob.assigned_user_id == params.assigned_user_id)
     if params.assigned_user:
         assigned_user_subquery = (
             select(User.id)
@@ -166,16 +167,42 @@ def update_withdraw_job(
     id: int,
     withdraw_job_input: WithdrawJobUpdateInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Updates an existing withdraw job in the database.
+    
+    Includes auto-assignment logic:
+    - When a user starts a job (status → Running), auto-assign to them if unassigned
+    - Prevent users from starting jobs assigned to others
+    - When manager assigns a user, auto-update status to Assigned
     """
 
     existing_withdraw_job = session.get(WithdrawJob, id)
-    updated_dt = datetime.now(timezone.utc)
 
     if not existing_withdraw_job:
         raise NotFound(detail=f"Withdraw job id {id} not found")
+    
+    # Capture original status before changes
+    original_status = existing_withdraw_job.status
+    
+    # Handle auto-assignment when user starts job
+    if withdraw_job_input.status:
+        auto_assign_on_start(
+            existing_withdraw_job, 
+            withdraw_job_input.status, 
+            current_user.id
+        )
+    
+    # Handle status update when manager assigns user
+    if withdraw_job_input.assigned_user_id is not None and not withdraw_job_input.status:
+        update_status_on_assignment(
+            existing_withdraw_job,
+            withdraw_job_input.assigned_user_id,
+            original_status
+        )
+
+    updated_dt = datetime.now(timezone.utc)
 
     pick_list = None
     building_id = None

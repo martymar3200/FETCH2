@@ -244,6 +244,10 @@
         {
             "name": "can_edit_non_tray_item",
             "description": "Can edit non-tray item details."
+        },
+        {
+            "name": "can_assign_jobs",
+            "description": "Can assign and reassign jobs to users across all job types (Accession, Verification, Shelving, Pick List, Refile, Withdraw)"
         }
     ]
 }

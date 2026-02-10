@@ -362,6 +362,7 @@ const columnFilters = ref({
   trayed: null,
   status: [
     'Created',
+    'Assigned',
     'Paused',
     'Running'
   ]  // Default to showing active jobs
@@ -382,6 +383,10 @@ const statusOptions = [
   {
     label: 'Created',
     value: 'Created'
+  },
+  {
+    label: 'Assigned',
+    value: 'Assigned'
   },
   {
     label: 'Paused',
@@ -439,6 +444,8 @@ const getStatusIcon = (status) => {
   switch (status) {
     case 'Created':
       return 'mdi-plus-circle'
+    case 'Assigned':
+      return 'mdi-account-check'
     case 'Running':
       return 'mdi-play-circle'
     case 'Paused':
@@ -454,6 +461,8 @@ const getStatusBadgeClass = (status) => {
   switch (status) {
     case 'Created':
       return 'status-badge--created'
+    case 'Assigned':
+      return 'status-badge--assigned'
     case 'Running':
       return 'status-badge--running'
     case 'Paused':
@@ -541,6 +550,7 @@ const clearColumnFilters = () => {
     trayed: null,
     status: [
       'Created',
+      'Assigned',
       'Paused',
       'Running'
     ]  // Reset to default active statuses

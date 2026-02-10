@@ -223,7 +223,7 @@ def update_tray(
                         tray_barcode_value=tray_barcode.value,
                         item_barcode_value=item_barcode.value,
                         change_type="OwnerEdit",
-                        completed_by_id=verification_job.user_id,
+                        completed_by_id=verification_job.assigned_user_id,
                     )
                 )
 
@@ -238,7 +238,7 @@ def update_tray(
                         tray_barcode_value=tray_barcode.value,
                         item_barcode_value=item_barcode.value,
                         change_type="SizeClassEdit",
-                        completed_by_id=verification_job.user_id,
+                        completed_by_id=verification_job.assigned_user_id,
                     )
                 )
 
@@ -253,7 +253,7 @@ def update_tray(
                         tray_barcode_value=tray_barcode.value,
                         item_barcode_value=item_barcode.value,
                         change_type="MediaTypeEdit",
-                        completed_by_id=verification_job.user_id,
+                        completed_by_id=verification_job.assigned_user_id,
                     )
                 )
     

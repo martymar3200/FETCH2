@@ -25,7 +25,7 @@ class VerificationJobInput(BaseModel):
     media_type_id: Optional[int] = None
     size_class_id: Optional[int] = None
     status: Optional[str] = None
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     accession_job_id: Optional[int] = None
     owner_id: int
@@ -46,7 +46,7 @@ class VerificationJobInput(BaseModel):
                 "trayed": True,
                 "workflow_id": None,
                 "status": "Created",
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "created_by_id": 2,
                 "accession_job_id": 1,
                 "owner_id": 1,
@@ -61,7 +61,7 @@ class VerificationJobInput(BaseModel):
 class VerificationJobUpdateInput(BaseModel):
     trayed: Optional[bool] = None
     status: Optional[str] = None
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     accession_job_id: Optional[int] = None
     owner_id: Optional[int] = None
     container_type_id: Optional[int] = None
@@ -82,7 +82,7 @@ class VerificationJobUpdateInput(BaseModel):
             "example": {
                 "trayed": True,
                 "status": "Created",
-                "user_id": 1,
+                "assigned_user_id": 1,
                 "accession_job_id": 1,
                 "owner_id": 1,
                 "container_type_id": 1,
@@ -235,7 +235,7 @@ class VerificationJobListOutput(VerificationJobBaseOutput):
     items: Optional[List[ItemDetailNestedForVerificationJob]] = []
     non_tray_items: Optional[List[NonTrayItemDetailNestedForVerificationJob]] = []
     
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
@@ -287,7 +287,7 @@ class VerificationJobListDropdownOutput(BaseModel):
 
 
 class VerificationJobDetailOutput(VerificationJobBaseOutput):
-    user_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None

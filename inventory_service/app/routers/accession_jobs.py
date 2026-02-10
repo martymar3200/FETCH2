@@ -32,7 +32,8 @@ from app.schemas.accession_jobs import (
 )
 from app.utilities import start_session_with_audit_info
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
 
 router = APIRouter(
     prefix="/accession-jobs",
@@ -70,8 +71,8 @@ def get_accession_job_list(
             query = query.where(AccessionJob.status.in_(params.status))
         if params.workflow_id:
             query = query.where(AccessionJob.workflow_id == params.workflow_id)
-        if params.user_id:
-            query = query.where(AccessionJob.user_id.in_(params.user_id))
+        if params.assigned_user_id:
+            query = query.where(AccessionJob.assigned_user_id == params.assigned_user_id)
         if params.assigned_user:
             assigned_user_subquery = (
                 select(User.id)
@@ -82,7 +83,7 @@ def get_accession_job_list(
                     )
                 .distinct()
             )
-            query = query.where(AccessionJob.user_id.in_(assigned_user_subquery))
+            query = query.where(AccessionJob.assigned_user_id.in_(assigned_user_subquery))
         if params.container_type:
             subquery = (
                 select(ContainerType.id)
@@ -188,18 +189,41 @@ def update_accession_job(
     accession_job: AccessionJobUpdateInput,
     session: Session = Depends(get_session),
     background_tasks: BackgroundTasks = None,
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Update an existing accession job with the provided data.
+    
+    Includes auto-assignment logic:
+    - When a user starts a job (status → Running), auto-assign to them if unassigned
+    - Prevent users from starting jobs assigned to others
+    - When manager assigns a user, auto-update status to Assigned
     """
     existing_accession_job = session.get(AccessionJob, id)
-
-    original_status = existing_accession_job.status
 
     if not existing_accession_job:
         raise NotFound(detail=f"Accession Job ID {id} Not Found")
 
+    original_status = existing_accession_job.status
     mutated_data = accession_job.model_dump(exclude_unset=True)
+    
+    # Handle auto-assignment when user starts job
+    new_status = mutated_data.get("status")
+    if new_status:
+        auto_assign_on_start(
+            existing_accession_job, 
+            new_status, 
+            current_user.id
+        )
+    
+    # Handle status update when manager assigns user
+    new_assigned_user_id = mutated_data.get("assigned_user_id")
+    if new_assigned_user_id is not None and "status" not in mutated_data:
+        update_status_on_assignment(
+            existing_accession_job,
+            new_assigned_user_id,
+            original_status
+        )
 
     for key, value in mutated_data.items():
         setattr(existing_accession_job, key, value)

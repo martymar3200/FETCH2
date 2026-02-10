@@ -110,6 +110,11 @@
     color: white;
   }
 
+  &--assigned {
+    background: linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%);
+    color: white;
+  }
+
   &--running {
     background: linear-gradient(135deg, #1a8000 0%, #2db800 100%);
     color: white;
