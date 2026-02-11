@@ -315,23 +315,7 @@ const { compiledBarCode } = useBarcodeScanHandler()
 const { checkUserPermission } = usePermissionHandler()
 const { addDataToIndexDb, getDataInIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
 
-// Shared Job Components
-import JobPageHeader from '@/components/Job/JobPageHeader.vue'
-import JobProgressBar from '@/components/Job/JobProgressBar.vue'
-import JobActionButtons from '@/components/Job/JobActionButtons.vue'
-import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
-import AuditTrail from '@/components/AuditTrail.vue'
 
-const router = useRouter()
-const route = useRoute()
-const shelvingStore = useShelvingStore()
-const barcodeStore = useBarcodeStore()
-
-
-// Composables
-const { compiledBarCode } = useBarcodeScanHandler()
-const { checkUserPermission } = usePermissionHandler()
-const { addDataToIndexDb, getDataInIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
 
 // Store refs
 const { appIsLoadingData } = storeToRefs(useGlobalStore())
@@ -595,6 +579,11 @@ const scanContainer = async () => {
     return
   }
 
+  if (moveType.value !== 'tray-item' && !positionNumber.value) {
+    scanError.value = 'Position required'
+    return
+  }
+
   try {
     appIsLoadingData.value = true
     scanError.value = ''
@@ -749,8 +738,9 @@ const completeJob = async () => {
 const saveState = () => {
   const state = {
     jobId: job.value?.id,
-    containers: containers.value,
+    containers: JSON.parse(JSON.stringify(containers.value)),
     destination: currentDestination.value,
+    destinationLocation: currentDestinationLocation.value,
     destinationOwner: destinationOwner.value,
     destinationSizeClass: destinationSizeClass.value,
     destinationId: destinationId.value,
@@ -761,9 +751,11 @@ const saveState = () => {
 
 const loadState = async () => {
   const res = await getDataInIndexDb('shelvingStore')
-  if (res?.data?.moveJob && res.data.moveJob.jobId === job.value?.id) {
+  // Use loose equality to handle string/number mismatch
+  if (res?.data?.moveJob && res.data.moveJob.jobId == job.value?.id) {
     containers.value = res.data.moveJob.containers || []
     currentDestination.value = res.data.moveJob.destination || ''
+    currentDestinationLocation.value = res.data.moveJob.destinationLocation || ''
     destinationOwner.value = res.data.moveJob.destinationOwner || ''
     destinationSizeClass.value = res.data.moveJob.destinationSizeClass || ''
     destinationId.value = res.data.moveJob.destinationId || null
@@ -804,7 +796,8 @@ onMounted(async () => {
           container_type: c.tray ? { type: 'Tray' } : c.non_tray_item ? { type: 'Non-Tray' } : { type: 'Item' },
           new_shelf_position: c.shelf_position_number,
           scanned_for_transfer: true,
-          destination_tray_barcode: c.destination_tray?.barcode?.value
+          destination_tray_barcode: c.destination_tray?.barcode?.value,
+          display_location: c.actual_shelf_position ? getItemLocation(c.actual_shelf_position) : '-'
         }))
 
         // Infer destination from first container for resumed/completed jobs
@@ -818,6 +811,7 @@ onMounted(async () => {
         } else {
           if (first.actual_shelf_position) {
             currentDestination.value = first.actual_shelf_position.shelf.barcode?.value
+            currentDestinationLocation.value = first.actual_shelf_position.shelf.location // Assumption: shelf object has location from API
             destinationOwner.value = first.actual_shelf_position.shelf.owner?.name
             // We don't have shelf size class directly in the nested schema yet, but owner is good
           }
