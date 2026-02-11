@@ -315,6 +315,24 @@ const { compiledBarCode } = useBarcodeScanHandler()
 const { checkUserPermission } = usePermissionHandler()
 const { addDataToIndexDb, getDataInIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
 
+// Shared Job Components
+import JobPageHeader from '@/components/Job/JobPageHeader.vue'
+import JobProgressBar from '@/components/Job/JobProgressBar.vue'
+import JobActionButtons from '@/components/Job/JobActionButtons.vue'
+import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
+import AuditTrail from '@/components/AuditTrail.vue'
+
+const router = useRouter()
+const route = useRoute()
+const shelvingStore = useShelvingStore()
+const barcodeStore = useBarcodeStore()
+
+
+// Composables
+const { compiledBarCode } = useBarcodeScanHandler()
+const { checkUserPermission } = usePermissionHandler()
+const { addDataToIndexDb, getDataInIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
+
 // Store refs
 const { appIsLoadingData } = storeToRefs(useGlobalStore())
 const { shelvingJob } = storeToRefs(shelvingStore)
@@ -331,6 +349,7 @@ const { verifyBarcode, getBarcodeDetails } = barcodeStore
 
 // Injected helpers
 const currentIsoDate = inject('current-iso-date')
+const getItemLocation = inject('get-item-location')
 
 // Props from route
 const moveType = computed(() => route.params.type || 'tray-non-tray')
@@ -352,6 +371,7 @@ const showAuditTrailModal = ref(false)
 
 // Destination state
 const currentDestination = ref('')
+const currentDestinationLocation = ref('')
 const destinationOwner = ref('')
 const destinationSizeClass = ref('')
 const destinationId = ref(null)
@@ -418,10 +438,10 @@ const containerColumns = computed(() => {
 
   if (moveType.value !== 'tray-item') {
     cols.push({
-      name: 'new_position',
-      label: 'New Position',
-      field: row => row.new_shelf_position || '-',
-      align: 'center'
+      name: 'location',
+      label: 'Shelving Location',
+      field: row => row.display_location || '-',
+      align: 'left'
     })
   }
 
@@ -531,6 +551,7 @@ const scanDestination = async () => {
       // Scanning a shelf as destination
       const res = await getShelfByBarcode(destinationBarcodeInput.value)
       currentDestination.value = res.data.barcode.value
+      currentDestinationLocation.value = res.data.location
       destinationOwner.value = res.data.owner?.name || ''
       destinationSizeClass.value = res.data.shelf_type?.size_class?.name || ''
       destinationId.value = res.data.id
@@ -555,6 +576,7 @@ const scanDestination = async () => {
 
 const clearDestination = () => {
   currentDestination.value = ''
+  currentDestinationLocation.value = ''
   destinationOwner.value = ''
   destinationSizeClass.value = ''
   destinationId.value = null
@@ -601,6 +623,13 @@ const scanContainer = async () => {
         destination_tray_barcode: currentDestination.value
       }
     } else {
+      // Compute display location based on current destination and position
+      const displayLocation = getItemLocation({
+        shelf_position: {
+          location: `${currentDestinationLocation.value}-${positionNumber.value}`
+        }
+      })
+
       if (barcodeInfo.data.type.name === 'Tray') {
         const res = await getShelvingTrayContainerDetails(containerBarcodeInput.value)
         containerData = {
@@ -610,7 +639,8 @@ const scanContainer = async () => {
           size_class: res.data.size_class,
           container_type: { type: 'Tray' },
           scanned_for_transfer: false,
-          new_shelf_position: positionNumber.value
+          new_shelf_position: positionNumber.value,
+          display_location: displayLocation
         }
       } else {
         const res = await getShelvingNonTrayItemDetails(containerBarcodeInput.value)
@@ -621,7 +651,8 @@ const scanContainer = async () => {
           size_class: res.data.size_class,
           container_type: { type: 'Non-Tray' },
           scanned_for_transfer: false,
-          new_shelf_position: positionNumber.value
+          new_shelf_position: positionNumber.value,
+          display_location: displayLocation
         }
       }
     }
