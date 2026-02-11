@@ -27,7 +27,7 @@ from app.models.non_tray_items import NonTrayItem
 
 class RequestStatus(str, Enum):
     New = "New"
-    InProgress = "InProgress"
+    PickList = "PickList"
     Completed = "Completed"
 
 
@@ -76,6 +76,7 @@ class Request(Base):
     external_request_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
     requestor_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
     fulfilled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
     # --- RELATIONSHIPS ---
     

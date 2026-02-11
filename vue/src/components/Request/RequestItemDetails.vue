@@ -4,8 +4,18 @@
       <div class="col-12 flex no-wrap items-center q-mb-xs-md q-mb-sm-lg">
         <MoreOptionsMenu
           :options="[
-            { text: 'Edit Request', disabled: requestJob.status == 'InProgress' || requestJob.status == 'Completed'},
-            { text: 'Delete Request', optionClass: 'text-negative', disabled: requestJob.status == 'Completed', hidden: !checkUserPermission('can_delete_request')},
+            {
+              text: 'Edit Request',
+              disabled: requestJob.status == 'PickList' || requestJob.status == 'Completed' || requestJob.deleted,
+              tooltip: requestJob.deleted ? 'Request is deleted' : null
+            },
+            {
+              text: 'Delete Request',
+              optionClass: 'text-negative',
+              disabled: requestJob.status == 'PickList' || requestJob.status == 'Completed' || requestJob.deleted,
+              tooltip: requestJob.deleted ? 'Request is already deleted' : ((requestJob.status == 'PickList' || requestJob.status == 'Completed') ? 'Cannot delete active request' : null),
+              hidden: !checkUserPermission('can_delete_request')
+            },
           ]"
           class="q-mr-sm"
           @click="handleOptionMenu"
@@ -63,9 +73,9 @@
             </label>
             <p
               class="request-details-text outline"
-              :class="requestJob.status == 'Completed' ? 'text-highlight' : requestJob.status == 'InProgress' ? 'text-highlight-warning' : null"
+              :class="requestJob.deleted ? 'text-negative' : (requestJob.status == 'Completed' ? 'text-highlight' : requestJob.status == 'PickList' ? 'text-highlight-warning' : null)"
             >
-              {{ requestJob.status }}
+              {{ requestJob.deleted ? 'Deleted' : requestJob.status }}
             </p>
           </div>
         </div>

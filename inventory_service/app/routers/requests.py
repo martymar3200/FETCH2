@@ -21,7 +21,7 @@ from app.models.delivery_locations import DeliveryLocation
 from app.models.media_types import MediaType
 from app.models.priorities import Priority
 from app.models.request_types import RequestType
-from app.models.requests import Request
+from app.models.requests import Request, RequestStatus
 from app.models.items import Item, ItemStatus
 from app.models.non_tray_items import NonTrayItem, NonTrayItemStatus
 from app.models.barcodes import Barcode
@@ -63,7 +63,7 @@ def get_request_list(
     Get a list of requests
     """
     # Create a query to select all Request from the database
-    query = select(Request)
+    query = select(Request).where(Request.deleted == False)
 
     if params.queue:
         # only return unfulfilled requests
@@ -280,6 +280,7 @@ def create_request(
             select(Request)
             .where(Request.item_id == item.id)
             .where(Request.fulfilled == False)
+            .where(Request.deleted == False)
         ).scalars().first()
 
         if existing_request:
@@ -315,7 +316,9 @@ def create_request(
         existing_non_tray_item = (
             session.execute(select(Request)
             .where(
-                Request.non_tray_item_id == non_tray_item.id, Request.fulfilled == False
+                Request.non_tray_item_id == non_tray_item.id,
+                Request.fulfilled == False,
+                Request.deleted == False
             ))
             .scalars()
             .first()
@@ -449,7 +452,7 @@ def update_request(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}", dependencies=[Depends(RequiresPermission("delete_requests"))])
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_delete_request"))])
 def delete_request(id: int, session: Session = Depends(get_session)):
     """
     Delete an Request by ID
@@ -457,6 +460,10 @@ def delete_request(id: int, session: Session = Depends(get_session)):
     request = session.get(Request, id)
 
     if request:
+        # Validate status - cannot delete if PickList or Completed (Active Job)
+        if request.status in [RequestStatus.PickList, RequestStatus.Completed]:
+             raise BadRequest(detail=f"Cannot delete request in '{request.status}' status. Only 'New' or 'Failed' requests can be deleted.")
+
         # Delete request from pick_list_requests
         if request.item:
             item = request.item
@@ -479,8 +486,9 @@ def delete_request(id: int, session: Session = Depends(get_session)):
                 )
             )
 
-        # Deleting request
-        session.delete(request)
+        # Deleting request (Soft Delete)
+        request.deleted = True
+        session.add(request)
         session.commit()
 
         raise HTTPException(

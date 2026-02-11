@@ -81,7 +81,7 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Requests (Delete)',
     description: 'Delete requests.',
-    permissions: ['delete_requests']
+    permissions: ['can_delete_request']
   },
   {
     name: 'Picklist (Viewer)',

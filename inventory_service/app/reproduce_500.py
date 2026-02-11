@@ -70,7 +70,7 @@ def test_crash():
             item_id=item.id,
             pick_list_id=picklist.id,
             building_id=building.id,
-            status=RequestStatus.InProgress
+            status=RequestStatus.PickList
         )
         session.add(request)
         session.commit()

@@ -116,6 +116,7 @@ class RequestBaseOutput(BaseModel):
     fulfilled: Optional[bool] = None
     requested_by_id: Optional[int] = None
     requested_by: Optional[UserDetailReadOutput] = None
+    deleted: bool = False
 
 
 class MediaTypeNestedForRequest(BaseModel):

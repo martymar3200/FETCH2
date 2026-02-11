@@ -58,7 +58,7 @@ export const useSearchStore = defineStore('search-store', {
           }
 
           const res = await this.$api.get(`${inventoryServiceApi[jobEndpoint]}${searchInput}`)
-          this.searchResults = [`${searchType} Job #: ${searchType == 'Accession' || searchType == 'Verification' ? res.data.workflow_id : res.data.id} ${res.data.status ? `- ${res.data.status}` : ''}`]
+          this.searchResults = [`${searchType} Job #: ${searchType == 'Accession' || searchType == 'Verification' ? res.data.workflow_id : res.data.id} ${res.data.deleted ? '- Deleted' : (res.data.status ? `- ${res.data.status}` : '')}`]
           return res
         }
       } catch (error) {

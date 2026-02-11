@@ -732,8 +732,8 @@ const requestStatusOptions = [
     value: 'New'
   },
   {
-    label: 'InProgress',
-    value: 'InProgress'
+    label: 'PickList',
+    value: 'PickList'
   },
   {
     label: 'Completed',
@@ -884,7 +884,8 @@ const getStatusIcon = (status) => {
   switch (status) {
     case 'New':
       return 'mdi-plus-circle'
-    case 'InProgress':
+    case 'PickList':
+      return 'mdi-format-list-checks'
     case 'Processing':
       return 'mdi-progress-clock'
     case 'Completed':
@@ -902,7 +903,7 @@ const getStatusBadgeClass = (status) => {
   switch (status) {
     case 'New':
       return 'status-new'
-    case 'InProgress':
+    case 'PickList':
     case 'Processing':
       return 'status-in-progress'
     case 'Completed':

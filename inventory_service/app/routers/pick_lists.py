@@ -254,7 +254,7 @@ def create_pick_list(
     session.execute(
         update(Request)
         .where(Request.id.in_(pick_list_input.request_ids))
-        .values(pick_list_id=new_pick_list.id, status=RequestStatus.InProgress)
+        .values(pick_list_id=new_pick_list.id, status=RequestStatus.PickList)
     )
 
     session.commit()
@@ -465,7 +465,7 @@ def add_request_to_pick_list(
     session.execute(
         update(Request).where(Request.id.in_(pick_list_input.request_ids)).values(
             pick_list_id=pick_list_id,
-            status=RequestStatus.InProgress,
+            status=RequestStatus.PickList,
             update_dt=datetime.now(timezone.utc),
         )
     )
