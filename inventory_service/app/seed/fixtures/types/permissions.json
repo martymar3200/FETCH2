@@ -168,6 +168,10 @@
         {
             "name": "can_access_admin",
             "description": "Can view and access admin dashboard."
+        },
+        {
+            "name": "can_view_audit_logs",
+            "description": "Can view audit logs history."
         }
     ]
 }

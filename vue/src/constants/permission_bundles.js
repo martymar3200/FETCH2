@@ -2,7 +2,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Accessioning (Viewer)',
     description: 'Read-only access to Accession Dashboard and Job details.',
-    permissions: ['can_access_accession']
+    permissions: [
+      'can_access_accession',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Accessioning (Core)',
@@ -22,7 +25,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Verification (Viewer)',
     description: 'Read-only access to Verification Dashboard.',
-    permissions: ['can_access_verification']
+    permissions: [
+      'can_access_verification',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Verification (Core)',
@@ -42,7 +48,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Shelving (Viewer)',
     description: 'Read-only access to Shelving Dashboard.',
-    permissions: ['can_access_shelving']
+    permissions: [
+      'can_access_shelving',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Shelving (Core)',
@@ -66,7 +75,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Requests (Viewer)',
     description: 'Read-only access to Request Dashboard.',
-    permissions: ['can_access_request']
+    permissions: [
+      'can_access_request',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Requests (Core)',
@@ -86,7 +98,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Picklist (Viewer)',
     description: 'Read-only access to Picklist Dashboard.',
-    permissions: ['can_access_picklist']
+    permissions: [
+      'can_access_picklist',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Picklist (Core)',
@@ -108,7 +123,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Refile (Viewer)',
     description: 'Read-only access to Refile Dashboard.',
-    permissions: ['can_access_refile']
+    permissions: [
+      'can_access_refile',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Refile (Core)',
@@ -132,7 +150,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Withdraw (Viewer)',
     description: 'Read-only access to Withdraw Dashboard.',
-    permissions: ['can_access_withdraw']
+    permissions: [
+      'can_access_withdraw',
+      'can_view_audit_logs'
+    ]
   },
   {
     name: 'Withdraw (Core)',
@@ -152,7 +173,8 @@ export const PERMISSION_BUNDLES = [
       'can_access_search',
       'can_view_all_shelving_jobs',
       'can_view_all_picklist_jobs',
-      'can_view_all_refile_jobs'
+      'can_view_all_refile_jobs',
+      'can_view_audit_logs'
     ]
   },
   {

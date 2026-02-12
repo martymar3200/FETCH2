@@ -237,5 +237,7 @@ def get_audit_trails_detail_list(
                     # V2 FIX: session.exec().all() -> session.execute(query).scalars().all()
                     audit_logs = session.execute(get_audit_query("items", request.item.id, request.create_dt)).scalars().all()
                     logs += add_last_action(audit_logs, request.item, table_name)
-    
+        return logs
+
+    return []
     # V2 FIX: session.exec()

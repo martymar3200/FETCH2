@@ -248,6 +248,10 @@
         {
             "name": "can_assign_jobs",
             "description": "Can assign and reassign jobs to users across all job types (Accession, Verification, Shelving, Pick List, Refile, Withdraw)"
+        },
+        {
+            "name": "can_view_audit_logs",
+            "description": "Can view audit logs history."
         }
     ]
 }

@@ -694,6 +694,15 @@
     :verification-job-details="verificationJob"
   />
 
+  <!-- Audit trail modal -->
+  <AuditTrail
+    v-if="showAuditTrailModal"
+    ref="historyModalRef"
+    @hide="showAuditTrailModal = null"
+    :job-type="showAuditTrailModal"
+    :job-id="verificationJob.id"
+  />
+
   <style
     lang="scss"
     scoped
@@ -735,6 +744,7 @@ import MobileActionBar from '@/components/MobileActionBar.vue'
 import VerificationNonTrayInfo from '@/components/Verification/VerificationNonTrayInfo.vue'
 import VerificationBatchSheet from '@/components/Verification/VerificationBatchSheet.vue'
 import { audioAlert } from '@/utils/audio.js'
+import AuditTrail from '@/components/AuditTrail.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -796,6 +806,7 @@ const manualBarcodeEdit = ref('')
 const editTrayBarcodeInput = ref('')
 const selectedMediaType = ref(null)
 const showConfirmation = ref(null)
+const showAuditTrailModal = ref(null)
 const selectedItems = ref([])
 const editJob = ref(false)
 const actionLoading = ref(false)
@@ -1354,7 +1365,7 @@ const handleOptionMenu = (option) => {
       text: 'Are you sure you want to cancel this job?'
     }
   } else if (option.text === 'View History') {
-    // Audit trail
+    showAuditTrailModal.value = 'verification_jobs'
   } else if (option.text == 'Edit Barcode' || option.text == 'Enter Barcode') {
     setBarcodeEditDisplay()
   } else if (option.text == 'Delete Items') {
