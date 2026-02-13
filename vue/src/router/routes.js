@@ -192,6 +192,15 @@ const routes = [
         }
       },
       {
+        name: 'admin-users',
+        path: 'admin/users',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_groups_and_permissions'
+        }
+      },
+      {
         name: 'record-management-items',
         path: 'record-management/items/:barcode?',
         component: () => import('@/pages/RecordManagementPage.vue'),

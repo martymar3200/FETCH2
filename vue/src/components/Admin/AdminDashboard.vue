@@ -83,6 +83,11 @@ const adminLinkList = computed(() => {
       hidden: !checkUserPermission('can_manage_groups_and_permissions')
     },
     {
+      title: 'User Management',
+      link: '/admin/users',
+      hidden: !checkUserPermission('can_manage_groups_and_permissions')
+    },
+    {
       title: 'System Configurations',
       sublinks: [
         {
