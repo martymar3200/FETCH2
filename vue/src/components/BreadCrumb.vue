@@ -378,6 +378,36 @@ const breadcrumbList = computed(() => {
         { text: `Move ${route.params.type == 'tray-non-tray' ? 'Tray/Non-Tray' : 'Tray Item'}` }
       ]
       break
+    case 'shipping':
+      breadCrumbs = [
+        ...breadCrumbs,
+        { text: 'Shipping' }
+      ]
+      break
+    case 'shipping-execute':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Shipping',
+          to: '/shipping'
+        },
+        { text: `${route.params.jobId}` }
+      ]
+      break
+    case 'shipping-manifest':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Shipping',
+          to: '/shipping'
+        },
+        {
+          text: `${route.params.jobId}`,
+          to: `/shipping/${route.params.jobId}`
+        },
+        { text: 'Manifest' }
+      ]
+      break
     case 'verification':
       if (!route.params.jobId) {
         breadCrumbs = [

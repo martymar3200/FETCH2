@@ -62,6 +62,9 @@ from app.models.verification_jobs import VerificationJob
 from app.models.withdraw_jobs import WithdrawJob
 from app.models.item_retrieval_events import ItemRetrievalEvent
 from app.models.non_tray_item_retrieval_events import NonTrayItemRetrievalEvent
+from app.models.shipping_bins import ShippingBin
+from app.models.shipping_jobs import ShippingJob
+from app.models.delivery_locations import DeliveryLocation
 from app.schemas.reporting import (
     AccessionItemsDetailOutput,
     ShelvingJobDiscrepancyOutput,
@@ -96,6 +99,7 @@ from app.filter_params import (
     MoveDiscrepancyParams,
     VerificationReportParams,
     WithdrawnItemsReportParams,
+    ShippingBinsReportParams,
 )
 from app.schemas.reporting import (
     AccessionItemsDetailOutput,
@@ -110,6 +114,7 @@ from app.schemas.reporting import (
     MoveDiscrepancyOutput,
     VerificationStatusReportOutput,
     WithdrawnItemsReportOutput,
+    ShippingBinsReportOutput,
 )
 from app.models.items import ItemStatus
 from app.models.non_tray_items import NonTrayItemStatus
@@ -2300,3 +2305,124 @@ def get_withdrawn_items_download_csv(
         },
     )
 
+
+
+@router.get("/shipping-bins/", response_model=Page[ShippingBinsReportOutput])
+def get_shipping_bins_report(
+    session: Session = Depends(get_session),
+    params: ShippingBinsReportParams = Depends(),
+    sort_params: SortParams = Depends(),
+) -> list:
+    """
+    Returns a list of active (uncleared) shipping bins.
+    """
+    query = (
+        select(ShippingBin)
+        .join(ShippingJob, ShippingBin.shipping_job_id == ShippingJob.id)
+        .outerjoin(DeliveryLocation, ShippingBin.delivery_location_id == DeliveryLocation.id)
+        .where(ShippingBin.cleared_dt.is_(None))
+    )
+
+    if params.from_dt:
+        query = query.where(ShippingJob.create_dt >= params.from_dt)
+    if params.to_dt:
+        query = query.where(ShippingJob.create_dt <= params.to_dt)
+    
+    if params.delivery_location_id:
+         query = query.where(ShippingBin.delivery_location_id.in_(params.delivery_location_id))
+
+    # Basic sorting by created date desc if no sort param
+    if not sort_params.sort_by:
+        query = query.order_by(desc(ShippingJob.create_dt))
+    else:
+        # TODO: Implement ShippingBinSorter if needed, for now basic sorting support
+        if sort_params.sort_by == "create_dt":
+             order_func = asc if sort_params.sort_order == "asc" else desc
+             query = query.order_by(order_func(ShippingJob.create_dt))
+        elif sort_params.sort_by == "shipping_job_id":
+             order_func = asc if sort_params.sort_order == "asc" else desc
+             query = query.order_by(order_func(ShippingJob.id))
+        elif sort_params.sort_by == "barcode":
+             order_func = asc if sort_params.sort_order == "asc" else desc
+             query = query.order_by(order_func(ShippingBin.barcode))
+        elif sort_params.sort_by == "delivery_location":
+             order_func = asc if sort_params.sort_order == "asc" else desc
+             query = query.order_by(order_func(DeliveryLocation.name))
+        elif sort_params.sort_by == "item_count":
+             # This is a bit complex as item_count is a property or aggregation
+             # For now, skip sorting by item count or handle in memory if pages are small (not recommended)
+             pass
+
+
+    # Enhance the result with item counts
+    # Getting item counts might require a separate query or group by if not efficient
+    # But current ShippingBin model has `items` relationship (lazy="selectin"), so it should be available on the objects.
+    # The output schema expects `item_count`. We can add a property to the model or compute it here.
+    # ShippingBinsReportOutput uses `from_attributes=True`, passing the ShippingBin object.
+    # We need to make sure ShippingBin object has `item_count` attribute or key.
+    
+    # Let's inspect ShippingBin model again. It has `items` relationship.
+    # We can add a property to ShippingBin model or wrap the result.
+    
+    return paginate(session, query)
+
+
+@router.get("/shipping-bins/download", response_class=StreamingResponse)
+def get_shipping_bins_csv(
+    session: Session = Depends(get_session),
+    params: ShippingBinsReportParams = Depends(),
+):
+    """
+    Returns a csv report of active shipping bins.
+    """
+    query = (
+        select(ShippingBin)
+        .join(ShippingJob, ShippingBin.shipping_job_id == ShippingJob.id)
+        .outerjoin(DeliveryLocation, ShippingBin.delivery_location_id == DeliveryLocation.id)
+        .where(ShippingBin.cleared_dt.is_(None))
+    )
+
+    if params.from_dt:
+        query = query.where(ShippingJob.create_dt >= params.from_dt)
+    if params.to_dt:
+        query = query.where(ShippingJob.create_dt <= params.to_dt)
+    if params.delivery_location_id:
+         query = query.where(ShippingBin.delivery_location_id.in_(params.delivery_location_id))
+
+    # Order by date
+    query = query.order_by(desc(ShippingJob.create_dt))
+
+    result = session.execute(query)
+    rows = result.scalars().all()
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(
+        [
+            "bin_number",
+            "shipping_job_number",
+            "created_date",
+            "item_count",
+            "delivery_location",
+        ]
+    )
+
+    for row in rows:
+        writer.writerow(
+            [
+                row.barcode if row.barcode else "",
+                row.shipping_job_id,
+                row.shipping_job.create_dt,
+                len(row.items),
+                row.delivery_location.name if row.delivery_location else "",
+            ]
+        )
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=shipping_bins.csv"},
+    )

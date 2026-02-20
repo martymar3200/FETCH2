@@ -7,6 +7,7 @@ export const useOptionStore = defineStore('option-store', {
     aisles: [],
     buildings: [],
     barcodeTypes: [],
+    deliveryLocations: [],
     containerTypes: [
       {
         id: 1,
@@ -444,6 +445,19 @@ export const useOptionStore = defineStore('option-store', {
       try {
         const res = await this.$api.patch(`${inventoryServiceApi.barcodeTypes}${payload.id}`, payload)
         this.barcodeTypes[this.barcodeTypes.findIndex(bt => bt.id == payload.id)] = res.data
+      } catch (error) {
+        throw error
+      }
+    },
+    async getDeliveryLocations (qParams) {
+      try {
+        const res = await this.$api.get(inventoryServiceApi.requestsLocations, {
+          params: {
+            size: 500,
+            ...qParams
+          }
+        })
+        this.deliveryLocations = res.data.items.sort((a, b) => a.name.localeCompare(b.name))
       } catch (error) {
         throw error
       }

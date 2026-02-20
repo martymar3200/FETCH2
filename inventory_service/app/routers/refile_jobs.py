@@ -707,6 +707,8 @@ def update_item_in_refile_job(
     setattr(existing_item, "status", "In")
     setattr(existing_item, "scanned_for_refile", True)
     setattr(existing_item, "scanned_for_refile_dt", update_dt)
+    setattr(existing_item, "shipping_bin_id", None)
+    setattr(existing_item, "scanned_for_shipping", False)
     # Commit the changes to the database
     session.add(existing_item)
     session.commit()
@@ -754,6 +756,8 @@ def update_non_tray_item_in_refile_job(
     setattr(existing_item, "status", "In")
     setattr(existing_item, "scanned_for_refile", True)
     setattr(existing_item, "scanned_for_refile_dt", update_dt)
+    setattr(existing_item, "shipping_bin_id", None)
+    setattr(existing_item, "scanned_for_shipping", False)
 
     # Commit the changes to the database
     session.add(existing_item)

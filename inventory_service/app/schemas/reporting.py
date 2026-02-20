@@ -433,3 +433,30 @@ class WithdrawnItemsReportOutput(BaseModel):
         }
     )
 
+
+class NestedDeliveryLocationShippingBinsReport(BaseModel):
+    name: Optional[str] = None
+
+
+class ShippingBinsReportOutput(BaseModel):
+    barcode: str
+    shipping_job_id: int
+    create_dt: datetime
+    item_count: int
+    delivery_location: Optional[NestedDeliveryLocationShippingBinsReport] = None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "barcode": "12345678901",
+                "shipping_job_id": 1,
+                "create_dt": "2023-10-08T20:46:56.764426",
+                "item_count": 10,
+                "delivery_location": {
+                    "name": "Fort Meade",
+                },
+            }
+        }
+    )
+

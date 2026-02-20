@@ -525,7 +525,8 @@ const {
   sizeClass,
   mediaTypes,
   users,
-  verificationJobsDropdown
+  verificationJobsDropdown,
+  deliveryLocations
 } = storeToRefs(useOptionStore())
 const {
   getSideList,
@@ -537,6 +538,7 @@ const {
 } = useBuildingStore()
 const { sides } = storeToRefs(useBuildingStore())
 const { getReport } = useReportsStore()
+const { getDeliveryLocations } = useOptionStore()
 
 // Local Data
 const reportModal = ref(null)
@@ -791,6 +793,35 @@ const generateReportModal = () => {
           label: 'Include Owner Tiers',
           dependsOn: 'owner_id',
           groupWith: 'owner_id'
+        }
+      ]
+      break
+    case 'Shipping Bins':
+      // Load delivery locations
+      getDeliveryLocations()
+
+      reportForm.value = {
+        from_dt: null,
+        to_dt: null,
+        delivery_location_id: null
+      }
+      reportParams.value = [
+        {
+          query: 'from_dt',
+          label: 'Job Created Date (From)'
+        },
+        {
+          query: 'to_dt',
+          label: 'Job Created Date (To)'
+        },
+        {
+          query: 'delivery_location_id',
+          label: 'Delivery Location',
+          options: deliveryLocations,
+          optionValue: 'id',
+          optionLabel: 'name',
+          multiple: true,
+          placeholder: 'Select Delivery Location'
         }
       ]
       break

@@ -161,6 +161,28 @@ export const PERMISSION_BUNDLES = [
     permissions: ['can_access_withdraw']
   },
   {
+    name: 'Shipping (Viewer)',
+    description: 'Read-only access to Shipping Dashboard.',
+    permissions: [
+      'can_access_shipping',
+      'can_view_audit_logs'
+    ]
+  },
+  {
+    name: 'Shipping (Core)',
+    description: 'Create and process shipping jobs.',
+    permissions: [
+      'can_access_shipping',
+      'create_shipping_jobs',
+      'process_shipping_jobs'
+    ]
+  },
+  {
+    name: 'Shipping (Delete)',
+    description: 'Delete Shipping Jobs.',
+    permissions: ['delete_shipping_jobs']
+  },
+  {
     name: 'Job Assignment (Manager)',
     description: 'Manually assign and reassign jobs to users across all job types (does not affect auto-assignment when users start jobs).',
     permissions: ['can_assign_jobs']

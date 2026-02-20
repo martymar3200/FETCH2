@@ -196,6 +196,7 @@ import { useRequestStore } from '@/stores/request-store'
 import { usePicklistStore } from '@/stores/picklist-store'
 import { useRefileStore } from '@/stores/refile-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
+import { useShippingStore } from '@/stores/shipping-store'
 import { storeToRefs } from 'pinia'
 import SearchAdvancedModal from '@/components/Search/SearchAdvancedModal.vue'
 import ItemDataOverlay from '@/components/RecordManagement/ItemDataOverlay.vue'
@@ -222,6 +223,7 @@ const { requestJob } = storeToRefs(useRequestStore())
 const { picklistJob } = storeToRefs(usePicklistStore())
 const { refileJob } = storeToRefs(useRefileStore())
 const { withdrawJob } = storeToRefs(useWithdrawalStore())
+const { shippingJob } = storeToRefs(useShippingStore())
 
 // Local Data
 const searchIsLoadingData = ref(false)
@@ -270,6 +272,10 @@ const searchTypes = computed(() => {
     {
       name: 'Picklist',
       hidden: !checkUserPermission('can_access_picklist')
+    },
+    {
+      name: 'Shipping',
+      hidden: !checkUserPermission('can_access_shipping')
     },
     {
       name: 'Refile',
@@ -438,6 +444,15 @@ const handlingSearchResultRouting = () => {
       withdrawJob.value = exactSearchResponseInfo.value
       router.push({
         name: 'withdrawal',
+        params: {
+          jobId: searchText.value
+        }
+      })
+      break
+    case 'Shipping':
+      shippingJob.value = exactSearchResponseInfo.value
+      router.push({
+        name: 'shipping-execute',
         params: {
           jobId: searchText.value
         }

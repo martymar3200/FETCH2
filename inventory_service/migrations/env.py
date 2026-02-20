@@ -1,6 +1,6 @@
 # /migrations/env.py - ULTIMATE FIX FOR NoReferencedTableError
 
-import pytz, os
+import os
 import importlib # <-- NEW IMPORT
 import pkgutil # <-- NEW IMPORT
 
@@ -105,10 +105,11 @@ def run_migrations_online() -> None:
         """
         Labels migration file autogeneration by inverted date
         """
-        eastern = pytz.timezone('US/Eastern')
-        current_time_et = datetime.now(eastern)
+        # eastern = pytz.timezone('US/Eastern')
+        # current_time_et = datetime.now(eastern)
+        current_time_utc = datetime.now(timezone.utc)
         # We already fixed this to use underscores in the previous step
-        rev_id = current_time_et.strftime("%Y_%m_%d_%H_%M_%S")
+        rev_id = current_time_utc.strftime("%Y_%m_%d_%H_%M_%S")
         for directive in directives:
             directive.rev_id = rev_id
 

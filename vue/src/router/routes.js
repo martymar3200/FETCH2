@@ -183,6 +183,15 @@ const routes = [
         }
       },
       {
+        name: 'admin-manage-shipping',
+        path: 'admin/manage/shipping',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
         name: 'admin-manage-child-owner-shelving',
         path: 'admin/manage/child-owner-shelving',
         component: () => import('@/pages/AdminPage.vue'),
@@ -302,6 +311,33 @@ const routes = [
         meta: {
           requiresAuth: true,
           requiresPerm: 'can_access_shelving'
+        }
+      },
+      {
+        name: 'shipping',
+        path: 'shipping',
+        component: () => import('@/pages/ShippingPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_access_shipping'
+        }
+      },
+      {
+        name: 'shipping-execute',
+        path: 'shipping/:jobId',
+        component: () => import('@/pages/ShippingPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_access_shipping'
+        }
+      },
+      {
+        name: 'shipping-manifest',
+        path: 'shipping/:jobId/manifest',
+        component: () => import('@/components/Shipping/ShippingManifest.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_access_shipping'
         }
       },
       {

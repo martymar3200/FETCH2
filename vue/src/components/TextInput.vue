@@ -1,5 +1,6 @@
 <template>
   <q-input
+    ref="inputRef"
     :dense="currentScreenSize == 'xs'"
     outlined
     :model-value="modelValue"
@@ -15,6 +16,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 // Props
@@ -40,6 +42,15 @@ const { currentScreenSize } = useCurrentScreenSize()
 const updateModelValue = (value) => {
   emit('update:modelValue', value)
 }
+
+const inputRef = ref(null)
+const focus = () => {
+  inputRef.value?.focus()
+}
+
+defineExpose({
+  focus
+})
 </script>
 
 <style lang="scss" scoped>

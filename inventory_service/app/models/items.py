@@ -1,3 +1,4 @@
+
 # /app/models/items.py - ULTIMATE, FINAL CORRECTED V2 (ABSOLUTE FK)
 
 import uuid
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
     from app.models.tray_withdrawal import TrayWithdrawal
     from app.models.withdraw_jobs import WithdrawJob
     from app.models.barcodes import Barcode
+    from app.models.shipping_bins import ShippingBin
 # -------------------------------------------------------------------
 
 
@@ -53,6 +55,7 @@ class ItemStatus(str, Enum):
     Withdrawn = "Withdrawn"
     Accessioned = "Accessioned"
     Verified = "Verified"
+    Retrieved = "Retrieved"
 
 
 class Item(Base): 
@@ -98,10 +101,12 @@ class Item(Base):
     accession_job_id: Mapped[Optional[int]] = mapped_column(ForeignKey(AccessionJob.__table__.c.id), nullable=True)
     verification_job_id: Mapped[Optional[int]] = mapped_column(ForeignKey(VerificationJob.__table__.c.id), nullable=True)
     media_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey(MediaType.__table__.c.id), nullable=True)
+    shipping_bin_id: Mapped[Optional[int]] = mapped_column(ForeignKey("shipping_bins.id"), nullable=True)
     
     # Boolean Fields
     scanned_for_accession: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_verification: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    scanned_for_shipping: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_refile_queue: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_refile: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
@@ -187,3 +192,6 @@ class Item(Base):
         primaryjoin="Item.id == item_withdrawals.c.item_id",
         secondaryjoin="WithdrawJob.id == item_withdrawals.c.withdraw_job_id"
     )
+
+    # 7. Shipping Relationship - defined via backref on ShippingBin.items
+    # Attribute created dynamically: shipping_bin

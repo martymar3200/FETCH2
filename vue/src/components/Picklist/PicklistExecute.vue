@@ -206,8 +206,8 @@
     <!-- Dialogs -->
     <JobConfirmDialog
       v-model="showCompleteDialog"
-      title="Complete Job?"
-      message="Are you sure you want to complete this pick list job?"
+      :title="shippingEnabled ? 'Complete & Send to Shipping?' : 'Complete Job?'"
+      :message="shippingEnabled ? 'Items will be marked as Retrieved. Proceed to Shipping?' : 'Are you sure you want to complete this pick list job?'"
       confirm-label="Complete & Print"
       confirm-color="positive"
       :loading="actionLoading"
@@ -301,6 +301,7 @@ const filter = ref('all')
 const barcodeInput = ref('')
 const actionLoading = ref(false)
 const scanning = ref(false)
+const shippingEnabled = ref(false)
 const showCompleteDialog = ref(false)
 const showCancelDialog = ref(false)
 const showAuditTrailModal = ref(false)
@@ -653,6 +654,13 @@ watch(compiledBarCode, (barcode) => {
 onMounted(async () => {
   if (!job.value || job.value.id != jobId.value) {
     await picklistStore.getPicklistJob(jobId.value)
+  }
+
+  try {
+    const setting = await useOptionStore().getSystemSetting('shipping_module_enabled')
+    shippingEnabled.value = setting.value === 'true'
+  } catch (e) {
+    // Default to false
   }
 
   nextTick(() => {

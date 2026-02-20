@@ -256,6 +256,12 @@ const essentialLinks = computed(() => {
       requiresPerm: 'can_access_picklist'
     },
     {
+      title: 'Shipping',
+      icon: 'local_shipping',
+      link: '/shipping',
+      requiresPerm: 'can_access_shipping'
+    },
+    {
       title: 'Refile',
       icon: 'format_list_numbered',
       link: '/refile',

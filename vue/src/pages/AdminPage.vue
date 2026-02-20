@@ -23,8 +23,12 @@
       v-if="route.name == 'admin-users'"
     />
 
+    <AdminShippingSettings
+      v-if="route.name == 'admin-manage-shipping'"
+    />
+
     <AdminListManagerDisplay
-      v-if="route.name.includes('admin-manage') && route.name !== 'admin-manage-shelf-position-direction' && route.name !== 'admin-manage-child-owner-shelving'"
+      v-if="route.name.includes('admin-manage') && route.name !== 'admin-manage-shelf-position-direction' && route.name !== 'admin-manage-child-owner-shelving' && route.name !== 'admin-manage-shipping'"
       :list-type="route.name.split('admin-manage-').pop()"
     />
 
@@ -47,6 +51,7 @@ import AdminLocationManagerDisplay from '@/components/Admin/AdminLocationManager
 import AdminShelfPositionDirection from '@/components/Admin/AdminShelfPositionDirection.vue'
 import AdminChildOwnerShelving from '@/components/Admin/AdminChildOwnerShelving.vue'
 import AdminUserManagement from '@/components/Admin/AdminUserManagement.vue'
+import AdminShippingSettings from '@/components/Admin/AdminShippingSettings.vue'
 
 const route = useRoute()
 

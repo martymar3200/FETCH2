@@ -736,6 +736,10 @@ const requestStatusOptions = [
     value: 'PickList'
   },
   {
+    label: 'Retrieved',
+    value: 'Retrieved'
+  },
+  {
     label: 'Completed',
     value: 'Completed'
   }
@@ -886,6 +890,8 @@ const getStatusIcon = (status) => {
       return 'mdi-plus-circle'
     case 'PickList':
       return 'mdi-format-list-checks'
+    case 'Retrieved':
+      return 'mdi-truck-delivery'
     case 'Processing':
       return 'mdi-progress-clock'
     case 'Completed':
@@ -905,6 +911,7 @@ const getStatusBadgeClass = (status) => {
       return 'status-new'
     case 'PickList':
     case 'Processing':
+    case 'Retrieved':
       return 'status-in-progress'
     case 'Completed':
       return 'status-completed'

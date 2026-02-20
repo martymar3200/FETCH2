@@ -252,6 +252,22 @@
         {
             "name": "can_view_audit_logs",
             "description": "Can view audit logs history."
+        },
+        {
+            "name": "can_access_shipping",
+            "description": "Can view shipping dashboard and jobs"
+        },
+        {
+            "name": "create_shipping_jobs",
+            "description": "Can create new shipping jobs"
+        },
+        {
+            "name": "process_shipping_jobs",
+            "description": "Execute shipping (scan bins/items, complete)"
+        },
+        {
+            "name": "delete_shipping_jobs",
+            "description": "Delete shipping jobs"
         }
     ]
 }

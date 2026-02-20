@@ -24,6 +24,8 @@ from app.models.non_tray_item_retrieval_events import NonTrayItemRetrievalEvent
 from app.models.shelves import Shelf
 from app.models.barcodes import Barcode
 from app.models.permissions import Permission
+from app.models.shipping_jobs import ShippingJob
+from app.models.shipping_bins import ShippingBin
 from app.logger import migration_logger
 
 def seed_new_permissions():

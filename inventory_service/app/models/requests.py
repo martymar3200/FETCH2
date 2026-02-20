@@ -28,6 +28,7 @@ from app.models.non_tray_items import NonTrayItem
 class RequestStatus(str, Enum):
     New = "New"
     PickList = "PickList"
+    Retrieved = "Retrieved"
     Completed = "Completed"
 
 

@@ -38,6 +38,7 @@ from app.config.exceptions import (
 )
 from app.sorting import PickListSorter
 from app.utilities import get_location, manage_transition, check_batch_completion
+from app.helpers.system_setting_helpers import get_setting_value
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
@@ -333,10 +334,14 @@ def update_pick_list(
                     ).all()
                 ]
 
+                # Check shipping module
+                shipping_enabled = get_setting_value(session, "shipping_module_enabled", "false")
+                target_status = "Retrieved" if shipping_enabled.lower() == "true" else "Out"
+
                 if item_ids:
                     session.execute(
                         update(Item).where(Item.id.in_(item_ids)).values(
-                            status="Out",
+                            status=target_status,
                             scanned_for_refile=None,
                             update_dt=datetime.now(timezone.utc),
                         )
@@ -345,19 +350,30 @@ def update_pick_list(
                 if non_tray_item_ids:
                     session.execute(
                         update(NonTrayItem).where(NonTrayItem.id.in_(non_tray_item_ids)).values(
-                            status="Out",
+                            status=target_status,
                             scanned_for_refile=None,
                             update_dt=datetime.now(timezone.utc),
                         )
                     )
 
-                session.execute(
-                    update(Request).where(Request.id.in_(request_ids)).values(
-                        fulfilled=True,
-                        status=RequestStatus.Completed,
-                        update_dt=datetime.now(timezone.utc),
+                if shipping_enabled.lower() == "true":
+                    # Shipping enabled: keep requests active as Retrieved
+                    session.execute(
+                        update(Request).where(Request.id.in_(request_ids)).values(
+                            status=RequestStatus.Retrieved,
+                            fulfilled=False,
+                            update_dt=datetime.now(timezone.utc),
+                        )
                     )
-                )
+                else:
+                    # Shipping disabled: complete requests immediately
+                    session.execute(
+                        update(Request).where(Request.id.in_(request_ids)).values(
+                            fulfilled=True,
+                            status=RequestStatus.Completed,
+                            update_dt=datetime.now(timezone.utc),
+                        )
+                    )
 
                 # Check for batch completion
                 batch_ids = (

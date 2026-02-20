@@ -461,7 +461,7 @@ def delete_request(id: int, session: Session = Depends(get_session)):
 
     if request:
         # Validate status - cannot delete if PickList or Completed (Active Job)
-        if request.status in [RequestStatus.PickList, RequestStatus.Completed]:
+        if request.status in [RequestStatus.PickList, RequestStatus.Retrieved, RequestStatus.Completed]:
              raise BadRequest(detail=f"Cannot delete request in '{request.status}' status. Only 'New' or 'Failed' requests can be deleted.")
 
         # Delete request from pick_list_requests

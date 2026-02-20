@@ -427,6 +427,11 @@ const reportItems = ref([
     description: 'Item location move discrepancies'
   },
   {
+    id: 'Shipping Bins',
+    label: 'Shipping Bins',
+    description: 'Active shipping bins by location and date'
+  },
+  {
     id: 'Total Item Retrieved',
     label: 'Total Item Retrieved',
     description: 'Retrieval counts by owner'
@@ -770,6 +775,52 @@ const generateReportTableFields = (qParams) => {
         'width',
         'depth',
         'available_space'
+      ]
+      break
+    case 'Shipping Bins':
+      generatedTableColumns.value = [
+        {
+          name: 'barcode',
+          field: 'barcode',
+          label: 'Bin #',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'shipping_job_id',
+          field: 'shipping_job_id',
+          label: 'Shipping Job #',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'create_dt',
+          field: 'create_dt',
+          label: 'Created Date',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'item_count',
+          field: 'item_count',
+          label: '# Items',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'delivery_location',
+          field: row => row.delivery_location?.name,
+          label: 'Delivery Location',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'barcode',
+        'shipping_job_id',
+        'create_dt',
+        'item_count',
+        'delivery_location'
       ]
       break
     case 'Refile Discrepancy':
