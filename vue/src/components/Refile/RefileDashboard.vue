@@ -616,6 +616,8 @@ const userOptionsFromData = computed(() => {
   refileJobList.value.forEach(row => {
     if (row.assigned_user?.name) {
       userSet.add(row.assigned_user.name)
+    } else if (row.assigned_user?.first_name) {
+      userSet.add(`${row.assigned_user.first_name} ${row.assigned_user.last_name}`)
     }
   })
   return Array.from(userSet).sort().map(u => ({
@@ -771,7 +773,12 @@ const refileTableColumns = ref([
   },
   {
     name: 'assigned_user_id',
-    field: row => row.assigned_user ? row.assigned_user.name : '',
+    field: row => {
+      if (!row.assigned_user) {
+        return ''
+      }
+      return row.assigned_user.name ? row.assigned_user.name : `${row.assigned_user.first_name} ${row.assigned_user.last_name}`
+    },
     label: 'Assigned User',
     align: 'left',
     sortable: true

@@ -131,6 +131,23 @@
                   @update:model-value="applyColumnFilters"
                   @click.stop
                 />
+
+                <!-- Assigned User filter -->
+                <q-select
+                  v-else-if="col.name === 'assigned_user_id'"
+                  v-model="columnFilters.assigned_user"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="userOptionsFromData.length > 0 ? userOptionsFromData : userOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
               </q-th>
             </q-tr>
           </template>
@@ -365,7 +382,35 @@ const columnFilters = ref({
     'Assigned',
     'Paused',
     'Running'
-  ]  // Default to showing active jobs
+  ],  // Default to showing active jobs
+  assigned_user: []
+})
+
+// Dynamic filter options from current table data
+const userOptionsFromData = computed(() => {
+  const userSet = new Set()
+  accessionJobList.value.forEach(row => {
+    if (row.assigned_user?.name) {
+      userSet.add(row.assigned_user.name)
+    } else if (row.assigned_user?.first_name) {
+      userSet.add(`${row.assigned_user.first_name} ${row.assigned_user.last_name}`)
+    }
+  })
+  return Array.from(userSet).sort().map(u => ({
+    label: u,
+    value: u
+  }))
+})
+
+// Fallback options from store data
+const userOptions = computed(() => {
+  if (useOptionStore().users) {
+    return useOptionStore().users.map(u => ({
+      label: u.name,
+      value: u.name
+    }))
+  }
+  return []
 })
 
 // Filter dropdown options
@@ -405,7 +450,8 @@ const statusOptions = [
 const accessionTableVisibleColumns = ref([
   'id',
   'trayed',
-  'status'
+  'status',
+  'assigned_user_id'
 ])
 const accessionTableColumns = ref([
   {
@@ -426,6 +472,13 @@ const accessionTableColumns = ref([
     name: 'status',
     field: 'status',
     label: 'Status',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'assigned_user_id',
+    field: row => row.assigned_user ? `${row.assigned_user.first_name} ${row.assigned_user.last_name}` : '',
+    label: 'Assigned User',
     align: 'left',
     sortable: true
   }
@@ -485,7 +538,8 @@ onBeforeMount(() => {
     accessionTableVisibleColumns.value = [
       'id',
       'trayed',
-      'status'
+      'status',
+      'assigned_user_id'
     ]
   }
 })
@@ -523,6 +577,11 @@ const loadAccessionJobs = async (qParams) => {
       filterParams.status = columnFilters.value.status
     }
 
+    // Add assigned_user filter
+    if (columnFilters.value.assigned_user && columnFilters.value.assigned_user.length > 0) {
+      filterParams.assigned_user = columnFilters.value.assigned_user
+    }
+
     await getAccessionJobList(filterParams)
   } catch (error) {
     Notify.create({
@@ -553,7 +612,8 @@ const clearColumnFilters = () => {
       'Assigned',
       'Paused',
       'Running'
-    ]  // Reset to default active statuses
+    ],  // Reset to default active statuses
+    assigned_user: []
   }
   applyColumnFilters()
 }
@@ -585,6 +645,7 @@ const submitAccessionJob = async () => {
       media_type_id: accessionJob.value.media_type,
       owner_id: accessionJob.value.owner,
       status: 'Running',
+      assigned_user_id: userData.value.user_id,
       trayed: accessionJob.value.trayed,
       created_by_id: userData.value.user_id
     }

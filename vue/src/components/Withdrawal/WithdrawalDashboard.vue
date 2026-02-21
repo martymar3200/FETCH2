@@ -115,6 +115,23 @@
                   @update:model-value="applyColumnFilters"
                   @click.stop
                 />
+
+                <!-- Assigned User filter -->
+                <q-select
+                  v-else-if="col.name === 'assigned_user_id'"
+                  v-model="columnFilters.assigned_user"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="userOptionsFromData.length > 0 ? userOptionsFromData : userOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
               </q-th>
             </q-tr>
           </template>
@@ -156,6 +173,7 @@ import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
+import { useOptionStore } from 'src/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
 import { storeToRefs } from 'pinia'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
@@ -196,13 +214,42 @@ const columnFilters = ref({
     'Assigned',
     'Paused',
     'Running'
-  ]
+  ],
+  assigned_user: []
+})
+
+// Dynamic filter options from current table data
+const userOptionsFromData = computed(() => {
+  const userSet = new Set()
+  withdrawJobList.value.forEach(row => {
+    if (row.assigned_user?.name) {
+      userSet.add(row.assigned_user.name)
+    } else if (row.assigned_user?.first_name) {
+      userSet.add(`${row.assigned_user.first_name} ${row.assigned_user.last_name}`)
+    }
+  })
+  return Array.from(userSet).sort().map(u => ({
+    label: u,
+    value: u
+  }))
+})
+
+// Fallback options from store data
+const userOptions = computed(() => {
+  if (useOptionStore().users) {
+    return useOptionStore().users.map(u => ({
+      label: u.name,
+      value: u.name
+    }))
+  }
+  return []
 })
 
 const withdrawTableVisibleColumns = ref([
   'id',
   'item_count',
   'status',
+  'assigned_user_id',
   'create_dt'
 ])
 const withdrawTableColumns = ref([
@@ -226,6 +273,14 @@ const withdrawTableColumns = ref([
     name: 'status',
     field: 'status',
     label: 'Status',
+    align: 'left',
+    sortable: true,
+    style: 'min-width: 150px'
+  },
+  {
+    name: 'assigned_user_id',
+    field: row => row.assigned_user ? `${row.assigned_user.first_name} ${row.assigned_user.last_name}` : '',
+    label: 'Assigned User',
     align: 'left',
     sortable: true,
     style: 'min-width: 150px'
@@ -303,6 +358,7 @@ onBeforeMount(() => {
     withdrawTableVisibleColumns.value = [
       'id',
       'item_count',
+      'assigned_user_id',
       'create_dt'
     ]
   }
@@ -321,6 +377,10 @@ const loadWithdrawJobs = async (qParams) => {
     }
     if (columnFilters.value.status && columnFilters.value.status.length > 0) {
       filterParams.status = columnFilters.value.status
+    }
+
+    if (columnFilters.value.assigned_user && columnFilters.value.assigned_user.length > 0) {
+      filterParams.assigned_user = columnFilters.value.assigned_user
     }
 
     await getWithdrawJobList(filterParams)
@@ -346,7 +406,13 @@ const applyColumnFilters = () => {
 const clearColumnFilters = () => {
   columnFilters.value = {
     id: null,
-    status: []
+    status: [
+      'Created',
+      'Assigned',
+      'Paused',
+      'Running'
+    ],
+    assigned_user: []
   }
   applyColumnFilters()
 }

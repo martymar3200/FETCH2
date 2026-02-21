@@ -237,7 +237,7 @@ class VerificationJobListOutput(VerificationJobBaseOutput):
     
     assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
-    user: Optional[UserDetailReadOutput] = None
+    assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     create_dt: datetime
 
@@ -289,7 +289,7 @@ class VerificationJobListDropdownOutput(BaseModel):
 class VerificationJobDetailOutput(VerificationJobBaseOutput):
     assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
-    user: Optional[UserDetailReadOutput] = None
+    assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     last_transition: Optional[datetime]
     run_time: Optional[timedelta]

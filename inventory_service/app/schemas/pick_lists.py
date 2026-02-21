@@ -90,7 +90,7 @@ class PickListBaseOutput(BaseModel):
     id: int
     assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
-    user: Optional[UserListOutput] = None
+    assigned_user: Optional[UserListOutput] = None
     created_by: Optional[UserListOutput] = None
     building_id: Optional[int] = None
     status: str
@@ -124,7 +124,7 @@ class PickListBaseOutput(BaseModel):
                 "id": 1,
                 "assigned_user_id": 1,
                 "created_by_id": 2,
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "first_name": "John",
                     "last_name": "Doe",
@@ -154,7 +154,7 @@ class PickListListOutput(PickListBaseOutput):
                 "id": 1,
                 "assigned_user_id": 1,
                 "created_by_id": 2,
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "first_name": "John",
                     "last_name": "Doe",
@@ -192,7 +192,7 @@ class PickListListOutput(PickListBaseOutput):
 
 
 class PickListDetailOutput(PickListBaseOutput):
-    user: Optional[UserDetailReadOutput] = None
+    assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     requests: Optional[list[RequestDetailReadOutputNoPickList]] = None
     withdraw_jobs: Optional[list[WithdrawJobDetailOutput]] = None
@@ -208,7 +208,7 @@ class PickListDetailOutput(PickListBaseOutput):
                 "request_count": 1,
                 "assigned_user_id": 1,
                 "created_by_id": 2,
-                "user": {
+                "assigned_user": {
                     "id": 1,
                     "name": "Bilbo Baggins",
                     "create_dt": "2023-10-08T20:46:56.764426",

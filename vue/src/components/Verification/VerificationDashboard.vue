@@ -121,6 +121,23 @@
                   @update:model-value="applyColumnFilters"
                   @click.stop
                 />
+
+                <!-- Assigned User filter -->
+                <q-select
+                  v-else-if="col.name === 'assigned_user_id'"
+                  v-model="columnFilters.assigned_user"
+                  dense
+                  outlined
+                  clearable
+                  multiple
+                  emit-value
+                  map-options
+                  :options="userOptionsFromData.length > 0 ? userOptionsFromData : userOptions"
+                  placeholder="All"
+                  class="column-filter-input"
+                  @update:model-value="applyColumnFilters"
+                  @click.stop
+                />
               </q-th>
             </q-tr>
           </template>
@@ -151,12 +168,13 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import { ref, onBeforeMount, computed } from 'vue'
 import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
 import { useVerificationStore } from 'src/stores/verification-store'
+import { useOptionStore } from 'src/stores/option-store'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import EssentialTable from '@/components/EssentialTable.vue'
 
@@ -188,7 +206,35 @@ const columnFilters = ref({
     'Assigned',
     'Paused',
     'Running'
-  ]  // Default to showing active jobs
+  ],  // Default to showing active jobs
+  assigned_user: []
+})
+
+// Dynamic filter options from current table data
+const userOptionsFromData = computed(() => {
+  const userSet = new Set()
+  verificationJobList.value.forEach(row => {
+    if (row.assigned_user?.name) {
+      userSet.add(row.assigned_user.name)
+    } else if (row.assigned_user?.first_name) {
+      userSet.add(`${row.assigned_user.first_name} ${row.assigned_user.last_name}`)
+    }
+  })
+  return Array.from(userSet).sort().map(u => ({
+    label: u,
+    value: u
+  }))
+})
+
+// Fallback options from store data
+const userOptions = computed(() => {
+  if (useOptionStore().users) {
+    return useOptionStore().users.map(u => ({
+      label: u.name,
+      value: u.name
+    }))
+  }
+  return []
 })
 
 // Filter dropdown options
@@ -228,7 +274,8 @@ const statusOptions = [
 const verificationTableVisibleColumns = ref([
   'id',
   'trayed',
-  'status'
+  'status',
+  'assigned_user_id'
 ])
 const verificationTableColumns = ref([
   {
@@ -249,6 +296,18 @@ const verificationTableColumns = ref([
     name: 'status',
     field: 'status',
     label: 'Status',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'assigned_user_id',
+    field: row => {
+      if (!row.assigned_user) {
+        return ''
+      }
+      return row.assigned_user.name ? row.assigned_user.name : `${row.assigned_user.first_name} ${row.assigned_user.last_name}`
+    },
+    label: 'Assigned User',
     align: 'left',
     sortable: true
   }
@@ -300,7 +359,8 @@ onBeforeMount(() => {
     verificationTableVisibleColumns.value = [
       'id',
       'trayed',
-      'status'
+      'status',
+      'assigned_user_id'
     ]
   }
 })
@@ -327,6 +387,11 @@ const loadVerificationJobs = async (qParams) => {
     // Add status filter
     if (columnFilters.value.status && columnFilters.value.status.length > 0) {
       filterParams.status = columnFilters.value.status
+    }
+
+    // Add assigned_user filter
+    if (columnFilters.value.assigned_user && columnFilters.value.assigned_user.length > 0) {
+      filterParams.assigned_user = columnFilters.value.assigned_user
     }
 
     await getVerificationJobList(filterParams)
@@ -359,7 +424,8 @@ const clearColumnFilters = () => {
       'Assigned',
       'Paused',
       'Running'
-    ]  // Reset to default active statuses
+    ],  // Reset to default active statuses
+    assigned_user: []
   }
   applyColumnFilters()
 }

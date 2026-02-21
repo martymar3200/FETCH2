@@ -278,7 +278,12 @@ const columns = [
   },
   {
     name: 'assigned_user_id',
-    field: row => row.assigned_user ? row.assigned_user.name : 'Unassigned',
+    field: row => {
+      if (!row.assigned_user) {
+        return 'Unassigned'
+      }
+      return row.assigned_user.name ? row.assigned_user.name : `${row.assigned_user.first_name} ${row.assigned_user.last_name}`
+    },
     label: 'Assigned User',
     align: 'left'
   },
