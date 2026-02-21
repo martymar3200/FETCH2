@@ -368,6 +368,14 @@ const routes = [
         }
       },
       {
+        name: 'user-settings',
+        path: 'user/settings',
+        component: () => import('@/pages/UserSettings.vue'),
+        meta: {
+          requiresAuth: true
+        }
+      },
+      {
         name: 'test',
         path: '/test',
         component: () => import('@/pages/TestPage.vue')

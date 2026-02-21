@@ -95,6 +95,19 @@ export const useUserStore = defineStore('user-store', {
           throw error
         }
       }
+    },
+    async updateUserProfile (id, payload) {
+      try {
+        const res = await this.$api.patch(`${inventoryServiceApi.users}${id}/`, payload)
+        this.userData = {
+          ...this.userData,
+          ...res.data
+        }
+        localStorage.setItem('user', JSON.stringify(this.userData))
+        return res.data
+      } catch (error) {
+        throw error
+      }
     }
   }
 })

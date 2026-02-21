@@ -136,6 +136,8 @@ const userOptions = ref([
 const handleOptions = (option) => {
   if (option == 'Logout') {
     logoutUser()
+  } else if (option == 'Settings') {
+    router.push({ name: 'user-settings' })
   }
 }
 const logoutUser = async () => {
