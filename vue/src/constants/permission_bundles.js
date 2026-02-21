@@ -20,7 +20,7 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Accessioning (Delete)',
     description: 'Delete Accession Jobs.',
-    permissions: ['delete_accession_jobs']
+    permissions: ['can_cancel_accession']
   },
   {
     name: 'Verification (Viewer)',
@@ -43,7 +43,7 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Verification (Delete)',
     description: 'Cancel/Delete Verification Jobs.',
-    permissions: ['delete_verification_jobs']
+    permissions: ['can_cancel_verification_job']
   },
   {
     name: 'Shelving (Viewer)',
@@ -118,7 +118,7 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Picklist (Delete)',
     description: 'Delete Picklist Jobs.',
-    permissions: ['delete_pick_lists']
+    permissions: ['can_delete_picklist_job']
   },
   {
     name: 'Refile (Viewer)',
@@ -145,7 +145,7 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Refile (Delete)',
     description: 'Delete Refile Jobs.',
-    permissions: ['delete_refile_jobs']
+    permissions: ['can_delete_refile_job']
   },
   {
     name: 'Withdraw (Viewer)',

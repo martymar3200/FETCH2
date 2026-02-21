@@ -8,20 +8,7 @@
           <div class="row items-center">
             <!-- Three-dot menu -->
             <MoreOptionsMenu
-              :options="!route.params.containerId ? [
-                { text: 'Edit', disabled: accessionJob.status == 'Completed' },
-                { text: 'Pause Job', disabled: accessionJob.status != 'Running' },
-                { text: 'Cancel Job', optionClass: 'text-negative', disabled: accessionJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_accession')},
-                { text: 'Print Job' },
-                { text: 'View History' }
-              ] : [
-                { text: 'Edit', disabled: accessionJob.status == 'Completed'},
-                { text: 'Pause Job', disabled: accessionJob.status != 'Running' },
-                { text: 'Cancel Job', optionClass: 'text-negative', disabled: accessionJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_accession')},
-                { text: 'Delete Tray', optionClass: 'text-negative', disabled: accessionJob.status == 'Completed'},
-                { text: 'Print Job' },
-                { text: 'View History' }
-              ]"
+              :options="dotMenuOptions"
               class="q-mr-sm"
               @click="handleOptionMenu"
             />
@@ -721,6 +708,53 @@ const verificationJobGenerated = ref(false)
 const isProcessingItemScan = ref(false) // Guard against double item scans
 const renderIsEditMode = computed(() => {
   return false
+})
+
+const dotMenuOptions = computed(() => {
+  if (!route.params.containerId) {
+    return [
+      {
+        text: 'Edit',
+        disabled: accessionJob.value.status == 'Completed'
+      },
+      {
+        text: 'Pause Job',
+        disabled: accessionJob.value.status != 'Running'
+      },
+      {
+        text: 'Cancel Job',
+        optionClass: 'text-negative',
+        disabled: accessionJob.value.status == 'Completed',
+        hidden: !(checkUserPermission('can_cancel_accession') || checkUserPermission('can_cancel_accession_job'))
+      },
+      { text: 'Print Job' },
+      { text: 'View History' }
+    ]
+  } else {
+    return [
+      {
+        text: 'Edit',
+        disabled: accessionJob.value.status == 'Completed'
+      },
+      {
+        text: 'Pause Job',
+        disabled: accessionJob.value.status != 'Running'
+      },
+      {
+        text: 'Cancel Job',
+        optionClass: 'text-negative',
+        disabled: accessionJob.value.status == 'Completed',
+        hidden: !(checkUserPermission('can_cancel_accession') || checkUserPermission('can_cancel_accession_job'))
+      },
+      {
+        text: 'Delete Tray',
+        optionClass: 'text-negative',
+        disabled: accessionJob.value.status == 'Completed'
+      },
+      { text: 'Print Job' },
+      { text: 'View History' }
+    ]
+  }
 })
 
 // Logic

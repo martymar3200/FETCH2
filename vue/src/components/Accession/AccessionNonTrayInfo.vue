@@ -6,13 +6,7 @@
         <div class="row items-center">
           <!-- Three-dot menu -->
           <MoreOptionsMenu
-            :options="[
-              { text: 'Edit', disabled: accessionJob.status == 'Completed' },
-              { text: 'Pause Job', disabled: accessionJob.status == 'Completed' || accessionJob.status == 'Paused' },
-              { text: 'Cancel Job', optionClass: 'text-negative', disabled: accessionJob.status == 'Completed', hidden: !checkUserPermission('can_cancel_accession') },
-              { text: 'Print Job' },
-              { text: 'View History' }
-            ]"
+            :options="dotMenuOptions"
             class="q-mr-sm"
             @click="handleOptionMenu"
           />
@@ -371,6 +365,26 @@ const isProcessingScan = ref(false) // Guard against double scans
 
 // Logic
 
+const dotMenuOptions = computed(() => {
+  return [
+    {
+      text: 'Edit',
+      disabled: accessionJob.value.status == 'Completed'
+    },
+    {
+      text: 'Pause Job',
+      disabled: accessionJob.value.status == 'Completed' || accessionJob.value.status == 'Paused'
+    },
+    {
+      text: 'Cancel Job',
+      optionClass: 'text-negative',
+      disabled: accessionJob.value.status == 'Completed',
+      hidden: !(checkUserPermission('can_cancel_accession') || checkUserPermission('can_cancel_accession_job'))
+    },
+    { text: 'Print Job' },
+    { text: 'View History' }
+  ]
+})
 
 // Computed
 const canComplete = computed(() => {
