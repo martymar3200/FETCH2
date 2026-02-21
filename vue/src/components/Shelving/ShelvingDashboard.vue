@@ -75,7 +75,7 @@
                       v-if="checkUserPermission('can_create_and_execute_direct_shelving_job')"
                       clickable
                       v-close-popup
-                      @click="showShelvingJobModal = 'Direct'"
+                      @click="handleCreateShelvingJob('Direct')"
                       role="menuitem"
                     >
                       <q-item-section>
@@ -777,6 +777,21 @@ const resetCreateShelfJobModal = () => {
   resetBuildingStore()
   showShelvingJobModal.value = null
 }
+
+const handleCreateShelvingJob = async (type) => {
+  if (userData.value?.default_building_id) {
+    shelvingJob.value.building_id = userData.value.default_building_id
+
+    if (type === 'Direct') {
+      // Direct origin only needs building, we can immediately submit.
+      await submitDirectToShelfJob()
+      return
+    } else {
+      await handleShelvingJobFormChange('Building')
+    }
+  }
+  showShelvingJobModal.value = type
+}
 const handleShelvingJobFormChange = async (valueType) => {
   // reset the form depending on the edited form field type
   switch (valueType) {
@@ -969,7 +984,7 @@ const submitShelvingJob = async () => {
     })
   } finally {
     appIsLoadingData.value = false
-    createShelvingJobModal.value.hideModal()
+    createShelvingJobModal.value?.hideModal()
   }
 }
 const submitDirectToShelfJob = async () => {
@@ -1001,7 +1016,7 @@ const submitDirectToShelfJob = async () => {
     })
   } finally {
     appIsLoadingData.value = false
-    createShelvingJobModal.value.hideModal()
+    createShelvingJobModal.value?.hideModal()
   }
 }
 const submitShelvingMove = async (moveType) => {

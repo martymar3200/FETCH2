@@ -9,13 +9,15 @@ class UserInput(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
+    default_building_id: Optional[int] = None
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "first_name": "Frodo",
                 "last_name": "Baggins",
-                "email": "FBaggins@example.com"
+                "email": "FBaggins@example.com",
+                "default_building_id": 1
             }
         }
     )

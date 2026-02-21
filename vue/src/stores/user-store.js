@@ -57,10 +57,20 @@ export const useUserStore = defineStore('user-store', {
           delete this.userData.token
         }
 
-        // set user credentials in local storage
-        localStorage.setItem('user', JSON.stringify(this.userData))
         // set user token in session storate
         sessionStorage.setItem('token', JSON.stringify(userToken))
+        // pre-seed local storage so axios interceptors will attach the token to the subsequent API call
+        localStorage.setItem('user', JSON.stringify(this.userData))
+
+        // Fetch the full user profile from the database to ensure all settings (e.g. default_building_id) are loaded natively
+        const profileRes = await this.$api.get(`${inventoryServiceApi.users}${this.userData.user_id}`)
+        this.userData = {
+          ...this.userData,
+          ...profileRes.data
+        }
+
+        // resave user credentials in local storage with the merged profile data
+        localStorage.setItem('user', JSON.stringify(this.userData))
 
         await this.getUserPermissions()
       } catch (error) {

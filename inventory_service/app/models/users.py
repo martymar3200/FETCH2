@@ -58,6 +58,9 @@ class User(Base):
     # TIMESTAMP (timezone=True)
     fetch_auth_expiration: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     
+    # Default Building
+    default_building_id: Mapped[Optional[int]] = mapped_column(ForeignKey("buildings.id"), nullable=True)
+    
     # REMOVED: create_dt and update_dt (Handled by Base)
     # The explicit defaults were moved to Base.
 

@@ -905,17 +905,20 @@ onBeforeMount(() => {
   }
 })
 
-const handleOptionMenu = (opt) => {
+const handleOptionMenu = async (opt) => {
   if (opt == 'Queue') {
     showAddItemToQueue.value = true
     if (refileDisplayType.value !== 'refile_queue') {
       refileDisplayType.value = 'refile_queue'
       loadRefileJobs()
     }
-  } else if (opt == 'Add') {
-    showRefileJobModal.value = 'Add'
-  } else if (opt == 'Create') {
-    showRefileJobModal.value = 'Create'
+  } else if (opt == 'Add' || opt == 'Create') {
+    if (userData.value?.default_building_id) {
+      filterRefileByBuilding.value = userData.value.default_building_id
+      await loadRefileQueueByBuilding(opt)
+    } else {
+      showRefileJobModal.value = opt
+    }
   }
 }
 const clearTableSelection = () => {
@@ -930,6 +933,8 @@ const resetRefileJobForm = () => {
   addToRefileJob.value = null
   clearTableSelection()
 }
+
+
 
 const loadRefileJobs = async (qParams) => {
   try {
@@ -1033,15 +1038,16 @@ const clearColumnFilters = () => {
   applyColumnFilters()
 }
 
-const loadRefileQueueByBuilding = async () => {
+const loadRefileQueueByBuilding = async (modeOverride = null) => {
   // this function only gets called during the creation/add refile job process
   try {
+    const mode = modeOverride || showRefileJobModal.value
     refileDisplayType.value = 'refile_queue'
     appActionIsLoadingData.value = true
     await getRefileQueueList({ building_id: filterRefileByBuilding.value })
 
     // display next step in refile job creation
-    if (showRefileJobModal.value == 'Create') {
+    if (mode == 'Create') {
       showCreateRefileJob.value = true
     } else {
       showAddRefileJob.value = true
@@ -1053,7 +1059,9 @@ const loadRefileQueueByBuilding = async () => {
     })
   } finally {
     appActionIsLoadingData.value = false
-    refileJobModalComponent.value.hideModal()
+    if (refileJobModalComponent.value) {
+      refileJobModalComponent.value.hideModal()
+    }
   }
 }
 const loadRefileJob = async (id) => {

@@ -42,12 +42,41 @@
                 </div>
               </div>
 
-              <div class="col-12">
+              <div class="col-12 col-sm-6">
                 <div class="text-caption text-grey-7">
                   Email Address
                 </div>
                 <div class="text-body1 text-weight-medium">
                   {{ userData.email }}
+                </div>
+              </div>
+
+              <div class="col-12">
+                <q-separator class="q-my-md" />
+                <div class="text-h6 q-mb-md">
+                  Preferences
+                </div>
+              </div>
+
+              <div class="col-12 col-sm-6">
+                <div class="form-group">
+                  <label class="form-group-label q-mb-xs">
+                    Default Building Location
+                  </label>
+                  <div class="text-caption text-grey-7 q-mb-sm">
+                    This building will be auto-selected for you in creation modals (e.g., Pick Lists, Jobs).
+                  </div>
+                  <SelectInput
+                    v-model="defaultBuildingId"
+                    :options="buildingsList"
+                    option-type="buildings"
+                    option-value="id"
+                    option-label="name"
+                    placeholder="Select Default Building"
+                    aria-label="defaultBuildingSelect"
+                    @update:model-value="onBuildingChange"
+                    :loading="saving"
+                  />
                 </div>
               </div>
             </div>
@@ -59,11 +88,56 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user-store'
+import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
+import SelectInput from '@/components/SelectInput.vue'
+import { Notify } from 'quasar'
 
 const userStore = useUserStore()
 const { userData } = storeToRefs(userStore)
+
+const optionStore = useOptionStore()
+const { buildings } = storeToRefs(optionStore)
+
+const buildingsList = ref([])
+const defaultBuildingId = ref(null)
+const saving = ref(false)
+
+onMounted(async () => {
+  // Load buildings for the dropdown if not already loaded
+  if (buildings.value.length === 0) {
+    await optionStore.getOptions('buildings')
+  }
+  buildingsList.value = buildings.value
+
+  // Set initial value from user profile
+  defaultBuildingId.value = userData.value.default_building_id || null
+})
+
+const onBuildingChange = async (newVal) => {
+  saving.value = true
+  try {
+    await userStore.updateUserProfile(userData.value.user_id, {
+      default_building_id: newVal
+    })
+    Notify.create({
+      type: 'positive',
+      message: 'Default building updated successfully'
+    })
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to update default building'
+    })
+    // Revert on failure
+    defaultBuildingId.value = userData.value.default_building_id || null
+    console.error(error)
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <style lang="scss" scoped>

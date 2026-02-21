@@ -95,7 +95,7 @@
                       v-if="checkUserPermission('can_add_to_picklist_job')"
                       clickable
                       v-close-popup
-                      @click="showPickListModal = 'Add'"
+                      @click="handlePickListModalOpen('Add')"
                       role="menuitem"
                     >
                       <q-item-section>
@@ -110,7 +110,7 @@
                       v-if="checkUserPermission('can_create_picklist_job')"
                       clickable
                       v-close-popup
-                      @click="showPickListModal = 'Create'"
+                      @click="handlePickListModalOpen('Create')"
                       role="menuitem"
                     >
                       <q-item-section>
@@ -1122,6 +1122,15 @@ const resetPickListForm = () => {
   clearTableSelection()
 }
 
+const handlePickListModalOpen = async (mode) => {
+  if (userData.value?.default_building_id) {
+    filterRequestsByBuilding.value = userData.value.default_building_id
+    await loadRequestJobsByBuilding(mode)
+  } else {
+    showPickListModal.value = mode
+  }
+}
+
 const loadRequestJobs = async (qParams) => {
   try {
     appIsLoadingData.value = true
@@ -1244,9 +1253,11 @@ const clearColumnFilters = () => {
   }
   applyColumnFilters()
 }
-const loadRequestJobsByBuilding = async () => {
+const loadRequestJobsByBuilding = async (modeOverride = null) => {
   try {
     appActionIsLoadingData.value = true
+    const mode = modeOverride || showPickListModal.value
+
     // change table view back to request view and clear out any pagination settings
     requestDisplayType.value = 'request_view'
     requestTableComponent.value.resetTablePagination()
@@ -1259,7 +1270,7 @@ const loadRequestJobsByBuilding = async () => {
     })
 
     // display next step in picklist creation
-    if (showPickListModal.value == 'Create') {
+    if (mode == 'Create') {
       showCreatePickList.value = true
     } else {
       showAddPickList.value = true
@@ -1271,7 +1282,9 @@ const loadRequestJobsByBuilding = async () => {
     })
   } finally {
     appActionIsLoadingData.value = false
-    picklistModalComponent.value.hideModal()
+    if (picklistModalComponent.value) {
+      picklistModalComponent.value.hideModal()
+    }
   }
 }
 const loadRequestJob = async (id) => {
