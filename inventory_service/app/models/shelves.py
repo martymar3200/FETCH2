@@ -1,10 +1,10 @@
-# /app/models/shelves.py - FINAL WITH CALC_AVAILABLE_SPACE
+# /app/models/shelves.py - REFACTORED: Removed ShelfNumber lookup table dependency
 
 import uuid
-import importlib # <--- Required for dynamic import
+import importlib
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from sqlalchemy import Integer, SmallInteger, VARCHAR, TIMESTAMP, ForeignKey, Numeric, String, CheckConstraint, text, select, func, or_ # <--- Added func, or_
+from sqlalchemy import Integer, SmallInteger, VARCHAR, TIMESTAMP, ForeignKey, Numeric, String, CheckConstraint, text, select, func, or_
 from sqlalchemy.schema import UniqueConstraint
 
 from typing import Optional, List
@@ -15,9 +15,8 @@ from app.database.base import Base
 from app.models.owners import Owner
 from app.models.ladders import Ladder
 from app.models.container_types import ContainerType
-from app.models.shelf_numbers import ShelfNumber
 from app.models.shelf_types import ShelfType
-from app.database.session import session_manager # <--- Required for session context
+from app.database.session import session_manager
 
 
 class Shelf(Base): 
@@ -29,14 +28,9 @@ class Shelf(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "ladder_id", "shelf_number_id", name="uq_ladder_id_shelf_number_id"
+            "ladder_id", "shelf_number", name="uq_ladder_id_shelf_number"
         ),
         UniqueConstraint("barcode_id"),
-        UniqueConstraint(
-            "location",
-            "internal_location",
-            name="uq_location_internal_location"
-        ),
         UniqueConstraint(
             "ladder_id",
             "sort_priority",
@@ -45,12 +39,10 @@ class Shelf(Base):
     )
 
     # Primary Key
-    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     # Simple Fields
     available_space: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)
-    location: Mapped[Optional[str]] = mapped_column(String(175), nullable=True, unique=True, default=None)
-    internal_location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, unique=True, default=None)
 
     # Foreign Key (UUID)
     barcode_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("barcodes.id"), nullable=True, unique=True)
@@ -62,9 +54,11 @@ class Shelf(Base):
     
     sort_priority: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True, default=None)
     
+    # Direct integer column (replaces shelf_number_id FK)
+    shelf_number: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    
     # Foreign Keys (Integer)
     container_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey(ContainerType.__table__.c.id), nullable=True)
-    shelf_number_id: Mapped[int] = mapped_column(ForeignKey(ShelfNumber.__table__.c.id), nullable=False)
     shelf_type_id: Mapped[int] = mapped_column(ForeignKey(ShelfType.__table__.c.id), nullable=False)
     owner_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Owner.__table__.c.id), nullable=True)
     ladder_id: Mapped[int] = mapped_column(ForeignKey(Ladder.__table__.c.id), nullable=False)
@@ -74,16 +68,18 @@ class Shelf(Base):
     owner: Mapped[Optional[Owner]] = relationship(back_populates="shelves")
     barcode: Mapped[Optional["Barcode"]] = relationship(uselist=False)
     shelf_type: Mapped[ShelfType] = relationship(back_populates="shelves")
-    shelf_number: Mapped[ShelfNumber] = relationship(back_populates="shelves")
     
     container_type: Mapped[Optional[ContainerType]] = relationship(
         back_populates="shelves", 
         foreign_keys=[container_type_id]
     )
     
-    shelf_positions: Mapped[List["ShelfPosition"]] = relationship(back_populates="shelf")
+    shelf_positions: Mapped[List["ShelfPosition"]] = relationship(
+        back_populates="shelf",
+        cascade="all, delete-orphan"
+    )
 
-    # --- METHODS RESTORED ---
+    # --- METHODS ---
 
     def calc_available_space(self, session: Optional[Session] = None) -> int:
         """
@@ -105,8 +101,6 @@ class Shelf(Base):
         total_positions = session.execute(total_positions_query).scalar() or 0
 
         # Get occupied positions count (where tray OR non_tray_item is present)
-        # Note: In V2, we check if the relationship is NOT NULL. 
-        # This requires ShelfPosition to have 'tray' and 'non_tray_item' relationships defined.
         occupied_positions_query = (
             select(func.count(ShelfPosition.id))
             .where(ShelfPosition.shelf_id == self.id)
@@ -122,26 +116,38 @@ class Shelf(Base):
         self.available_space = total_positions - occupied_positions
         return self.available_space
 
-    def update_shelf_address(self, session: Optional[Session] = None) -> str:
-        if session and not self.ladder:
-            session.refresh(self)
-
-        shelf_number = self.shelf_number.number
+    @property
+    def location(self) -> str:
         ladder = self.ladder
-        ladder_number = self.ladder.ladder_number.number
-        side = self.ladder.side
-        side_orientation = self.ladder.side.side_orientation.name
-        aisle = self.ladder.side.aisle
-        aisle_number = self.ladder.side.aisle.aisle_number.number
-        module = self.ladder.side.aisle.module
-        building = self.ladder.side.aisle.module.building
+        if not ladder: return "Unknown"
+        side = ladder.side
+        if not side: return "Unknown"
+        aisle = side.aisle
+        if not aisle: return "Unknown"
+        module = aisle.module
+        if not module: return "Unknown"
+        building = module.building
+        if not building: return "Unknown"
 
-        self.location = (
-            f"{building.name}-{module.module_number}-{aisle_number}-"
-            f"{side_orientation[0]}-{ladder_number}-{shelf_number}"
+        return (
+            f"{building.name}-{module.module_number}-{aisle.aisle_number}-"
+            f"{side.side_orientation.name[0]}-{ladder.ladder_number}-{self.shelf_number}"
         )
 
-        self.internal_location = (
+    @property
+    def internal_location(self) -> str:
+        ladder = self.ladder
+        if not ladder: return "Unknown"
+        side = ladder.side
+        if not side: return "Unknown"
+        aisle = side.aisle
+        if not aisle: return "Unknown"
+        module = aisle.module
+        if not module: return "Unknown"
+        building = module.building
+        if not building: return "Unknown"
+
+        return (
             f"{building.id}-{module.id}-{aisle.id}-{side.id}"
             f"-{ladder.id}-{self.id}"
         )

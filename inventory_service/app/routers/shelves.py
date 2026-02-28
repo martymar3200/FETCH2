@@ -1,14 +1,13 @@
-# /code/app/routers/shelves.py - FINAL REFACRORED TO SQLALCHEMY V2
+# /code/app/routers/shelves.py - REFACTORED: Removed ShelfNumber/ShelfPositionNumber lookup table dependencies
 
 import logging
+import re
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 from fastapi_pagination import paginate as paginate_list
-# CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate
-# CRITICAL FIX: Replaced from sqlmodel import Session, select
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from datetime import datetime, timezone
@@ -20,7 +19,6 @@ from app.models.owners import Owner
 from app.models.shelf_types import ShelfType
 from app.models.shelves import Shelf
 from app.models.barcodes import Barcode
-from app.models.shelf_numbers import ShelfNumber
 from app.models.buildings import Building
 from app.models.modules import Module
 from app.models.aisles import Aisle
@@ -30,13 +28,14 @@ from app.models.size_class import SizeClass
 from app.models.trays import Tray
 from app.models.non_tray_items import NonTrayItem
 from app.models.shelf_positions import ShelfPosition
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.schemas.shelves import (
     ShelfInput,
     ShelfUpdateInput,
+    ShelfBulkUpdateInput,
     ShelfListOutput,
     ShelfDetailWriteOutput,
     ShelfDetailReadOutput,
+    ShelfInsertOutput,
 )
 from app.config.exceptions import NotFound, ValidationException, InternalServerError
 from app.sorting import ShelvingSorter
@@ -117,7 +116,6 @@ def get_shelf_list(
     if params.unassigned:
         shelf_queryset = shelf_queryset.where(Shelf.barcode_id == None)
     if params.barcode_value:
-        # V2 FIX: Use scalar_subquery
         barcode_value_subquery = select(Barcode.id).where(
             Barcode.value == params.barcode_value
         ).scalar_subquery()
@@ -125,11 +123,9 @@ def get_shelf_list(
             Shelf.barcode_id.in_(select(Barcode.id).where(Barcode.value == params.barcode_value))
         )
     if params.owner:
-        # V2 FIX
         owner_subquery = select(Owner.id).where(Owner.name == params.owner).scalar_subquery()
         shelf_queryset = shelf_queryset.where(Shelf.owner_id == owner_subquery)
     if params.size_class:
-        # V2 FIX
         size_class_subquery = select(SizeClass.id).where(
             SizeClass.name == params.size_class
         ).scalar_subquery()
@@ -144,7 +140,6 @@ def get_shelf_list(
         sorter = ShelvingSorter(Shelf)
         shelf_queryset = sorter.apply_sorting(shelf_queryset, sort_params)
 
-    # CRITICAL FIX: Paginate now takes only the query object
     return paginate(session, shelf_queryset)
 
 
@@ -167,7 +162,6 @@ def get_shelf_by_barcode_value(value: str, session: Session = Depends(get_sessio
     Retrieve a shelf using a barcode value
     """
     statement = select(Shelf).join(Barcode).where(Barcode.value == value)
-    # V2 FIX: session.exec() -> session.execute().scalars().first()
     shelf = session.execute(statement).scalars().first()
     if not shelf:
         raise NotFound(detail=f"Shelf with barcode value {value} not found")
@@ -177,34 +171,24 @@ def get_shelf_by_barcode_value(value: str, session: Session = Depends(get_sessio
 def get_next_available_position(session: Session, shelf_id: int, direction: str = "low_to_high") -> Optional[int]:
     """
     Calculate the next available shelf position number.
-    
-    Args:
-        session: Database session
-        shelf_id: The shelf ID
-        direction: 'low_to_high' or 'high_to_low'
-    
-    Returns:
-        The next available position number, or None if shelf is full
     """
-    # Get all positions for this shelf
     positions_query = (
-        select(ShelfPosition, ShelfPositionNumber.number)
-        .join(ShelfPositionNumber, ShelfPosition.shelf_position_number_id == ShelfPositionNumber.id)
+        select(ShelfPosition)
         .where(ShelfPosition.shelf_id == shelf_id)
     )
     
     if direction == "high_to_low":
-        positions_query = positions_query.order_by(ShelfPositionNumber.number.desc())
+        positions_query = positions_query.order_by(ShelfPosition.position_number.desc())
     else:
-        positions_query = positions_query.order_by(ShelfPositionNumber.number.asc())
+        positions_query = positions_query.order_by(ShelfPosition.position_number.asc())
     
-    positions = session.execute(positions_query).all()
+    positions = session.execute(positions_query).scalars().all()
     
-    for position, position_number in positions:
+    for position in positions:
         # Check if position is occupied by a tray
         tray = session.execute(
             select(Tray.id).where(Tray.shelf_position_id == position.id).limit(1)
-        ).first()
+        ).scalar()
         
         if tray:
             continue
@@ -212,13 +196,13 @@ def get_next_available_position(session: Session, shelf_id: int, direction: str 
         # Check if position is occupied by a non-tray item
         non_tray = session.execute(
             select(NonTrayItem.id).where(NonTrayItem.shelf_position_id == position.id).limit(1)
-        ).first()
+        ).scalar()
         
         if non_tray:
             continue
         
         # Position is available
-        return position_number
+        return position.position_number
     
     # No available positions
     return None
@@ -228,7 +212,6 @@ def get_next_available_position(session: Session, shelf_id: int, direction: str 
 def get_shelf_next_available_position(value: str, session: Session = Depends(get_session)):
     """
     Retrieve a shelf's next available position using a barcode value.
-    Returns the shelf info along with next_available_position.
     """
     from app.routers.system_settings import get_setting_value
     
@@ -237,10 +220,7 @@ def get_shelf_next_available_position(value: str, session: Session = Depends(get
     if not shelf:
         raise NotFound(detail=f"Shelf with barcode value {value} not found")
     
-    # Get the direction setting
     direction = get_setting_value(session, "shelf_position_auto_assign_direction", "low_to_high")
-    
-    # Get next available position
     next_position = get_next_available_position(session, shelf.id, direction)
     
     return {
@@ -265,12 +245,10 @@ def get_shelved_entities_by_shelf_barcode_value(
     using a shelf barcode value
     """
     shelf_statement = select(Shelf).join(Barcode).where(Barcode.value == value)
-    # V2 FIX
     shelf = session.execute(shelf_statement).scalars().first()
     if not shelf:
         raise NotFound(detail=f"Shelf with barcode value {value} not found")
 
-    # V2 FIX
     shelf_positions = list(
         session.execute(
             select(ShelfPosition).where(ShelfPosition.shelf_id == shelf.id)
@@ -279,7 +257,6 @@ def get_shelved_entities_by_shelf_barcode_value(
 
     position_ids = [p.id for p in shelf_positions]
 
-    # V2 FIX
     trays = {
         t.shelf_position_id: t
         for t in session.execute(
@@ -289,7 +266,6 @@ def get_shelved_entities_by_shelf_barcode_value(
         ).scalars().all()
     }
 
-    # V2 FIX
     non_trays = {
         nt.shelf_position_id: nt
         for nt in session.execute(
@@ -301,8 +277,8 @@ def get_shelved_entities_by_shelf_barcode_value(
 
     results = []
     for shelf_position in shelf_positions:
-        # Get the position number from the related shelf_position_number object.
-        position_number = shelf_position.shelf_position_number.number
+        # Direct access — no more lookup table traversal
+        position_number = shelf_position.position_number
 
         if shelf_position.id in trays:
             results.append(
@@ -330,71 +306,231 @@ def create_shelf(
 ) -> Shelf:
     """
     Create a shelf and efficiently bulk-creates its associated shelf positions.
+    Also generates location strings for the shelf and positions.
     """
     try:
-        shelf_number = shelf_input.shelf_number
-        shelf_number_id = shelf_input.shelf_number_id
-        mutated_data = shelf_input.model_dump(exclude="shelf_number")
         audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"})
+        from app.utilities import start_session_with_audit_info
+        start_session_with_audit_info(audit_info, session)
 
-        if not shelf_number_id and not shelf_number:
-            raise ValidationException(detail="shelf_number_id OR shelf_number required")
-        elif shelf_number and not shelf_number_id:
-            # V2 FIX
-            shelf_num_object = session.execute(select(ShelfNumber).where(ShelfNumber.number == shelf_number)).scalars().first()
-            if not shelf_num_object:
-                raise ValidationException(f"No shelf_number entity exists for shelf number {shelf_number}")
-            mutated_data["shelf_number_id"] = shelf_num_object.id
+        # Handle barcode creation transactionally
+        shelf_data = shelf_input.model_dump(exclude={"barcode_value"})
+        barcode_value = shelf_input.barcode_value
 
-        new_shelf = Shelf(**mutated_data)
+        if barcode_value and not shelf_data.get("barcode_id"):
+            # Check if barcode already exists
+            existing_barcode = session.execute(
+                select(Barcode).where(Barcode.value == barcode_value)
+            ).scalars().first()
+
+            if existing_barcode:
+                raise ValidationException(
+                    detail=f"Barcode '{barcode_value}' already exists in the system."
+                )
+
+            # Look up the 'Shelf' barcode type
+            from app.models.barcode_types import BarcodeType
+            barcode_type = session.execute(
+                select(BarcodeType).where(BarcodeType.name == "Shelf")
+            ).scalars().first()
+
+            if not barcode_type:
+                raise ValidationException(detail="Barcode type 'Shelf' not found.")
+
+            # Validate against allowed pattern if configured
+            if barcode_type.allowed_pattern:
+                if not re.fullmatch(barcode_type.allowed_pattern, barcode_value):
+                    raise ValidationException(
+                        detail=f"Barcode '{barcode_value}' does not match the required pattern for type 'Shelf'."
+                    )
+
+            # Create barcode in the same transaction
+            new_barcode = Barcode(
+                value=barcode_value,
+                type_id=barcode_type.id,
+                withdrawn=False
+            )
+            session.add(new_barcode)
+            session.flush()  # Flush to get the ID without committing
+            shelf_data["barcode_id"] = new_barcode.id
+
+        new_shelf = Shelf(**shelf_data)
         session.add(new_shelf)
-        session.commit()
+        session.flush()
         session.refresh(new_shelf)
+
+        # Location strings are auto-generated via @property
 
         shelf_type = session.get(ShelfType, new_shelf.shelf_type_id)
         if not shelf_type:
-             raise InternalServerError(detail=f"ShelfType ID {new_shelf.shelf_type_id} not found.")
+             raise ValidationException(detail=f"ShelfType ID {new_shelf.shelf_type_id} not found.")
 
-        # --- OPTIMIZED SHELF POSITION CREATION ---
-
-        # 1. Fetch all required ShelfPositionNumber objects in a single query.
+        # Create shelf positions with direct position_number
         required_numbers = list(range(1, shelf_type.max_capacity + 1))
-        # V2 FIX
-        position_numbers_query = select(ShelfPositionNumber).where(ShelfPositionNumber.number.in_(required_numbers))
-        
-        # 2. Create a dictionary map for instant O(1) lookups.
-        position_numbers_map = {p.number: p for p in session.execute(position_numbers_query).scalars().all()}
 
-        shelf_position_list = []
-        for position_num in required_numbers:
-            shelf_pos_num_obj = position_numbers_map.get(position_num)
-            
-            if not shelf_pos_num_obj:
-                raise InternalServerError(f"ShelfPositionNumber for position {position_num} not found in database.")
+        shelf_positions_to_create = [
+            ShelfPosition(
+                shelf_id=new_shelf.id,
+                position_number=position_num,
+            )
+            for position_num in required_numbers
+        ]
 
-            shelf_position_list.append({
-                "shelf_id": new_shelf.id,
-                "shelf_position_number_id": shelf_pos_num_obj.id,
-            })
-
-        if shelf_position_list:
-            shelf_positions_to_create: List[ShelfPosition] = [
-                ShelfPosition(**data) for data in shelf_position_list
-            ]
+        if shelf_positions_to_create:
             session.add_all(shelf_positions_to_create)
-            start_session_with_audit_info(audit_info, session)
-            session.commit()
+            session.flush()
+
+            # Location strings are auto-generated via @property
         
-        # Re-calculate available space.
+        # Re-calculate available space
         if hasattr(new_shelf, 'calc_available_space'):
             new_shelf.calc_available_space(session=session)
             session.add(new_shelf)
-            session.commit()
-            session.refresh(new_shelf)
+            
+        session.commit()
+        session.refresh(new_shelf)
 
         return new_shelf
+    except ValidationException:
+        session.rollback()
+        raise
+    except IntegrityError as e:
+        session.rollback()
+        raise ValidationException(detail=f"Database integrity error: {e.orig}")
     except Exception as e:
+        session.rollback()
         raise InternalServerError(detail=f"{e}")
+
+
+@router.post("/insert", response_model=ShelfInsertOutput, status_code=201)
+def insert_shelf(
+    shelf_input: ShelfInput, session: Session = Depends(get_session)
+):
+    """
+    Insert a shelf at a specific shelf_number on a ladder, shifting
+    existing shelves at that number and above up by 1.
+
+    Uses descending-order processing to avoid unique constraint violations
+    on (ladder_id, shelf_number).
+    """
+    try:
+        audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"})
+        insert_at = shelf_input.shelf_number
+        ladder_id = shelf_input.ladder_id
+
+        # 1. Find all shelves on this ladder at or above the insertion point
+        shelves_to_shift = (
+            session.execute(
+                select(Shelf)
+                .where(Shelf.ladder_id == ladder_id)
+                .where(Shelf.shelf_number >= insert_at)
+                .order_by(Shelf.shelf_number.desc())
+            )
+            .scalars()
+            .all()
+        )
+
+        shifted_count = len(shelves_to_shift)
+
+        # 2. Shift each shelf down by 1 in descending order.
+        # Update both shelf_number and location strings simultaneously to satisfy unique constraints for BOTH columns.
+        for shelf in shelves_to_shift:
+            shelf.shelf_number += 1
+            # Location string is auto-generated via @property
+            session.add(shelf)
+
+            # Location string is auto-generated via @property
+
+            # Flush immediately to release the old shelf_number and location string for the next shelf in the loop
+            session.flush()
+
+        # 4. Handle barcode creation transactionally (same as create_shelf)
+        shelf_data = shelf_input.model_dump(exclude={"barcode_value"})
+        barcode_value = shelf_input.barcode_value
+
+        if barcode_value and not shelf_data.get("barcode_id"):
+            existing_barcode = session.execute(
+                select(Barcode).where(Barcode.value == barcode_value)
+            ).scalars().first()
+
+            if existing_barcode:
+                raise ValidationException(
+                    detail=f"Barcode '{barcode_value}' already exists in the system."
+                )
+
+            from app.models.barcode_types import BarcodeType
+            barcode_type = session.execute(
+                select(BarcodeType).where(BarcodeType.name == "Shelf")
+            ).scalars().first()
+
+            if not barcode_type:
+                raise ValidationException(detail="Barcode type 'Shelf' not found.")
+
+            if barcode_type.allowed_pattern:
+                if not re.fullmatch(barcode_type.allowed_pattern, barcode_value):
+                    raise ValidationException(
+                        detail=f"Barcode '{barcode_value}' does not match the required pattern for type 'Shelf'."
+                    )
+
+            new_barcode = Barcode(
+                value=barcode_value,
+                type_id=barcode_type.id,
+                withdrawn=False
+            )
+            session.add(new_barcode)
+            session.flush()
+            shelf_data["barcode_id"] = new_barcode.id
+
+        # Create the new shelf at the now-vacant number
+        new_shelf = Shelf(**shelf_data)
+        session.add(new_shelf)
+        session.flush()
+        session.refresh(new_shelf)
+
+        # Location strings are auto-generated via @property
+
+        # Create shelf positions
+        shelf_type = session.get(ShelfType, new_shelf.shelf_type_id)
+        if not shelf_type:
+            raise InternalServerError(detail=f"ShelfType ID {new_shelf.shelf_type_id} not found.")
+
+        required_numbers = list(range(1, shelf_type.max_capacity + 1))
+        shelf_positions_to_create = [
+            ShelfPosition(
+                shelf_id=new_shelf.id,
+                position_number=position_num,
+            )
+            for position_num in required_numbers
+        ]
+
+        if shelf_positions_to_create:
+            session.add_all(shelf_positions_to_create)
+            session.flush()
+
+            # Location strings are auto-generated via @property
+
+        # Re-calculate available space
+        if hasattr(new_shelf, 'calc_available_space'):
+            new_shelf.calc_available_space(session=session)
+            session.add(new_shelf)
+
+        # 5. Commit entire transaction
+        session.commit()
+        session.refresh(new_shelf)
+
+        LOGGER.info(
+            f"Inserted shelf at position {insert_at} on ladder {ladder_id}. "
+            f"Shifted {shifted_count} existing shelves."
+        )
+
+        return {"shelf": new_shelf, "shifted_count": shifted_count}
+
+    except IntegrityError as e:
+        session.rollback()
+        raise ValidationException(detail=f"Integrity error during insert-and-shift: {e.orig}")
+    except Exception as e:
+        session.rollback()
+        raise InternalServerError(detail=f"Insert-and-shift failed: {e}")
 
 
 @router.patch("/{id}", response_model=ShelfDetailWriteOutput)
@@ -413,12 +549,49 @@ def update_shelf(
 
     mutated_data = shelf_input.model_dump(exclude_unset=True)
 
-    # --- START: LOGIC TO HANDLE SHELF CAPACITY CHANGES ---
+    # Handle barcode_value transactionally (same pattern as create_shelf)
+    barcode_value = mutated_data.pop("barcode_value", None)
     
-    # Check if the shelf_type_id is being changed and is different from the current one.
+    if barcode_value:
+        existing_barcode = session.execute(
+            select(Barcode).where(Barcode.value == barcode_value)
+        ).scalars().first()
+
+        # Only throw an error if the barcode exists AND it belongs to a different entity
+        if existing_barcode and existing_shelf.barcode_id != existing_barcode.id:
+            raise ValidationException(
+                detail=f"Barcode '{barcode_value}' already exists in the system."
+            )
+            
+        # If there's no barcode_id provided but we have a text value to create, create a new one
+        if not mutated_data.get("barcode_id") and not existing_barcode:
+            from app.models.barcode_types import BarcodeType
+            barcode_type = session.execute(
+                select(BarcodeType).where(BarcodeType.name == "Shelf")
+            ).scalars().first()
+
+            if not barcode_type:
+                raise ValidationException(detail="Barcode type 'Shelf' not found.")
+
+            if barcode_type.allowed_pattern:
+                if not re.fullmatch(barcode_type.allowed_pattern, barcode_value):
+                    raise ValidationException(
+                        detail=f"Barcode '{barcode_value}' does not match the required pattern for type 'Shelf'."
+                    )
+
+            new_barcode = Barcode(
+                value=barcode_value,
+                type_id=barcode_type.id,
+                withdrawn=False
+            )
+            session.add(new_barcode)
+            session.flush()
+            mutated_data["barcode_id"] = new_barcode.id
+
+    # --- LOGIC TO HANDLE SHELF CAPACITY CHANGES ---
+    
     if "shelf_type_id" in mutated_data and mutated_data["shelf_type_id"] != existing_shelf.shelf_type_id:
         
-        # Get the old and new shelf type objects to compare their capacities.
         old_shelf_type = session.get(ShelfType, existing_shelf.shelf_type_id)
         new_shelf_type = session.get(ShelfType, mutated_data["shelf_type_id"])
 
@@ -430,77 +603,53 @@ def update_shelf(
 
         # --- PATH 1: DECREASING CAPACITY ---
         if new_capacity < old_capacity:
-            # We need to remove positions, but first, we must verify they are empty.
             num_to_remove = old_capacity - new_capacity
 
-            # Find the positions with the highest numbers to remove them.
             positions_to_check_query = (
                 select(ShelfPosition)
-                .join(ShelfPositionNumber, ShelfPosition.shelf_position_number_id == ShelfPositionNumber.id)
                 .where(ShelfPosition.shelf_id == id)
-                .order_by(ShelfPositionNumber.number.desc())
+                .order_by(ShelfPosition.position_number.desc())
                 .limit(num_to_remove)
             )
-            # V2 FIX
             positions_to_delete = session.execute(positions_to_check_query).scalars().all()
             position_ids_to_delete = [p.id for p in positions_to_delete]
 
             if position_ids_to_delete:
-                # Check for ANY trays or non-tray items in the positions slated for deletion.
-                # V2 FIX
                 occupied_tray = session.execute(select(Tray.id).where(Tray.shelf_position_id.in_(position_ids_to_delete)).limit(1)).first()
-                # V2 FIX
                 occupied_non_tray = session.execute(select(NonTrayItem.id).where(NonTrayItem.shelf_position_id.in_(position_ids_to_delete)).limit(1)).first()
 
                 if occupied_tray or occupied_non_tray:
-                    # An item exists! Block the update and throw a clear error.
                     raise ValidationException(detail="Shelf is not Empty")
 
-                # If we reach here, the positions are empty and safe to delete.
                 for pos in positions_to_delete:
                     session.delete(pos)
         
         # --- PATH 2: INCREASING CAPACITY ---
         elif new_capacity > old_capacity:
-            # We need to add new empty positions.
             new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
             
-            position_numbers_query = (
-                select(ShelfPositionNumber)
-                .filter(ShelfPositionNumber.number.in_(new_position_numbers_range))
-            )
-            # V2 FIX
-            position_numbers_map = {p.number: p for p in session.execute(position_numbers_query).scalars().all()}
-
             for position_num in new_position_numbers_range:
-                shelf_pos_num_obj = position_numbers_map.get(position_num)
-                if not shelf_pos_num_obj:
-                    raise InternalServerError(f"ShelfPositionNumber for position {position_num} not found in database.")
-                
                 new_position = ShelfPosition(
                     shelf_id=id,
-                    shelf_position_number_id=shelf_pos_num_obj.id,
+                    position_number=position_num,
                 )
                 session.add(new_position)
 
-    # --- END: LOGIC TO HANDLE SHELF CAPACITY CHANGES ---
-
-    # Apply all other attribute changes from the request.
+    # Apply all other attribute changes
     for key, value in mutated_data.items():
         setattr(existing_shelf, key, value)
 
-    # Update the timestamp and commit all changes (deletes, adds, updates).
     setattr(existing_shelf, "update_dt", datetime.now(timezone.utc))
     session.add(existing_shelf)
-    session.commit()
-    session.refresh(existing_shelf)
+    session.flush()
 
-    # Re-calculate available space now that positions have changed.
+    # Re-calculate available space
     if hasattr(existing_shelf, 'calc_available_space'):
         existing_shelf.calc_available_space(session=session)
         session.add(existing_shelf)
-        session.commit()
-        session.refresh(existing_shelf)
+        
+    session.commit()
+    session.refresh(existing_shelf)
 
     return existing_shelf
 
@@ -513,6 +662,23 @@ def delete_shelf(id: int, session: Session = Depends(get_session)):
     shelf = session.get(Shelf, id)
 
     if shelf:
+        # Check for items on this shelf
+        # V2: Use select(func.count()) for efficiency
+        items_count_query = (
+            select(func.count(ShelfPosition.id))
+            .where(ShelfPosition.shelf_id == id)
+            .where(
+                (ShelfPosition.tray != None) | (ShelfPosition.non_tray_item != None)
+            )
+        )
+        items_count = session.execute(items_count_query).scalar()
+
+        if items_count > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot delete Shelf {shelf.shelf_number}: {items_count} items are shelved on it."
+            )
+
         session.delete(shelf)
         session.commit()
 
@@ -521,3 +687,35 @@ def delete_shelf(id: int, session: Session = Depends(get_session)):
         )
 
     raise NotFound(detail=f"Shelf ID {id} Not Found")
+
+
+@router.patch("/bulk", response_model=List[ShelfDetailWriteOutput])
+def bulk_update_shelves(
+    updates: List[ShelfBulkUpdateInput],
+    session: Session = Depends(get_session),
+):
+    """
+    Bulk update shelves. Each item must include an 'id' field.
+    Designed for batch-editing owner, shelf_type, container_type, sort_priority.
+    """
+    results = []
+    for update in updates:
+        data = update.model_dump(exclude_unset=True)
+        shelf_id = data.pop("id")
+
+        shelf = session.get(Shelf, shelf_id)
+        if not shelf:
+            raise NotFound(detail=f"Shelf ID {shelf_id} Not Found")
+
+        for key, value in data.items():
+            setattr(shelf, key, value)
+
+        setattr(shelf, "update_dt", datetime.now(timezone.utc))
+        session.add(shelf)
+        results.append(shelf)
+
+    session.commit()
+    for r in results:
+        session.refresh(r)
+
+    return results

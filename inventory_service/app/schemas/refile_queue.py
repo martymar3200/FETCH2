@@ -83,12 +83,12 @@ class NestedShelfPositionNumberForRefileQueue(BaseModel):
 class NestedShelfForRefileQueue(BaseModel):
     id: int
     barcode: Optional[BarcodeDetailReadOutput] = None
-    shelf_number: NestedShelfNumberForRefileQueue
+    shelf_number: int
 
 
 class ShelfPositionNestedForRefileQueue(BaseModel):
     id: int
-    shelf_position_number: NestedShelfPositionNumberForRefileQueue
+    position_number: int
     shelf: NestedShelfForRefileQueue
     location: Optional[str] = None
     internal_location: Optional[str] = None
@@ -171,14 +171,10 @@ class RefileQueueWriteOutput(BaseModel):
                         },
                         "shelf_position": {
                             "id": 1,
-                            "shelf_position_number": {
-                                "number": 1
-                            },
+                            "position_number": 1,
                             "shelf": {
                                 "id": 1,
-                                "shelf_number": {
-                                    "number": 1
-                                },
+                                "shelf_number": 1,
                                 "barcode": {
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "value": "5901234123457",
@@ -229,14 +225,10 @@ class RefileQueueWriteOutput(BaseModel):
                     "shelf_position_id": 1,
                     "shelf_position": {
                         "id": 1,
-                        "shelf_position_number": {
-                            "number": 1
-                        },
+                        "position_number": 1,
                         "shelf": {
                             "id": 1,
-                            "shelf_number": {
-                                "number": 1
-                            },
+                            "shelf_number": 1,
                             "barcode": {
                                 "id": "550e8400-e29b-41d4-a716-446655440000",
                                 "value": "5901234123457",

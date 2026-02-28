@@ -57,35 +57,8 @@ const routes = [
         }
       },
       {
-        name: 'admin-location-manage-buildings',
-        path: 'admin/manage/buildings',
-        component: () => import('@/pages/AdminPage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresPerm: 'can_manage_locations'
-        }
-      },
-      {
-        name: 'admin-location-manage-modules',
-        path: 'admin/manage/:buildingId/modules',
-        component: () => import('@/pages/AdminPage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresPerm: 'can_manage_locations'
-        }
-      },
-      {
-        name: 'admin-location-manage-aisles',
-        path: 'admin/manage/:buildingId/:moduleId/aisles',
-        component: () => import('@/pages/AdminPage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresPerm: 'can_manage_locations'
-        }
-      },
-      {
-        name: 'admin-location-manage-ladders',
-        path: 'admin/manage/:buildingId/:moduleId/:aisleId/:sideId/ladders',
+        name: 'admin-location-explorer',
+        path: 'admin/locations',
         component: () => import('@/pages/AdminPage.vue'),
         meta: {
           requiresAuth: true,
@@ -99,15 +72,6 @@ const routes = [
         meta: {
           requiresAuth: true,
           requiresPerm: 'can_manage_list_configurations'
-        }
-      },
-      {
-        name: 'admin-location-manage-shelves',
-        path: 'admin/manage/:buildingId/:moduleId/:aisleId/:sideId/:ladderId/shelves',
-        component: () => import('@/pages/AdminPage.vue'),
-        meta: {
-          requiresAuth: true,
-          requiresPerm: 'can_manage_locations'
         }
       },
       {

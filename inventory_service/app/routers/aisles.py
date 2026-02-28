@@ -1,12 +1,10 @@
-# /code/app/routers/aisles.py - REFACRORED TO SQLALCHEMY V2
+# /code/app/routers/aisles.py - REFACTORED: Removed AisleNumber lookup table dependency
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
-# CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
-from fastapi_pagination.ext.sqlalchemy import paginate 
-# CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
-from sqlalchemy import select     # select is imported from sqlalchemy now
+from fastapi_pagination.ext.sqlalchemy import paginate
+from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from typing import Optional
@@ -14,8 +12,13 @@ from typing import Optional
 from app.database.session import get_session
 from app.filter_params import SortParams, AisleFilterParams
 from app.models.aisles import Aisle
-from app.models.aisle_numbers import AisleNumber
 from app.models.modules import Module
+from app.models.sides import Side
+from app.models.ladders import Ladder
+from app.models.shelves import Shelf
+from app.models.shelf_positions import ShelfPosition
+from app.models.trays import Tray
+from app.models.non_tray_items import NonTrayItem
 from app.schemas.aisles import (
     AisleInput,
     AisleUpdateInput,
@@ -51,8 +54,7 @@ def get_aisle_list(
     query = select(Aisle).join(Module, Aisle.module_id == Module.id)
 
     if search:
-        query = query.join(AisleNumber, Aisle.aisle_number_id == AisleNumber.id).where(
-            AisleNumber.number == search)
+        query = query.where(Aisle.aisle_number == int(search))
 
     if params.module_number:
         query = query.where(Module.module_number == params.module_number)
@@ -65,7 +67,6 @@ def get_aisle_list(
 
     # Validate and Apply sorting based on sort_params
     if sort_params.sort_by:
-        # Apply sorting using BaseSorter
         sorter = AisleSorter(Aisle)
         query = sorter.apply_sorting(query, sort_params)
 
@@ -77,7 +78,6 @@ def get_aisle_detail(id: int, session: Session = Depends(get_session)):
     """
     Retrieves the details of an aisle from the database using the provided ID.
     """
-    # Retrieve the aisle from the database using the provided ID
     aisle = session.get(Aisle, id)
 
     if aisle:
@@ -92,30 +92,7 @@ def create_aisle(aisle_input: AisleInput, session: Session = Depends(get_session
     Create a new aisle.
     """
     try:
-        # Check if aisle # or aisle_number_id
-        aisle_number = aisle_input.aisle_number
-        aisle_number_id = aisle_input.aisle_number_id
-        mutated_data = aisle_input.model_dump(exclude="aisle_number")
-        if not aisle_number_id and not aisle_number:
-            raise ValidationException(
-                detail=f"aisle_number_id OR aisle_number required"
-            )
-        elif aisle_number and not aisle_number_id:
-            # get aisle_number_id from aisle number
-            # CRITICAL V2 CONVERSION: session.query().filter().first() -> session.execute(select(...)).scalars().first()
-            aisle_num_object = (
-                session.execute(select(AisleNumber).filter(AisleNumber.number == aisle_number))
-                .scalars()
-                .first()
-            )
-            if not aisle_num_object:
-                raise ValidationException(
-                    detail=f"No aisle_number entity exists for aisle number {aisle_number}"
-                )
-            mutated_data["aisle_number_id"] = aisle_num_object.id
-
-        # Create a new Aisle object
-        new_aisle = Aisle(**mutated_data)
+        new_aisle = Aisle(**aisle_input.model_dump())
         session.add(new_aisle)
         session.commit()
         session.refresh(new_aisle)
@@ -134,7 +111,6 @@ def update_aisle(
     Updates an aisle with the given ID using the provided aisle data.
     """
     try:
-        # Get the existing aisle
         existing_aisle = session.get(Aisle, id)
 
         if not existing_aisle:
@@ -165,6 +141,25 @@ def delete_aisle(id: int, session: Session = Depends(get_session)):
     aisle = session.get(Aisle, id)
 
     if aisle:
+        # Check for items on any shelf in this aisle
+        items_count_query = (
+            select(func.count(ShelfPosition.id))
+            .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
+            .join(Ladder, Shelf.ladder_id == Ladder.id)
+            .join(Side, Ladder.side_id == Side.id)
+            .where(Side.aisle_id == id)
+            .where(
+                (ShelfPosition.tray != None) | (ShelfPosition.non_tray_item != None)
+            )
+        )
+        items_count = session.execute(items_count_query).scalar()
+
+        if items_count > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot delete Aisle {aisle.aisle_number}: {items_count} items are shelved in its side(s)."
+            )
+
         session.delete(aisle)
         session.commit()
         return HTTPException(

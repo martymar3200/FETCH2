@@ -21,8 +21,12 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # 1. Update BatchUploadStatus Enum: Add 'Uploaded'
     # Use autocommit block for ALTER TYPE which cannot run inside a transaction block in some PG versions
-    with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE batch_upload_status_enum ADD VALUE IF NOT EXISTS 'Uploaded'")
+    conn = op.get_bind()
+    res = conn.execute(sa.text("SELECT 1 FROM pg_enum JOIN pg_type ON pg_type.oid = pg_enum.enumtypid WHERE pg_type.typname = 'batch_upload_status_enum' AND pg_enum.enumlabel = 'Uploaded'")).scalar()
+    if not res:
+        op.execute("COMMIT")
+        op.execute("ALTER TYPE batch_upload_status_enum ADD VALUE 'Uploaded'")
+        op.execute("BEGIN")
 
     # 2. Migrate existing data: 'Completed' (old meaning) -> 'Uploaded'
     # Doing this allows 'Completed' to be reused for the new meaning (All Requests Done)

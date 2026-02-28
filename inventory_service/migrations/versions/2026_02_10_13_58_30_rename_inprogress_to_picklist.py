@@ -20,10 +20,21 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Rename 'InProgress' to 'PickList' in the request_status enum
-    # This requires Postgres 10+
-    op.execute("ALTER TYPE request_status RENAME VALUE 'InProgress' TO 'PickList'")
+    conn = op.get_bind()
+    res = conn.execute(sa.text("SELECT 1 FROM pg_enum JOIN pg_type ON pg_type.oid = pg_enum.enumtypid WHERE pg_type.typname = 'request_status' AND pg_enum.enumlabel = 'InProgress'")).scalar()
+    if res:
+        # PostgreSQL doesn't allow ALTER TYPE inside a transaction block gracefully if there are errors,
+        # but since Alembic runs inside a transaction, we commit first, run the alter type, and start a new transaction.
+        op.execute("COMMIT")
+        op.execute("ALTER TYPE request_status RENAME VALUE 'InProgress' TO 'PickList'")
+        op.execute("BEGIN")
 
 
 def downgrade() -> None:
     # Rename 'PickList' back to 'InProgress'
-    op.execute("ALTER TYPE request_status RENAME VALUE 'PickList' TO 'InProgress'")
+    conn = op.get_bind()
+    res = conn.execute(sa.text("SELECT 1 FROM pg_enum JOIN pg_type ON pg_type.oid = pg_enum.enumtypid WHERE pg_type.typname = 'request_status' AND pg_enum.enumlabel = 'PickList'")).scalar()
+    if res:
+        op.execute("COMMIT")
+        op.execute("ALTER TYPE request_status RENAME VALUE 'PickList' TO 'InProgress'")
+        op.execute("BEGIN")

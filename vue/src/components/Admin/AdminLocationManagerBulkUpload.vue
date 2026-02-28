@@ -99,7 +99,7 @@
                 sort_by: 'aisle_number'
               }"
               option-value="id"
-              :option-label="opt => opt.aisle_number.number"
+              option-label="aisle_number"
               :placeholder="'Select Aisle'"
               :clearable="false"
               :disabled="!bulkUploadLocationForm.module_id"

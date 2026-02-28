@@ -70,7 +70,7 @@ class AisleNumberNestedForBuilding(BaseModel):
 
 class AisleNestedForBuilding(BaseModel):
     id: int
-    aisle_number: AisleNumberNestedForBuilding
+    aisle_number: int
 
 
 class ModuleNestedForBuilding(BaseModel):

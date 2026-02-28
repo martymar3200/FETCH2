@@ -249,12 +249,12 @@ class NestedBuildingForRefileJob(BaseModel):
 class NestedShelfForRefileJob(BaseModel):
     id: int
     barcode: Optional[BarcodeDetailReadOutput] = None
-    shelf_number: NestedShelfNumberForRefileJob
+    shelf_number: int
 
 
 class ShelfPositionNestedForRefileJob(BaseModel):
     id: int
-    shelf_position_number: NestedShelfPositionNumberForRefileJob
+    position_number: int
     shelf: NestedShelfForRefileJob
     location: Optional[str] = None
     internal_location: Optional[str] = None
@@ -378,14 +378,10 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
                             "shelf_position": {
                                 "location": "Cabin Branch-04-57-L-23-10-08",
                                 "internal_location": "01-04-57-L-23-10-08",
-                                "shelf_position_number": {
-                                    "number": 1
-                                },
+                                "position_number": 1,
                                 "shelf": {
                                     "id": 1,
-                                    "shelf_number": {
-                                        "number": 1
-                                    },
+                                    "shelf_number": 1,
                                     "barcode": {
                                         "id": "550e8400-e29b-41d4-a716-446655440000",
                                         "value": "5901234123457",
@@ -433,14 +429,10 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
                         "shelf_position": {
                             "location": "Cabin Branch-04-57-L-23-10-08",
                             "internal_location": "01-04-57-L-23-10-08",
-                            "shelf_position_number": {
-                                "number": 1
-                            },
+                            "position_number": 1,
                             "shelf": {
                                 "id": 1,
-                                "shelf_number": {
-                                    "number": 1
-                                },
+                                "shelf_number": 1,
                                 "barcode": {
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "value": "5901234123457",
@@ -500,14 +492,10 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
                             "shelf_position": {
                                 "location": "Cabin Branch-04-57-L-23-10-08",
                                 "internal_location": "01-04-57-L-23-10-08",
-                                "shelf_position_number": {
-                                    "number": 1
-                                },
+                                "position_number": 1,
                                 "shelf": {
                                     "id": 1,
-                                    "shelf_number": {
-                                        "number": 1
-                                    },
+                                    "shelf_number": 1,
                                     "barcode": {
                                         "id": "550e8400-e29b-41d4-a716-446655440000",
                                         "value": "5901234123457",
@@ -526,14 +514,10 @@ class RefileJobDetailOutput(RefileJobBaseOutput):
                         "shelf_position": {
                             "location": "Cabin Branch-04-57-L-23-10-08",
                             "internal_location": "01-04-57-L-23-10-08",
-                            "shelf_position_number": {
-                                "number": 1
-                            },
+                            "position_number": 1,
                             "shelf": {
                                 "id": 1,
-                                "shelf_number": {
-                                    "number": 1
-                                },
+                                "shelf_number": 1,
                                 "barcode": {
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "value": "5901234123457",

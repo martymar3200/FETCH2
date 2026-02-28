@@ -325,12 +325,11 @@ def process_tray_item_move(item: Item, source_tray: Tray, destination_tray: Tray
                         update_dt=update_dt
                     )
                 )
-                session.commit()
-
             update_shelf_space_after_tray(
-                destination_tray, destination_tray.shelf_position_id,
+                session, destination_tray, destination_tray.shelf_position_id,
                 source_tray.shelf_position_id
-                )
+            )
+            session.commit()
     except Exception as e:
         print(f"Error in process_tray_item_move: {e}")
 
@@ -344,9 +343,9 @@ def process_tray_move(session: Session, tray: Tray, source_shelf: Shelf,
     tray.shelf_position_id = destination_shelf_position_id
     tray.update_dt = update_dt
     session.add(tray)
+    update_shelf_space_after_tray(session, tray, destination_shelf_position_id, old_position_id)
     session.commit()
     session.refresh(tray)
-    update_shelf_space_after_tray(tray, destination_shelf_position_id, old_position_id)
 
 
 def process_non_tray_item_move(session: Session, non_tray_item: NonTrayItem, source_shelf: Shelf,
@@ -357,9 +356,9 @@ def process_non_tray_item_move(session: Session, non_tray_item: NonTrayItem, sou
     non_tray_item.shelf_position_id = destination_shelf_position_id
     non_tray_item.update_dt = update_dt
     session.add(non_tray_item)
+    update_shelf_space_after_non_tray(session, non_tray_item, destination_shelf_position_id, old_position_id)
     session.commit()
     session.refresh(non_tray_item)
-    update_shelf_space_after_non_tray(non_tray_item, destination_shelf_position_id, old_position_id)
     return non_tray_item
 
 
@@ -449,38 +448,6 @@ def manage_verification_job_change_action(verification_job: VerificationJob, upd
             session.commit()
     except Exception as e:
         print(f"Error in manage_verification_job_change_action: {e}")
-        item_query = select(Item).where(Item.accession_job_id == accession_job.id)
-        items = session.execute(item_query).scalars().all()
-        if items:
-                for item in items:
-                    defunct_barcodes.append(item.barcode_id)
-                    session.delete(item)
-            
-            # Delete Accessioned Trays
-        tray_query = select(Tray).where(Tray.accession_job_id == accession_job.id)
-        trays = session.execute(tray_query).scalars().all()
-        if trays:
-                for tray in trays:
-                    defunct_barcodes.append(tray.barcode_id)
-                    session.delete(tray)
-            
-            # Delete Accessioned Non-Trays
-        non_tray_query = select(NonTrayItem).where(
-                NonTrayItem.accession_job_id == accession_job.id
-            )
-        non_trays_items = session.execute(non_tray_query).scalars().all()
-        if non_trays_items:
-                for non_tray_item in non_trays_items:
-                    defunct_barcodes.append(non_tray_item.barcode_id)
-                    session.delete(non_tray_item)
-
-                for barcode_id in defunct_barcodes:
-                    barcode_query = select(Barcode).where(Barcode.id == barcode_id)
-                barcode = session.execute(barcode_query).scalars().first()
-                if barcode:
-                    session.delete(barcode)
-
-        session.commit()
 
 
 def manage_verification_job_transition(verification_job: VerificationJob, original_status: str, audit_info: dict):
@@ -540,12 +507,11 @@ def process_tray_item_move(item: Item, source_tray: Tray, destination_tray: Tray
                     update_dt=update_dt
                 )
             )
-            session.commit()
-
         update_shelf_space_after_tray(
-            destination_tray, destination_tray.shelf_position_id,
+            session, destination_tray, destination_tray.shelf_position_id,
             source_tray.shelf_position_id
         )
+        session.commit()
 
 
 def process_tray_move(session: Session, tray: Tray, source_shelf: Shelf,
@@ -555,9 +521,9 @@ def process_tray_move(session: Session, tray: Tray, source_shelf: Shelf,
     tray.shelf_position_id = destination_shelf_position_id
     tray.update_dt = update_dt
     session.add(tray)
+    update_shelf_space_after_tray(session, tray, destination_shelf_position_id, old_position_id)
     session.commit()
     session.refresh(tray)
-    update_shelf_space_after_tray(tray, destination_shelf_position_id, old_position_id)
 
 
 def process_non_tray_item_move(session: Session, non_tray_item: NonTrayItem, source_shelf: Shelf,
@@ -567,9 +533,9 @@ def process_non_tray_item_move(session: Session, non_tray_item: NonTrayItem, sou
     non_tray_item.shelf_position_id = destination_shelf_position_id
     non_tray_item.update_dt = update_dt
     session.add(non_tray_item)
+    update_shelf_space_after_non_tray(session, non_tray_item, destination_shelf_position_id, old_position_id)
     session.commit()
     session.refresh(non_tray_item)
-    update_shelf_space_after_non_tray(non_tray_item, destination_shelf_position_id, old_position_id)
     return non_tray_item
 
 

@@ -249,10 +249,7 @@ export const useBuildingStore = defineStore('building-store', {
 
         // add the newly added aisle to the top of the moduleDetail aisle array with a manual serialized aisle_number
         this.moduleDetails.aisles = [
-          {
-            ...res.data,
-            aisle_number: { number: payload.aisle_number }
-          },
+          res.data,
           ...this.moduleDetails.aisles
         ]
 
@@ -266,13 +263,7 @@ export const useBuildingStore = defineStore('building-store', {
           side_orientation_id: 2
         })
       } catch (error) {
-        if (error.response.status == 422 && error.response?.data?.detail.includes('No aisle_number entity')) {
-          // if we get a 422 error related to the number passed in not existing create that number and re run the aisle creation
-          await this.postAisleNumber(payload.aisle_number)
-          await this.postAisle(payload)
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async patchAisle (payload) {
@@ -280,18 +271,7 @@ export const useBuildingStore = defineStore('building-store', {
         const res = await this.$api.patch(`${inventoryServiceApi.aisles}${payload.id}`, payload)
 
         // update the specific aisle with the response info
-        this.moduleDetails.aisles[this.moduleDetails.aisles.findIndex(a => a.id == payload.id)] = {
-          ...res.data,
-          aisle_number: { number: payload.aisle_number }
-        }
-      } catch (error) {
-        throw error
-      }
-    },
-    async postAisleNumber (aisleNumber) {
-      try {
-        // adds a new aisle number to the db to be utilized in aisle creation
-        await this.$api.post(inventoryServiceApi.aislesNumbers, { number: aisleNumber })
+        this.moduleDetails.aisles[this.moduleDetails.aisles.findIndex(a => a.id == payload.id)] = res.data
       } catch (error) {
         throw error
       }
@@ -342,10 +322,7 @@ export const useBuildingStore = defineStore('building-store', {
 
         // add the newly added ladder to the top of the sideDetail ladders array
         this.sideDetails.ladders = [
-          {
-            ...res.data,
-            ladder_number: { number: payload.ladder_number }
-          },
+          res.data,
           ...this.sideDetails.ladders
         ]
       } catch (error) {
@@ -357,10 +334,7 @@ export const useBuildingStore = defineStore('building-store', {
         const res = await this.$api.patch(`${inventoryServiceApi.ladders}${payload.id}`, payload)
 
         // update the specific ladder with the response info
-        this.sideDetails.ladders[this.sideDetails.ladders.findIndex(l => l.id == payload.id)] = {
-          ...res.data,
-          ladder_number: { number: payload.ladder_number }
-        }
+        this.sideDetails.ladders[this.sideDetails.ladders.findIndex(l => l.id == payload.id)] = res.data
       } catch (error) {
         throw error
       }
@@ -395,10 +369,7 @@ export const useBuildingStore = defineStore('building-store', {
 
         // add the newly added shelve to the top of the shelves list
         this.shelves = [
-          {
-            ...res.data,
-            shelf_number: { number: payload.shelf_number }
-          },
+          res.data,
           ...this.shelves
         ]
       } catch (error) {
@@ -410,10 +381,15 @@ export const useBuildingStore = defineStore('building-store', {
         const res = await this.$api.patch(`${inventoryServiceApi.shelves}${payload.id}`, payload)
 
         // update the specific shelve with the response info
-        this.shelves[this.shelves.findIndex(s => s.id == payload.id)] = {
-          ...res.data,
-          shelf_number: { number: payload.shelf_number }
-        }
+        this.shelves[this.shelves.findIndex(s => s.id == payload.id)] = res.data
+      } catch (error) {
+        throw error
+      }
+    },
+    async postInsertShelve (payload) {
+      try {
+        const res = await this.$api.post(`${inventoryServiceApi.shelves}insert`, payload)
+        return res
       } catch (error) {
         throw error
       }
@@ -432,6 +408,46 @@ export const useBuildingStore = defineStore('building-store', {
         throw error
       }
     },
+    async deleteBuilding (id) {
+      try {
+        const res = await this.$api.delete(`${inventoryServiceApi.buildings}${id}`)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async deleteModule (id) {
+      try {
+        const res = await this.$api.delete(`${inventoryServiceApi.modules}${id}`)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async deleteAisle (id) {
+      try {
+        const res = await this.$api.delete(`${inventoryServiceApi.aisles}${id}`)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async deleteLadder (id) {
+      try {
+        const res = await this.$api.delete(`${inventoryServiceApi.ladders}${id}`)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async deleteShelve (id) {
+      try {
+        const res = await this.$api.delete(`${inventoryServiceApi.shelves}${id}`)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
     async postBulkLocation (payload) {
       try {
         // create a formData Object and assign the file to the formData to be passed to api as 'multipart/form-data' content
@@ -444,6 +460,38 @@ export const useBuildingStore = defineStore('building-store', {
           formData.append(key, value)
         })
         const res = await this.$api.post(`${inventoryServiceApi.batchUploadLocationManagement}`, formData)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async postBulkUpdateLocations (payload) {
+      try {
+        let formData = new FormData()
+        Object.entries(payload).forEach(entry => {
+          const [
+            key,
+            value
+          ] = entry
+          formData.append(key, value)
+        })
+        const res = await this.$api.patch(`${inventoryServiceApi.batchUploadLocationManagement}`, formData)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async patchBulkLadders (payload) {
+      try {
+        const res = await this.$api.patch(`${inventoryServiceApi.ladders}bulk`, payload)
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    async patchBulkShelves (payload) {
+      try {
+        const res = await this.$api.patch(`${inventoryServiceApi.shelves}bulk`, payload)
         return res
       } catch (error) {
         throw error

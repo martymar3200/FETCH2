@@ -29,7 +29,10 @@ class Building(Base): # <--- Inherit from Base
 
     # --- RELATIONSHIPS ---
     # modules in a building
-    modules: Mapped[List["Module"]] = relationship(back_populates="building")
+    modules: Mapped[List["Module"]] = relationship(
+        back_populates="building",
+        cascade="all, delete-orphan"
+    )
     shelving_jobs: Mapped[List["ShelvingJob"]] = relationship(back_populates="building")
     pick_lists: Mapped[List["PickList"]] = relationship(back_populates="building")
     requests: Mapped[List["Request"]] = relationship(back_populates="building")

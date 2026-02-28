@@ -92,12 +92,12 @@ class NestedShelfPositionNumberForWithdrawJob(BaseModel):
 class NestedShelfForWithdrawJob(BaseModel):
     id: int
     barcode: Optional[BarcodeDetailOutput] = None
-    shelf_number: NestedShelfNumberForWithdrawJob
+    shelf_number: int
 
 
 class ShelfPositionNestedForWithdrawJob(BaseModel):
     id: int
-    shelf_position_number: NestedShelfPositionNumberForWithdrawJob
+    position_number: int
     shelf: NestedShelfForWithdrawJob
     location: Optional[str] = None
     internal_location: Optional[str] = None
@@ -316,9 +316,7 @@ class WithdrawJobWriteOutput(WithdrawJobListOutput):
                                 }
                             },
                             "shelf_id": 1,
-                            "shelf_position_number": {
-                                "number": 1
-                            }
+                            "shelf_position_number": 1
                         },
                         "create_dt": "2023-10-08T20:46:56.764426",
                         "update_dt": "2023-10-08T20:46:56.764426"
@@ -352,9 +350,7 @@ class WithdrawJobWriteOutput(WithdrawJobListOutput):
                                 }
                             },
                             "shelf_id": 1,
-                            "shelf_position_number": {
-                                "number": 1
-                            }
+                            "shelf_position_number": 1
                         },
                         "items": [
                             {
@@ -477,9 +473,7 @@ class WithdrawJobDetailOutput(WithdrawJobBaseOutput):
                                 }
                             },
                             "shelf_id": 1,
-                            "shelf_position_number": {
-                                "number": 1
-                            }
+                            "shelf_position_number": 1
                         },
                         "create_dt": "2023-10-08T20:46:56.764426",
                         "update_dt": "2023-10-08T20:46:56.764426"
@@ -513,9 +507,7 @@ class WithdrawJobDetailOutput(WithdrawJobBaseOutput):
                                 }
                             },
                             "shelf_id": 1,
-                            "shelf_position_number": {
-                                "number": 1
-                            }
+                            "shelf_position_number": 1
                         },
                         "items": [
                             {

@@ -413,9 +413,7 @@ class ShelvingAssignmentService:
         if ladder_id:
             location_conditions.append(Shelf.ladder_id == ladder_id)
         elif aisle_id:
-            location_conditions.append(Ladder.side_id.in_(
-                select(Side.id).where(Side.aisle_id == aisle_id)
-            ))
+            location_conditions.append(Side.aisle_id == aisle_id)
         elif module_id:
             location_conditions.append(Aisle.module_id == module_id)
         else:
@@ -486,7 +484,14 @@ class ShelvingAssignmentService:
                 .where(ShelvingJobContainer.status == ShelvingJobContainerStatus.ASSIGNED)
                 .exists()
             ))
-            .order_by(asc(ShelfPosition.location))
+            .order_by(
+                asc(Module.module_number),
+                asc(Aisle.aisle_number),
+                asc(Side.side_orientation_id),
+                asc(Ladder.ladder_number),
+                asc(Shelf.shelf_number),
+                asc(ShelfPosition.position_number)
+            )
             .limit(count_needed)
             .with_for_update()  # Lock positions to prevent race conditions
         )

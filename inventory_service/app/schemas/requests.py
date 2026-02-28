@@ -156,7 +156,7 @@ class ShelfNestedForRequest(BaseModel):
 class ShelfPositionNestedForRequest(BaseModel):
     id: int
     shelf_id: int
-    shelf_position_number: ShelfPositionNumberNestedForRequest
+    position_number: int
     shelf: Optional[ShelfNestedForRequest] = None
     location: Optional[str] = None
     internal_location: Optional[str] = None
@@ -340,9 +340,7 @@ class RequestDetailWriteOutput(RequestBaseOutput):
                             },
                             "location": "Cabin Branch-04-57-L-23-10-08",
                             "internal_location": "01-04-57-L-23-10-08",
-                            "shelf_position_number": {
-                                "number": 1
-                            },
+                            "position_number": 1,
                         },
                     },
                 },
@@ -486,9 +484,7 @@ class RequestListOutput(RequestBaseOutput):
                             },
                             "location": "Cabin Branch-04-57-L-23-10-08",
                             "internal_location": "01-04-57-L-23-10-08",
-                            "shelf_position_number": {
-                                "number": 2
-                            },
+                            "position_number": 2,
                         },
                     },
                 },
@@ -585,9 +581,7 @@ class RequestDetailReadOutput(RequestDetailWriteOutput):
                                     "update_dt": "2023-10-08T20:46:56.764398"
                                 },
                             },
-                            "shelf_position_number": {
-                                "number": 2
-                            },
+                            "position_number": 2,
                         },
                     },
                 },
@@ -698,9 +692,7 @@ class RequestDetailReadOutputNoPickList(RequestBaseOutput):
                                     "update_dt": "2023-10-08T20:46:56.764398"
                                 },
                             },
-                            "shelf_position_number": {
-                                "number": 2
-                            },
+                            "position_number": 2,
                         },
                     },
                 },

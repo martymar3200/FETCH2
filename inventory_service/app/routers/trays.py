@@ -17,7 +17,6 @@ from app.logger import inventory_logger
 from app.models.move_discrepancies import MoveDiscrepancy
 from app.models.non_tray_items import NonTrayItem
 from app.models.owners import Owner
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.shelf_positions import ShelfPosition
 from app.models.shelves import Shelf
 from app.models.shelving_job_discrepancies import ShelvingJobDiscrepancy
@@ -174,10 +173,9 @@ def create_tray(tray_input: TrayInput, session: Session = Depends(get_session)):
         new_tray.accession_dt = datetime.now(timezone.utc)
     new_tray.container_type_id = container_type.id
     session.add(new_tray)
+    update_shelf_space_after_tray(session, new_tray, None, None)
     session.commit()
     session.refresh(new_tray)
-
-    update_shelf_space_after_tray(new_tray, None, None)
 
     return new_tray
 
@@ -277,12 +275,11 @@ def update_tray(
     setattr(existing_tray, "update_dt", datetime.now(timezone.utc))
 
     session.add(existing_tray)
+    update_shelf_space_after_tray(
+        session, existing_tray, existing_tray.shelf_position_id, tray.shelf_position_id
+    )
     session.commit()
     session.refresh(existing_tray)
-
-    update_shelf_space_after_tray(
-        existing_tray, existing_tray.shelf_position_id, tray.shelf_position_id
-    )
 
     return existing_tray
 
@@ -303,7 +300,7 @@ def delete_tray(id: int, session: Session = Depends(get_session)):
             session.delete(item)
             session.commit()
 
-        update_shelf_space_after_tray(None, None, tray.shelf_position_id)
+        update_shelf_space_after_tray(session, None, None, tray.shelf_position_id)
         session.delete(tray)
         session.commit()
 
@@ -368,10 +365,8 @@ def move_tray(
     current_assigned_location = None
     original_assigned_location = None
     if src_shelf:
-        shelf_position = tray.shelf_position
-        shelf_position_number = shelf_position.shelf_position_number
         original_assigned_location = (src_shelf.location + "-" + str(
-            shelf_position_number.number))
+            tray.shelf_position.position_number))
     if dest_shelf:
         current_assigned_location = (dest_shelf.location + "-" + str(
             tray_input.shelf_position_number))
@@ -508,17 +503,7 @@ def move_tray(
     destination_shelf_positions = dest_shelf.shelf_positions
     destination_shelf_position_id = None
     for destination_shelf_position in destination_shelf_positions:
-        # V2 FIX
-        shel_position_number = (
-            session.execute(select(ShelfPositionNumber)
-            .filter(
-                ShelfPositionNumber.id
-                == destination_shelf_position.shelf_position_number_id
-            ))
-            .scalars()
-            .first()
-        )
-        if shel_position_number.number == tray_input.shelf_position_number:
+        if destination_shelf_position.position_number == tray_input.shelf_position_number:
             destination_shelf_position_id = destination_shelf_position.id
             # V2 FIX
             tray_shelf_position = (
@@ -562,10 +547,9 @@ def move_tray(
     tray.update_dt = update_dt
 
     session.add(tray)
-    session.commit()
-
     update_shelf_space_after_tray(
-        tray, destination_shelf_position_id, old_shelf_position_id
+        session, tray, destination_shelf_position_id, old_shelf_position_id
     )
+    session.commit()
 
     return tray

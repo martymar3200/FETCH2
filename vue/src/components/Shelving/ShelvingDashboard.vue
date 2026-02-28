@@ -403,7 +403,7 @@
                           sort_by: 'aisle_number'
                         }"
                         option-value="id"
-                        :option-label="opt => opt.aisle_number.number"
+                        option-label="aisle_number"
                         :placeholder="'Select Aisle'"
                         :disabled="!shelvingJob.module_id"
                         :clearable="false"
@@ -449,7 +449,7 @@
                       sort_by: 'ladder_number'
                     }"
                     option-value="id"
-                    :option-label="opt => opt.ladder_number.number"
+                    option-label="ladder_number"
                     :placeholder="'Select Ladder'"
                     :disabled="!shelvingJob.side_id"
                     :clearable="false"

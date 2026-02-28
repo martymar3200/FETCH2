@@ -5,7 +5,7 @@ from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate 
 # CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy import select # select is imported from sqlalchemy now
+from sqlalchemy import select, func # select is imported from sqlalchemy now
 from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,6 +15,13 @@ from app.database.session import get_session
 from app.filter_params import SortParams, ModuleFilterParams
 from app.models.modules import Module
 from app.models.buildings import Building
+from app.models.aisles import Aisle
+from app.models.sides import Side
+from app.models.ladders import Ladder
+from app.models.shelves import Shelf
+from app.models.shelf_positions import ShelfPosition
+from app.models.trays import Tray
+from app.models.non_tray_items import NonTrayItem
 from app.schemas.modules import (
     ModuleInput,
     ModuleUpdateInput,
@@ -131,6 +138,26 @@ def delete_module(id: int, session: Session = Depends(get_session)):
     """
     module = session.get(Module, id)
     if module:
+        # Check for items on any shelf in this module
+        items_count_query = (
+            select(func.count(ShelfPosition.id))
+            .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
+            .join(Ladder, Shelf.ladder_id == Ladder.id)
+            .join(Side, Ladder.side_id == Side.id)
+            .join(Aisle, Side.aisle_id == Aisle.id)
+            .where(Aisle.module_id == id)
+            .where(
+                (ShelfPosition.tray != None) | (ShelfPosition.non_tray_item != None)
+            )
+        )
+        items_count = session.execute(items_count_query).scalar()
+
+        if items_count > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot delete Module {module.module_number}: {items_count} items are shelved in its aisles."
+            )
+
         session.delete(module)
         session.commit()
 

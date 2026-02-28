@@ -73,7 +73,7 @@ class LadderNumberNestedForSide(BaseModel):
 
 class LadderNestedForSide(BaseModel):
     id: int
-    ladder_number: LadderNumberNestedForSide
+    ladder_number: int
     sort_priority: Optional[int] = None
     create_dt: datetime
     update_dt: datetime
@@ -103,9 +103,7 @@ class SideDetailReadOutput(SideBaseOutput):
                 "ladders": [
                     {
                         "id": 1,
-                        "ladder_number": {
-                            "number": 1
-                        },
+                        "ladder_number": 1,
                         "sort_priority": 1,
                         "create_dt": "2023-10-08T20:46:56.764426",
                         "update_dt": "2023-10-08T20:46:56.764398"

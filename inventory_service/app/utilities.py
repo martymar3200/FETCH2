@@ -96,7 +96,8 @@ def get_module_shelf_position(session, shelf_position):
 def get_location(session: Session, shelf_position):
     """
     Retrieves the related location data for a given shelf position.
-    CRITICAL: session.exec() converted to session.execute().scalars().first()
+    REFACTORED: Removed separate queries for lookup tables (AisleNumber, LadderNumber, ShelfNumber).
+    Numbers are now direct fields on the entity models.
     """
     shelf_query = select(Shelf).filter(Shelf.id == shelf_position.shelf_id)
 
@@ -114,7 +115,7 @@ def get_location(session: Session, shelf_position):
         .where(Aisle.id == Side.aisle_id)
     )
 
-    # --- EXECUTION CONVERSION ---
+    # --- EXECUTION ---
     shelf = session.execute(shelf_query).scalars().first()
     ladder = session.execute(ladder_query).scalars().first()
     aisle = session.execute(aisle_query).scalars().first()
@@ -128,30 +129,11 @@ def get_location(session: Session, shelf_position):
     if not aisle:
         raise NotFound(detail=f"Aisle ID {ladder.aisle_id} Not Found")
 
-    shelf_number_query = select(ShelfNumber).where(
-        ShelfNumber.id == shelf.shelf_number_id
-    )
-
-    ladder_number_query = select(LadderNumber).where(
-        LadderNumber.id == ladder.ladder_number_id
-    )
-
-    aisle_number_query = select(AisleNumber).where(
-        AisleNumber.id == aisle.aisle_number_id
-    )
-
-    # --- EXECUTION CONVERSION ---
-    shelf_number = session.execute(shelf_number_query).scalars().first()
-    ladder_number = session.execute(ladder_number_query).scalars().first()
-    aisle_number = session.execute(aisle_number_query).scalars().first()
-
+    # Numbers are now direct fields on the entity objects — no separate lookup queries needed
     return {
         "aisle": aisle,
         "ladder": ladder,
         "shelf": shelf,
-        "shelf_number": shelf_number,
-        "ladder_number": ladder_number,
-        "aisle_number": aisle_number,
     }
 
 

@@ -96,7 +96,7 @@
                   sort_by: 'aisle_number'
                 }"
                 option-value="id"
-                :option-label="opt => opt.aisle_number.number"
+                option-label="aisle_number"
                 :placeholder="'Select Aisle'"
                 :disabled="!reportForm.module_id"
                 @update:model-value="handleLocationFormChange('Aisle')"
@@ -141,7 +141,7 @@
                   sort_by: 'ladder_number'
                 }"
                 option-value="id"
-                :option-label="opt => opt.ladder_number.number"
+                option-label="ladder_number"
                 :placeholder="'Select Ladder'"
                 :disabled="!reportForm.side_id"
                 @update:model-value="handleLocationFormChange('Ladder')"

@@ -3,12 +3,12 @@
     ref="locationModal"
     :show-actions="false"
     @reset="emit('hide')"
-    aria-label="locationAddOrEditModal"
+    aria-label="locationEditModal"
   >
     <template #header-content="{ hideModal }">
       <q-card-section class="row items-center q-pb-none">
         <h2 class="text-h6 text-bold">
-          {{ actionType == 'Add' ? 'Add New' : 'Edit' }} {{ titleCaseLocationType }}
+          {{ actionType === 'Add' ? 'Add New' : actionType === 'Insert' ? 'Insert & Shift' : 'Edit' }} {{ singularLevel }}
         </h2>
 
         <q-btn
@@ -22,6 +22,7 @@
         />
       </q-card-section>
     </template>
+
     <template #main-content>
       <q-card-section class="q-pb-none">
         <div class="row">
@@ -29,11 +30,11 @@
             v-for="field in locationFields"
             :key="field.field"
           >
-            <!-- text inputs -->
+            <!-- Text / Number inputs -->
             <div
               v-if="!field.options"
               class="q-mb-md"
-              :class="field.field == 'width' || field.field == 'height' ? 'col-xs-12 col-sm-4' : field.field == 'depth' ? 'col-xs-12 col-sm-4 q-px-sm-sm' : 'col-12'"
+              :class="field.field === 'width' || field.field === 'height' ? 'col-xs-12 col-sm-4' : field.field === 'depth' ? 'col-xs-12 col-sm-4 q-px-sm-sm' : 'col-12'"
             >
               <div class="form-group">
                 <label class="form-group-label">
@@ -54,7 +55,8 @@
                 />
               </div>
             </div>
-            <!-- select inputs -->
+
+            <!-- Select inputs -->
             <div
               v-else
               class="col-12 q-mb-md"
@@ -74,11 +76,11 @@
                   :options="field.options"
                   :option-type="field.optionType"
                   option-value="id"
-                  :option-label="field.field == 'container_type_id' || field.field == 'shelf_type_id' ? 'type' : 'name'"
+                  :option-label="field.field === 'container_type_id' || field.field === 'shelf_type_id' ? 'type' : 'name'"
                   :placeholder="`Select ${field.label}`"
                   :disabled="field.disabled"
                   :clearable="!field.required"
-                  @update:model-value="handleLocationFormChange(field.label)"
+                  @update:model-value="handleFieldChange(field.label)"
                   :aria-label="`${field.field}Select`"
                 />
               </div>
@@ -94,11 +96,11 @@
           no-caps
           unelevated
           color="accent"
-          :label="actionType == 'Add' ? `Add ${titleCaseLocationType}` : `Update ${titleCaseLocationType}`"
+          :label="actionType === 'Add' ? `Add ${singularLevel}` : actionType === 'Insert' ? `Insert ${singularLevel}` : `Update ${singularLevel}`"
           class="text-body1 full-width"
           :loading="appActionIsLoadingData"
-          :disabled="isLocationFormValid"
-          @click="actionType == 'Add' ? addNewLocationType() : updateLocationType()"
+          :disabled="!isFormValid"
+          @click="actionType === 'Add' ? addEntity() : actionType === 'Insert' ? insertEntity() : updateEntity()"
         />
 
         <q-space class="q-mx-xs" />
@@ -117,45 +119,40 @@
 
 <script setup>
 import { ref, computed, onBeforeMount } from 'vue'
-import { useRoute } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
-import { Notify } from 'quasar'
 import { useOptionStore } from '@/stores/option-store'
 import { useBuildingStore } from '@/stores/building-store'
-import { useBarcodeStore } from '@/stores/barcode-store'
+import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'
 import SelectInput from '@/components/SelectInput.vue'
 import TextInput from '@/components/TextInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
 
-const route = useRoute()
-
 // Props
-const mainProps = defineProps({
+const props = defineProps({
   actionType: {
     type: String,
     required: true
   },
-  locationType: {
+  locationLevel: {
     type: String,
     required: true
   },
   locationData: {
     type: Object,
-    default: () => {
-      return {}
-    }
+    default: () => ({})
+  },
+  parentIds: {
+    type: Object,
+    default: () => ({})
   }
 })
 
 // Emits
 const emit = defineEmits([
   'hide',
-  'submit',
-  'newLocationAdded'
+  'saved'
 ])
-
-// Composables
 
 // Store Data
 const { appActionIsLoadingData } = storeToRefs(useGlobalStore())
@@ -175,57 +172,60 @@ const {
   postLadder,
   patchLadder,
   postShelve,
-  patchShelve
+  patchShelve,
+  postInsertShelve
 } = useBuildingStore()
-const { verifyBarcode } = useBarcodeStore()
-const { barcodeDetails } = storeToRefs(useBarcodeStore())
+
 
 // Local Data
-const titleCaseLocationType = computed(() => {
-  return mainProps.locationType.replace(mainProps.locationType[0], mainProps.locationType[0].toUpperCase()).slice(0, -1)
-})
 const locationModal = ref(null)
-const locationFields = ref(null)
+const locationFields = ref([])
 const locationForm = ref({})
-const isLocationFormValid = computed(() => {
-  const optionalFields = locationFields.value.flatMap(f => !f.required ? f.field : [] )
-  return !Object.keys(locationForm.value).every(key => optionalFields.includes(key) || locationForm.value[key] !== null && locationForm.value[key] !== '')
-})
-const disableShelfType = computed(() => {
-  return !locationForm.value.size_class_id ? true : false
-})
-const filteredShelfTypes =  computed(() => {
-  let shelfTypesBySizeClass = []
-  if (shelfTypes.value.length > 0) {
-    shelfTypesBySizeClass = shelfTypes.value.filter(st => st.size_class_id == locationForm.value.size_class_id)
+
+const singularLevel = computed(() => {
+  const map = {
+    Buildings: 'Building',
+    Modules: 'Module',
+    Aisles: 'Aisle',
+    Ladders: 'Ladder',
+    Shelves: 'Shelf'
   }
-  return shelfTypesBySizeClass
+  return map[props.locationLevel] || props.locationLevel
+})
+
+const isFormValid = computed(() => {
+  const optionalFields = locationFields.value.flatMap(f => !f.required ? f.field : [])
+  return Object.keys(locationForm.value).every(key =>
+    optionalFields.includes(key) || (locationForm.value[key] !== null && locationForm.value[key] !== '')
+  )
+})
+
+const disableShelfType = computed(() => !locationForm.value.size_class_id)
+
+const filteredShelfTypes = computed(() => {
+  if (shelfTypes.value.length > 0) {
+    return shelfTypes.value.filter(st => st.size_class_id == locationForm.value.size_class_id)
+  }
+  return []
 })
 
 // Logic
 
-
 onBeforeMount(() => {
-  generateLocationModal()
+  generateForm()
 })
 
-const handleLocationFormChange = async (labelType) => {
-  // reset the form depending on the edited form field type
-  switch (labelType) {
-    case 'Container Size':
-      if (locationForm.value.shelf_type_id) {
-        locationForm.value.shelf_type_id = null
-      }
-      return
+const handleFieldChange = (labelType) => {
+  if (labelType === 'Container Size' && locationForm.value.shelf_type_id) {
+    locationForm.value.shelf_type_id = null
   }
 }
 
-const generateLocationModal = () => {
-  // creates the modal fields needed based on the locationType
-  switch (mainProps.locationType) {
-    case 'buildings':
+const generateForm = () => {
+  switch (props.locationLevel) {
+    case 'Buildings':
       locationForm.value = {
-        name: mainProps.locationData.name ?? ''
+        name: props.locationData.name ?? ''
       }
       locationFields.value = [
         {
@@ -235,10 +235,11 @@ const generateLocationModal = () => {
         }
       ]
       break
-    case 'modules':
+
+    case 'Modules':
       locationForm.value = {
-        building_id: route.params.buildingId,
-        module_number: mainProps.locationData.module_number ?? ''
+        building_id: props.parentIds.building_id,
+        module_number: props.locationData.module_number ?? ''
       }
       locationFields.value = [
         {
@@ -249,11 +250,12 @@ const generateLocationModal = () => {
         }
       ]
       break
-    case 'aisles':
+
+    case 'Aisles':
       locationForm.value = {
-        module_id: route.params.moduleId,
-        sort_priority: mainProps.locationData.sort_priority ?? null,
-        aisle_number: mainProps.locationData.aisle_number?.number ?? ''
+        module_id: props.parentIds.module_id,
+        sort_priority: props.locationData.sort_priority ?? null,
+        aisle_number: props.locationData.aisle_number ?? ''
       }
       locationFields.value = [
         {
@@ -261,7 +263,7 @@ const generateLocationModal = () => {
           label: 'Aisle Number',
           fieldType: 'number',
           required: true,
-          disabled: mainProps.actionType == 'Edit'
+          disabled: props.actionType === 'Edit'
         },
         {
           field: 'sort_priority',
@@ -270,11 +272,12 @@ const generateLocationModal = () => {
         }
       ]
       break
-    case 'ladders':
+
+    case 'Ladders':
       locationForm.value = {
-        side_id: route.params.sideId,
-        sort_priority: mainProps.locationData.sort_priority ?? null,
-        ladder_number: mainProps.locationData.ladder_number?.number ?? ''
+        side_id: props.parentIds.side_id,
+        sort_priority: props.locationData.sort_priority ?? null,
+        ladder_number: props.locationData.ladder_number ?? ''
       }
       locationFields.value = [
         {
@@ -282,7 +285,7 @@ const generateLocationModal = () => {
           label: 'Ladder Number',
           fieldType: 'number',
           required: true,
-          disabled: mainProps.actionType == 'Edit'
+          disabled: props.actionType === 'Edit'
         },
         {
           field: 'sort_priority',
@@ -291,20 +294,21 @@ const generateLocationModal = () => {
         }
       ]
       break
-    case 'shelves':
+
+    case 'Shelves':
       locationForm.value = {
-        ladder_id: route.params.ladderId,
-        owner_id: mainProps.locationData.owner?.id ?? null,
-        size_class_id: mainProps.locationData.shelf_type?.size_class_id ?? null,
-        shelf_type_id: mainProps.locationData.shelf_type?.id ?? null,
-        container_type_id: mainProps.locationData.container_type?.id ?? null,
-        width: mainProps.locationData.width ?? '',
-        depth: mainProps.locationData.depth ?? '',
-        height: mainProps.locationData.height ?? '',
-        barcode_value: mainProps.locationData.barcode?.value ?? '',
-        sort_priority: mainProps.locationData.sort_priority ?? null,
-        shelf_number: mainProps.locationData.shelf_number?.number ?? ''
-      },
+        ladder_id: props.parentIds.ladder_id,
+        owner_id: props.locationData.owner?.id ?? null,
+        size_class_id: props.locationData.shelf_type?.size_class_id ?? null,
+        shelf_type_id: props.locationData.shelf_type?.id ?? null,
+        container_type_id: props.locationData.container_type?.id ?? null,
+        width: props.locationData.width ?? '',
+        depth: props.locationData.depth ?? '',
+        height: props.locationData.height ?? '',
+        barcode_value: props.locationData.barcode?.value ?? '',
+        sort_priority: props.locationData.sort_priority ?? null,
+        shelf_number: props.locationData.shelf_number ?? ''
+      }
       locationFields.value = [
         {
           field: 'owner_id',
@@ -338,14 +342,14 @@ const generateLocationModal = () => {
         {
           field: 'barcode_value',
           label: 'Shelf Barcode',
-          disabled: mainProps.actionType == 'Edit' && mainProps.locationData.barcode?.value ? true : false,
+          disabled: props.actionType === 'Edit' && props.locationData.barcode?.value ? true : false,
           required: true
         },
         {
           field: 'shelf_number',
           label: 'Shelf Number',
           fieldType: 'number',
-          disabled: mainProps.actionType == 'Edit',
+          disabled: props.actionType === 'Edit',
           required: true
         },
         {
@@ -373,125 +377,116 @@ const generateLocationModal = () => {
         }
       ]
       break
-    default:
-      break
   }
 }
 
-const addNewLocationType = async () => {
+const addEntity = async () => {
   try {
     appActionIsLoadingData.value = true
-    // send api request to add a new location by the locationType
     const payload = locationForm.value
-    switch (mainProps.locationType) {
-      case 'buildings':
+
+    switch (props.locationLevel) {
+      case 'Buildings':
         await postBuilding(payload)
         break
-      case 'modules':
+      case 'Modules':
         await postModule(payload)
         break
-      case 'aisles':
+      case 'Aisles':
         await postAisle(payload)
         break
-      case 'ladders':
+      case 'Ladders':
         await postLadder(payload)
         break
-      case 'shelves':
-        // if payload includes a shelf barcode validate it and create the shelf barcode
-        if (payload.barcode_value !== '') {
-          const res = await verifyBarcode(payload.barcode_value, 'Shelf', true)
-          if (res == 'barcode_exists') {
-          // if the inputed shelf barcode exists throw an error since shelf barcode has to be new when adding new shelves
-            Notify.create({
-              type: 'negative',
-              message: 'The shelf barcode inputed already exists. Please try again.'
-            })
-            return
-          }
-          payload.barcode_id = barcodeDetails.value.id
-        }
+      case 'Shelves':
         await postShelve(payload)
-        break
-      default:
         break
     }
 
     Notify.create({
       type: 'positive',
-      message: `Successfully Added A New ${titleCaseLocationType.value}`
+      message: `Successfully added a new ${singularLevel.value}`
     })
+
+    emit('saved')
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: error.response?.data?.detail || error.message || 'Failed to add location'
+      message: error.response?.data?.detail || error.message || `Failed to add ${singularLevel.value}`
     })
   } finally {
-    // emit to parent that we added a new location option
-    emit('newLocationAdded')
-
     appActionIsLoadingData.value = false
-    locationModal.value.hideModal()
   }
 }
 
-const updateLocationType = async () => {
+const insertEntity = async () => {
   try {
     appActionIsLoadingData.value = true
-    // send api request to add a new location by the locationType
-    let payload = {
-      id: mainProps.locationData.id,
+    const payload = locationForm.value
+
+    // insert only applies to Shelves
+    if (props.locationLevel === 'Shelves') {
+      await postInsertShelve(payload)
+    }
+
+    Notify.create({
+      type: 'positive',
+      message: `Successfully inserted a new ${singularLevel.value}`
+    })
+
+    emit('saved')
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.detail || error.message || `Failed to insert ${singularLevel.value}`
+    })
+  } finally {
+    appActionIsLoadingData.value = false
+  }
+}
+
+const updateEntity = async () => {
+  try {
+    appActionIsLoadingData.value = true
+    const payload = {
+      id: props.locationData.id,
       ...locationForm.value
     }
-    switch (mainProps.locationType) {
-      case 'buildings':
+
+    switch (props.locationLevel) {
+      case 'Buildings':
         await patchBuilding(payload)
         break
-      case 'modules':
+      case 'Modules':
         await patchModule(payload)
         break
-      case 'aisles':
+      case 'Aisles':
         await patchAisle(payload)
         break
-      case 'ladders':
+      case 'Ladders':
         await patchLadder(payload)
         break
-      case 'shelves':
-        // if payload includes a shelf barcode validate it and create the shelf barcode (this only occurs when a user bulk uploads a shelf without a barcode)
-        if (!mainProps.locationData.barcode?.value) {
-          const res = await verifyBarcode(payload.barcode_value, 'Shelf', true)
-          if (res == 'barcode_exists') {
-            // if the inputed shelf barcode exists throw an error since shelf barcode has to be new when adding new shelves
-            Notify.create({
-              type: 'negative',
-              message: 'The shelf barcode inputed already exists. Please try again.'
-            })
-            return
-          }
-          payload.barcode_id = barcodeDetails.value.id
-        }
-
-        // convert empty payload value for sort priority to be null since backend expects int values only
-        if (payload.sort_priority == '') {
+      case 'Shelves':
+        if (payload.sort_priority === '') {
           payload.sort_priority = null
         }
         await patchShelve(payload)
         break
-      default:
-        break
     }
 
     Notify.create({
       type: 'positive',
-      message: `Successfully Updated The ${titleCaseLocationType.value}`
+      message: `Successfully updated the ${singularLevel.value}`
     })
+
+    emit('saved')
   } catch (error) {
     Notify.create({
       type: 'negative',
-      message: error.response?.data?.detail || error.message || 'Failed to update location'
+      message: error.response?.data?.detail || error.message || `Failed to update ${singularLevel.value}`
     })
   } finally {
     appActionIsLoadingData.value = false
-    locationModal.value.hideModal()
   }
 }
 </script>

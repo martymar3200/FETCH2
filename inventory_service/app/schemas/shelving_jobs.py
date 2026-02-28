@@ -183,7 +183,7 @@ class NestedShelfForShelvingJob(BaseModel):
 
 class ShelfPositionNestedForShelvingJob(BaseModel):
     id: int
-    shelf_position_number: NestedShelfPositionNumberForShelvingJob
+    position_number: int
     shelf: NestedShelfForShelvingJob
     location: Optional[str] = None
     internal_location: Optional[str] = None
@@ -266,9 +266,9 @@ class ShelvingJobContainerDetailOutput(BaseModel):
     @property
     def shelf_position_number(self) -> Optional[int]:
         if self.actual_shelf_position:
-            return self.actual_shelf_position.shelf_position_number.number
+            return self.actual_shelf_position.position_number
         if self.proposed_shelf_position:
-            return self.proposed_shelf_position.shelf_position_number.number
+            return self.proposed_shelf_position.position_number
         return None
 
 class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
@@ -357,16 +357,12 @@ class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
                         },
                         "shelf_position": {
                             "id": 1,
-                            "shelf_position_number": {
-                                "number": 5
-                            },
+                            "position_number": 5,
                             "location": "Cabin Branch-04-57-L-23-10-08",
                             "internal_location": "01-04-57-L-23-10-08",
                             "shelf": {
                                 "id": 1,
-                                "shelf_number": {
-                                    "number": 1
-                                },
+                                "shelf_number": 1,
                                 "barcode": {
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "value": "5901234123457",
@@ -412,14 +408,10 @@ class ShelvingJobDetailOutput(ShelvingJobBaseOutput):
                         },
                         "shelf_position": {
                             "id": 1,
-                            "shelf_position_number": {
-                                "number": 5
-                            },
+                            "position_number": 5,
                             "shelf": {
                                 "id": 1,
-                                "shelf_number": {
-                                    "number": 1
-                                },
+                                "shelf_number": 1,
                                 "barcode": {
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "value": "5901234123457",
@@ -520,16 +512,12 @@ class ReAssignmentOutput(BaseModel):
             },
             "shelf_position": {
                 "id": 1,
-                "shelf_position_number": {
-                    "number": 5
-                },
+                "position_number": 5,
                 "shelf": {
                                 "id": 1,
                                 "ladder": {
                                     "id": 1,
-                                    "ladder_number": {
-                                        "number": 1
-                                    },
+                                    "ladder_number": 1,
                                     "side": {
                                         "id": 1,
                                         "side_orientation": {
@@ -537,9 +525,7 @@ class ReAssignmentOutput(BaseModel):
                                         },
                                         "aisle": {
                                             "id": 1,
-                                            "aisle_number": {
-                                                "number": 1
-                                            },
+                                            "aisle_number": 1,
                                             "module": {
                                                 "id": 1,
                                                 "module_number": "1"
@@ -551,9 +537,7 @@ class ReAssignmentOutput(BaseModel):
                                         }
                                     }
                                 },
-                                "shelf_number": {
-                                    "number": 1
-                                },
+                                "shelf_number": 1,
                                 "barcode": {
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "value": "5901234123457",

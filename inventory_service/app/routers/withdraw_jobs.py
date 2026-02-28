@@ -433,7 +433,7 @@ def update_withdraw_job(
                             update_dt=updated_dt,
                         ))
                     for tray in trays_to_update:
-                        update_shelf_space_after_tray(tray, tray.shelf_position_id, None)
+                        update_shelf_space_after_tray(session, tray, tray.shelf_position_id, None)
 
         if non_tray_item_ids:
             non_tray_items_to_update = session.execute(
@@ -487,7 +487,7 @@ def update_withdraw_job(
             # Update shelf space using the saved shelf_position_ids
             for shelf_position_id in shelf_position_ids_to_update:
                 if shelf_position_id:
-                    update_shelf_space_after_non_tray(None, None, shelf_position_id)
+                    update_shelf_space_after_non_tray(session, None, None, shelf_position_id)
 
     if withdraw_job_input.status:
         if withdraw_job_input.run_timestamp:

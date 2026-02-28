@@ -27,16 +27,15 @@ from app.models.barcode_types import BarcodeType
 from app.models.barcodes import Barcode
 from app.models.batch_upload import BatchUpload, BatchUploadStatus
 from app.models.container_types import ContainerType
-from app.models.ladder_numbers import LadderNumber
 from app.models.ladders import Ladder
 from app.models.owners import Owner
 from app.models.requests import Request
-from app.models.shelf_numbers import ShelfNumber
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.shelf_positions import ShelfPosition
 from app.models.shelf_types import ShelfType
 from app.models.shelves import Shelf
 from app.models.size_class import SizeClass
+from app.models.trays import Tray
+from app.models.non_tray_items import NonTrayItem
 from app.models.users import User
 from app.models.withdraw_jobs import WithdrawJob
 from app.schemas.batch_upload import (
@@ -199,6 +198,191 @@ async def delete_batch_upload(id: int, session: Session = Depends(get_session)):
     )
 
 
+@router.patch("/location-management")
+async def batch_upload_location_management_update(
+    file: UploadFile,
+    session: Session = Depends(get_session),
+):
+    """
+    Batch upload endpoint to process bulk updates for shelves via CSV.
+    """
+    if not file:
+        raise BadRequest(detail="Upload File is required")
+
+    file_name = file.filename
+    file_size = file.size
+    file_content_type = file.content_type
+    contents = await file.read()
+
+    # Load the file into a DataFrame
+    if (
+        file_name.endswith(".xlsx")
+        or file_content_type
+        == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ):
+        df = pd.read_excel(contents, dtype=str)
+    elif file_name.endswith(".csv"):
+        df = pd.read_csv(StringIO(contents.decode("utf-8")), dtype=str)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported file format")
+
+    new_batch_upload = BatchUpload(
+        file_name=file_name, file_size=file_size, file_type=file_content_type
+    )
+
+    session.add(new_batch_upload)
+    session.commit()
+    session.refresh(new_batch_upload)
+
+    # Sanitize DataFrame: Replace pandas NA/nan with None for SQLAlchemy compatibility
+    df = df.replace({pd.NA: None, float("nan"): None, "": None})
+
+    errors = []
+
+    for index, row in df.iterrows():
+        try:
+            if not row.get("Shelf Barcode"):
+                errors.append(
+                    {"line": int(index) + 1, "error": "Shelf Barcode is required to identify the shelf"}
+                )
+                continue
+
+            shelf_barcode_value = str(row["Shelf Barcode"]).strip()
+
+            # Lookup shelf
+            shelf = (
+                session.execute(
+                    select(Shelf)
+                    .join(Barcode, Shelf.barcode_id == Barcode.id)
+                    .filter(Barcode.value == shelf_barcode_value)
+                )
+                .scalars()
+                .first()
+            )
+
+            if not shelf:
+                errors.append(
+                    {"line": int(index) + 1, "error": f"Shelf with barcode {shelf_barcode_value} not found"}
+                )
+                continue
+
+            # Process optional updates
+            if row.get("Owner"):
+                owner_name = str(row["Owner"]).strip()
+                owner = session.execute(select(Owner).filter(Owner.name == owner_name)).scalars().first()
+                if not owner:
+                    errors.append({"line": int(index) + 1, "error": f"Owner {owner_name} not found"})
+                    continue
+                shelf.owner_id = owner.id
+
+            if row.get("Container Type"):
+                ct_name = str(row["Container Type"]).strip()
+                container_type = session.execute(select(ContainerType).filter(ContainerType.type == ct_name)).scalars().first()
+                if not container_type:
+                    errors.append({"line": int(index) + 1, "error": f"Container Type {ct_name} not found"})
+                    continue
+                shelf.container_type_id = container_type.id
+
+            if row.get("Size Class") or row.get("Shelf Type"):
+                # Load current size_class / shelf_type if only one is provided
+                current_shelf_type = session.get(ShelfType, shelf.shelf_type_id)
+                current_size_class_id = current_shelf_type.size_class_id
+                current_size_class = session.get(SizeClass, current_size_class_id)
+                
+                size_class_name = str(row["Size Class"]).strip() if row.get("Size Class") else current_size_class.name
+                shelf_type_name = str(row["Shelf Type"]).strip() if row.get("Shelf Type") else current_shelf_type.type
+
+                shelf_type = (
+                    session.execute(select(ShelfType)
+                    .join(SizeClass)
+                    .filter(SizeClass.name == size_class_name)
+                    .filter(ShelfType.type == shelf_type_name))
+                    .scalars()
+                    .first()
+                )
+                if not shelf_type:
+                    errors.append({"line": int(index) + 1, "error": f"Shelf Type {shelf_type_name} with Size Class {size_class_name} not found"})
+                    continue
+                
+                # Resize shelf positions if capacity changed
+                if shelf.shelf_type_id != shelf_type.id:
+                    old_capacity = current_shelf_type.max_capacity if current_shelf_type else 0
+                    new_capacity = shelf_type.max_capacity
+
+                    # Path 1: Decreasing capacity
+                    if new_capacity < old_capacity:
+                        num_to_remove = old_capacity - new_capacity
+                        positions_to_check_query = (
+                            select(ShelfPosition)
+                            .where(ShelfPosition.shelf_id == shelf.id)
+                            .order_by(ShelfPosition.position_number.desc())
+                            .limit(num_to_remove)
+                        )
+                        positions_to_delete = session.execute(positions_to_check_query).scalars().all()
+                        position_ids_to_delete = [p.id for p in positions_to_delete]
+
+                        if position_ids_to_delete:
+                            occupied_tray = session.execute(select(Tray.id).where(Tray.shelf_position_id.in_(position_ids_to_delete)).limit(1)).first()
+                            occupied_non_tray = session.execute(select(NonTrayItem.id).where(NonTrayItem.shelf_position_id.in_(position_ids_to_delete)).limit(1)).first()
+
+                            if occupied_tray or occupied_non_tray:
+                                errors.append({"line": int(index) + 1, "error": f"Cannot resize Shelf {shelf_barcode_value} - positions being removed are occupied"})
+                                continue
+
+                            for pos in positions_to_delete:
+                                session.delete(pos)
+
+                    # Path 2: Increasing capacity
+                    elif new_capacity > old_capacity:
+                        new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
+                        for position_num in new_position_numbers_range:
+                            new_position = ShelfPosition(
+                                shelf_id=shelf.id,
+                                position_number=position_num,
+                            )
+                            session.add(new_position)
+
+                shelf.shelf_type_id = shelf_type.id
+                
+                # Re-calculate available space
+                if hasattr(shelf, 'calc_available_space'):
+                    session.flush()
+                    shelf.calc_available_space(session=session)
+
+            if row.get("Width"):
+                shelf.width = float(row["Width"])
+            if row.get("Height"):
+                shelf.height = float(row["Height"])
+            if row.get("Depth"):
+                shelf.depth = float(row["Depth"])
+            if row.get("Location Logical Order"):
+                shelf.sort_priority = int(row["Location Logical Order"])
+
+            session.add(shelf)
+
+        except Exception as e:
+            errors.append({"line": int(index) + 1, "error": str(e)})
+
+    if errors:
+        session.rollback()
+
+        new_batch_upload.status = "Failed"
+        session.add(new_batch_upload)
+        session.commit()
+
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=errors)
+
+    # Commit all shelf modifications
+    session.commit()
+
+    # Update batch upload status
+    new_batch_upload.status = "Completed"
+    session.add(new_batch_upload)
+    session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content="Batch Upload Update Successful"
+    )
 
 @router.patch("/{id}", response_model=BatchUploadDetailOutput)
 async def update_batch_upload(
@@ -723,6 +907,9 @@ async def batch_upload_location_management(
     shelves_bulk = []
     errors = []
 
+    # Sanitize DataFrame: Replace pandas NA/nan with None for SQLAlchemy compatibility
+    df = df.replace({pd.NA: None, float("nan"): None})
+
     for index, row in df.iterrows():
         try:
             if not row["ladder_number"]:
@@ -731,22 +918,11 @@ async def batch_upload_location_management(
                 )
                 continue
 
-            # V2 FIX: session.query().filter().first() -> session.execute(select(...)).scalars().first()
-            ladder_number = (
-                session.execute(select(LadderNumber).filter(LadderNumber.number == row["ladder_number"]))
-                .scalars()
-                .first()
-            )
-
-            if not ladder_number:
-                ladder_number = LadderNumber(number=row["ladder_number"])
-                ladder_number = commit_record(session, ladder_number)
-
-            # V2 FIX: session.query().filter().first() -> session.execute(select(...)).scalars().first()
+            # Look up or create ladder by direct number
             ladder = (
                 session.execute(select(Ladder)
                 .filter(
-                    Ladder.ladder_number_id == ladder_number.id,
+                    Ladder.ladder_number == row["ladder_number"],
                     Ladder.side_id == side_id,
                 ))
                 .scalars()
@@ -755,11 +931,12 @@ async def batch_upload_location_management(
 
             if not ladder:
                 ladder = Ladder(
-                    ladder_number_id=ladder_number.id,
+                    ladder_number=row["ladder_number"],
                     sort_priority=row["ladder_sort_priority"],
                     side_id=side_id,
                 )
-                ladder = commit_record(session, ladder)
+                session.add(ladder)
+                session.flush()
 
             if pd.notna(row["shelf_number"]):
                 # V2 FIX: session.query().filter().first() -> session.execute(select(...)).scalars().first()
@@ -822,39 +999,26 @@ async def batch_upload_location_management(
                     )
                     continue
 
-                # V2 FIX
-                shelf_number = (
-                    session.execute(select(ShelfNumber)
-                    .filter(ShelfNumber.number == row["shelf_number"]))
+                # Check if shelf already exists with this number on this ladder
+                existing_shelf = (
+                    session.execute(select(Shelf)
+                    .filter(
+                        Shelf.shelf_number == row["shelf_number"],
+                        Shelf.ladder_id == ladder.id,
+                    ))
                     .scalars()
                     .first()
                 )
-
-                if shelf_number:
-                    # Check if the shelf already exists
-                    # V2 FIX
-                    existing_shelf = (
-                        session.execute(select(Shelf)
-                        .filter(
-                            Shelf.shelf_number_id == shelf_number.id,
-                            Shelf.ladder_id == ladder.id,
-                        ))
-                        .scalars()
-                        .first()
+                if existing_shelf:
+                    errors.append(
+                        {
+                            "line": int(index) + 1,
+                            "error": f"Shelf number {row['shelf_number']} at "
+                            "ladder number "
+                            f"{row['ladder_number']} already exists",
+                        }
                     )
-                    if existing_shelf:
-                        errors.append(
-                            {
-                                "line": int(index) + 1,
-                                "error": f"Shelf number {row['shelf_number']} at "
-                                "ladder number "
-                                f"{row['ladder_number']} already exists",
-                            }
-                        )
-                        continue
-                else:
-                    shelf_number = ShelfNumber(number=row["shelf_number"])
-                    shelf_number = commit_record(session, shelf_number)
+                    continue
 
                 shelf_barcode = None
                 if pd.notna(row["shelf_barcode"]):
@@ -904,7 +1068,8 @@ async def batch_upload_location_management(
                         shelf_barcode = Barcode(
                             value=shelf_barcode_value, type_id=barcode_type.id
                         )
-                        shelf_barcode = commit_record(session, shelf_barcode)
+                        session.add(shelf_barcode)
+                        session.flush()
 
                 new_shelf = Shelf(
                     height=row["height"],
@@ -912,7 +1077,7 @@ async def batch_upload_location_management(
                     depth=row["depth"],
                     sort_priority=row["shelf_sort_priority"],
                     container_type_id=container_type.id,
-                    shelf_number_id=shelf_number.id,
+                    shelf_number=row["shelf_number"],
                     shelf_type_id=shelf_type.id,
                     owner_id=owner.id,
                     ladder_id=ladder.id,
@@ -927,6 +1092,7 @@ async def batch_upload_location_management(
             errors.append({"line": int(index) + 1, "error": str(e)})
 
     if errors:
+        session.rollback()
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=errors)
 
     if len(shelves_bulk) > 0:
@@ -937,29 +1103,16 @@ async def batch_upload_location_management(
             shelf_type = shelf.shelf_type
             max_capacity = shelf_type.max_capacity
 
+            # Set initial available space
+            shelf.available_space = max_capacity
+
             # Create Shelf Positions
             shelf_position_bulk = []
             for index in range(1, max_capacity + 1):
-                # V2 FIX
-                shelf_position_number = (
-                    session.execute(select(ShelfPositionNumber)
-                    .filter(ShelfPositionNumber.number == index))
-                    .scalars()
-                    .first()
-                )
-
-                if not shelf_position_number:
-                    shelf_position_number = ShelfPositionNumber(
-                        shelf_type_id=shelf_type.id, position_number=index
-                    )
-                    session.add(shelf_position_number)
-                    session.commit()
-                    session.refresh(shelf_position_number)
-
                 shelf_position_bulk.append(
                     ShelfPosition(
                         shelf_id=shelf.id,
-                        shelf_position_number_id=shelf_position_number.id,
+                        position_number=index,
                     )
                 )
 

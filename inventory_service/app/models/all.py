@@ -1,5 +1,4 @@
 from app.models.accession_jobs import AccessionJob
-from app.models.aisle_numbers import AisleNumber
 from app.models.aisles import Aisle
 from app.models.audit_trails import AuditTrail
 from app.models.barcode_types import BarcodeType
@@ -14,7 +13,6 @@ from app.models.groups import Group
 from app.models.item_retrieval_events import ItemRetrievalEvent
 from app.models.item_withdrawals import ItemWithdrawal
 from app.models.items import Item
-from app.models.ladder_numbers import LadderNumber
 from app.models.ladders import Ladder
 from app.models.link_tables import *
 from app.models.media_types import MediaType
@@ -34,8 +32,6 @@ from app.models.refile_jobs import RefileJob
 from app.models.refile_non_tray_items import RefileNonTrayItem
 from app.models.request_types import RequestType
 from app.models.requests import Request
-from app.models.shelf_numbers import ShelfNumber
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.shelf_positions import ShelfPosition
 from app.models.shelf_types import ShelfType
 from app.models.shelves import Shelf

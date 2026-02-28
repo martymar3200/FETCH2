@@ -44,4 +44,7 @@ class Side(Base): # <--- Inherit from Base
     aisle: Mapped[Aisle] = relationship(back_populates="sides")
     
     # Ladders on a side
-    ladders: Mapped[List["Ladder"]] = relationship(back_populates="side")
+    ladders: Mapped[List["Ladder"]] = relationship(
+        back_populates="side",
+        cascade="all, delete-orphan"
+    )

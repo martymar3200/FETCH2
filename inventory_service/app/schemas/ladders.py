@@ -6,22 +6,19 @@ from datetime import datetime, timezone
 
 from app.schemas.shelf_types import ShelfTypeDetailOutput
 from app.schemas.sides import SideDetailWriteOutput
-from app.schemas.ladder_numbers import LadderNumberDetailOutput
 from app.schemas.barcodes import BarcodeDetailReadOutput
 
 
 class LadderInput(BaseModel):
     side_id: conint(ge=0, le=2147483647)
-    ladder_number_id: Optional[conint(ge=0, le=32767)] = None
-    ladder_number: Optional[int] = None
+    ladder_number: conint(ge=1, le=32767)
     sort_priority: Optional[conint(ge=0, le=32767)] = None
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "side_id": 1,
-                "ladder_number_id": 1,
-                "ladder_number": None,
+                "ladder_number": 1,
                 "sort_priority": 1
             }
         }
@@ -30,18 +27,23 @@ class LadderInput(BaseModel):
 
 class LadderUpdateInput(BaseModel):
     side_id: Optional[conint(ge=0, le=2147483647)] = None
-    ladder_number_id: Optional[conint(ge=0, le=32767)] = None
+    ladder_number: Optional[conint(ge=1, le=32767)] = None
     sort_priority: Optional[conint(ge=0, le=32767)] = None
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "side_id": 1,
-                "ladder_number_id": 1,
+                "ladder_number": 1,
                 "sort_priority": 1
             }
         }
     )
+
+
+class LadderBulkUpdateInput(BaseModel):
+    id: conint(ge=0, le=2147483647)
+    sort_priority: Optional[conint(ge=0, le=32767)] = None
 
 
 class LadderBaseOutput(BaseModel):
@@ -50,8 +52,7 @@ class LadderBaseOutput(BaseModel):
 
 class LadderListOutput(LadderBaseOutput):
     side_id: int
-    ladder_number_id: int
-    ladder_number: Optional[LadderNumberDetailOutput] = None
+    ladder_number: int
     sort_priority: Optional[int] = None
 
     model_config = ConfigDict(
@@ -59,7 +60,7 @@ class LadderListOutput(LadderBaseOutput):
             "example": {
                 "id": 1,
                 "side_id": 1,
-                "ladder_number_id": 1,
+                "ladder_number": 1,
                 "sort_priority": 1
             }
         }
@@ -68,8 +69,7 @@ class LadderListOutput(LadderBaseOutput):
 
 class LadderDetailWriteOutput(LadderBaseOutput):
     side_id: int
-    ladder_number_id: int
-    ladder_number: Optional[LadderNumberDetailOutput] = None
+    ladder_number: int
     sort_priority: Optional[int] = None
     create_dt: datetime
     update_dt: datetime
@@ -79,7 +79,7 @@ class LadderDetailWriteOutput(LadderBaseOutput):
             "example": {
                 "id": 1,
                 "side_id": 1,
-                "ladder_number_id": 1,
+                "ladder_number": 1,
                 "sort_priority": 1,
                 "create_dt": "2023-10-08T20:46:56.764426",
                 "update_dt": "2023-10-08T20:46:56.764398"
@@ -93,10 +93,6 @@ class OwnerNestedForLadderOutput(BaseModel):
     name: str
 
 
-class ShelfNumberNestedForLadderOutput(BaseModel):
-    number: int
-
-
 class ContainerTypeNestedForLadderOutput(BaseModel):
     id: int
     type: str
@@ -107,7 +103,7 @@ class ShelvesNestedForLadderOutput(BaseModel):
     available_space: Optional[int] = None
     sort_priority: Optional[int] = None
     barcode: Optional[BarcodeDetailReadOutput] = None
-    shelf_number: ShelfNumberNestedForLadderOutput
+    shelf_number: int
     owner: Optional[OwnerNestedForLadderOutput] = None
     width: Optional[float] = None
     height: Optional[float] = None
@@ -125,7 +121,7 @@ class SideNestedForLadderOutput(SideDetailWriteOutput):
 class LadderDetailReadOutput(LadderBaseOutput):
     sort_priority: Optional[int] = None
     side: SideDetailWriteOutput
-    ladder_number: LadderNumberDetailOutput
+    ladder_number: int
     shelves: List[ShelvesNestedForLadderOutput]
     create_dt: datetime
     update_dt: datetime
@@ -143,19 +139,12 @@ class LadderDetailReadOutput(LadderBaseOutput):
                     "create_dt": "2023-10-08T20:46:56.764426",
                     "update_dt": "2023-10-08T20:46:56.764398"
                 },
-                "ladder_number": {
-                    "id": 1,
-                    "number": 1,
-                    "create_dt": "2023-10-09T17:04:09.812257",
-                    "update_dt": "2023-10-10T01:00:28.576069"
-                },
+                "ladder_number": 1,
                 "shelves": [
                     {
                         "id": 1,
                         "available_space": 30,
-                        "shelf_number": {
-                            "number": 3
-                        },
+                        "shelf_number": 3,
                         "shelf_type": {
                             "id": 1,
                             "type": "Long",
@@ -178,8 +167,7 @@ class LadderDetailReadOutput(LadderBaseOutput):
                             "type_id": 1,
                             "create_dt": "2023-10-08T20:46:56.764426",
                             "update_dt": "2023-10-08T20:46:56.764398"
-                        },
-                        "size_class_id": 1
+                        }
                     }
                 ],
                 "create_dt": "2023-10-08T20:46:56.764426",

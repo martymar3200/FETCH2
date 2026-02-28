@@ -1,30 +1,18 @@
-# /app/models/shelf_numbers.py - ULTIMATE, FINAL CORRECTED V2
+# /app/models/shelf_numbers.py - LEGACY: Lookup table kept for reference, relationships removed
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import SmallInteger, Integer
-
-from typing import Optional, List
-from datetime import datetime, timezone
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import SmallInteger
 
 from app.database.base import Base
 
 
-class ShelfNumber(Base): # <--- Inherit from Base
+class ShelfNumber(Base):
     """
     Model to represent the Shelf Numbers table.
+    DEPRECATED: Numbers are now direct fields on the entity models.
     """
     __tablename__ = "shelf_numbers"
 
-    # Primary Key
     id: Mapped[int] = mapped_column(SmallInteger, primary_key=True, autoincrement=True)
-
-    # Number field (unique)
     number: Mapped[int] = mapped_column(SmallInteger, nullable=False, unique=True)
-    
-    # --- RELATIONSHIP ---
-    # shelves assigned this number
-    shelves: Mapped[List["Shelf"]] = relationship(
-        back_populates="shelf_number",
-        primaryjoin="Shelf.shelf_number_id==ShelfNumber.id" # <-- FINAL FIX
-    )

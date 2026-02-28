@@ -20,11 +20,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # 1. Add 'Retrieved' to item_status Enum
-    # Note: We must check if it exists first to be idempotent, or rely on "ALTER TYPE ... ADD VALUE IF NOT EXISTS"
-    # Postgres < 12 doesn't support IF NOT EXISTS, but we assume modern Postgres. 
-    # If not, we can wrap in a try/catch, but autocommit block is needed for ALTER TYPE.
-    with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE item_status ADD VALUE IF NOT EXISTS 'Retrieved'")
+    conn = op.get_bind()
+    res = conn.execute(sa.text("SELECT 1 FROM pg_enum JOIN pg_type ON pg_type.oid = pg_enum.enumtypid WHERE pg_type.typname = 'item_status' AND pg_enum.enumlabel = 'Retrieved'")).scalar()
+    if not res:
+        # Commit the current Alembic transaction to unlock the DB for the ALTER TYPE
+        op.execute("COMMIT")
+        op.execute("ALTER TYPE item_status ADD VALUE 'Retrieved'")
+        op.execute("BEGIN")
 
     # 2. Create Shipping Jobs
     op.create_table('shipping_jobs',

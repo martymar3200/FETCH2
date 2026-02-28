@@ -85,7 +85,7 @@
                   sort_by: 'aisle_number'
                 }"
                 option-value="id"
-                :option-label="opt => opt.aisle_number.number"
+                option-label="aisle_number"
                 :placeholder="'Select Aisle'"
                 :disabled="!searchForm.module_id"
                 @update:model-value="handleLocationFormChange('Aisle')"
@@ -130,7 +130,7 @@
                   sort_by: 'ladder_number'
                 }"
                 option-value="id"
-                :option-label="opt => opt.ladder_number.number"
+                option-label="ladder_number"
                 :placeholder="'Select Ladder'"
                 :disabled="!searchForm.side_id"
                 @update:model-value="handleLocationFormChange('Ladder')"
@@ -157,7 +157,7 @@
                   ladder_id: searchForm.ladder_id,
                   sort_by: 'shelf_number'
                 }"
-                :option-label="opt => opt.shelf_number.number"
+                option-label="shelf_number"
                 :placeholder="'Select Shelf'"
                 :disabled="!searchForm.ladder_id"
                 aria-label="shelfSelect"

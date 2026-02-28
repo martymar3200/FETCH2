@@ -20,7 +20,6 @@ from app.models.shelf_types import ShelfType
 from app.models.shelves import Shelf
 from app.models.size_class import SizeClass
 from app.models.shelf_positions import ShelfPosition
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.trays import Tray
 from app.models.non_tray_items import NonTrayItem
 # --- END: MODIFIED/NEW IMPORTS FOR BACKGROUND TASK ---
@@ -85,9 +84,8 @@ def resize_shelves_for_type(
                 # Find the positions with the highest numbers to remove them.
                 positions_to_check_query = (
                     select(ShelfPosition)
-                    .join(ShelfPositionNumber, ShelfPosition.shelf_position_number_id == ShelfPositionNumber.id)
                     .where(ShelfPosition.shelf_id == shelf.id)
-                    .order_by(ShelfPositionNumber.number.desc())
+                    .order_by(ShelfPosition.position_number.desc())
                     .limit(num_to_remove)
                 )
                 # V2 FIX: session.exec().all() -> session.execute(select(...)).scalars().all()
@@ -115,14 +113,11 @@ def resize_shelves_for_type(
             # --- INCREASING CAPACITY ---
             new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
             if new_position_numbers_range:
-                # V2 FIX: session.exec().all() -> session.execute(select(...)).scalars().all()
-                pos_nums_map = {p.number: p for p in session.execute(select(ShelfPositionNumber).where(ShelfPositionNumber.number.in_(new_position_numbers_range))).scalars().all()}
+                # Direct position_number — no lookup table needed
                 for shelf in affected_shelves:
                     for position_num in new_position_numbers_range:
-                        shelf_pos_num_obj = pos_nums_map.get(position_num)
-                        if shelf_pos_num_obj:
-                            new_position = ShelfPosition(shelf_id=shelf.id, shelf_position_number_id=shelf_pos_num_obj.id)
-                            session.add(new_position)
+                        new_position = ShelfPosition(shelf_id=shelf.id, position_number=position_num)
+                        session.add(new_position)
                     LOGGER.info(f"Background Task: Queued {len(new_position_numbers_range)} new positions for Shelf ID {shelf.id}.")
 
         session.commit()

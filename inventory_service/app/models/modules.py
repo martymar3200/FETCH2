@@ -2,7 +2,7 @@
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, VARCHAR, ForeignKey
+from sqlalchemy import Integer, String, VARCHAR, ForeignKey, UniqueConstraint
 
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -22,14 +22,19 @@ class Module(Base): # <--- Inherit from Base
     # NOTE: __tablename__ is handled by Base.
     # __tablename__ = "modules"
 
+    # module_number must be unique within a building
+    __table_args__ = (
+        UniqueConstraint('building_id', 'module_number', name='uq_modules_building'),
+    )
+
     # Primary Key
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     # Foreign Key to Building
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=False)
 
-    # Module Number field (unique)
-    module_number: Mapped[str] = mapped_column(String(50), nullable=True, unique=True)
+    # Module Number field
+    module_number: Mapped[str] = mapped_column(String(50), nullable=True)
     
     # REMOVED: create_dt and update_dt are handled by the Base class.
 
@@ -38,4 +43,7 @@ class Module(Base): # <--- Inherit from Base
     building: Mapped["Building"] = relationship(back_populates="modules")
     
     # aisles in a module
-    aisles: Mapped[List["Aisle"]] = relationship(back_populates="module")
+    aisles: Mapped[List["Aisle"]] = relationship(
+        back_populates="module",
+        cascade="all, delete-orphan"
+    )

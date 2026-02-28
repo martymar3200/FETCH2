@@ -1,14 +1,12 @@
-# /code/app/routers/ladders.py - REFACRORED TO SQLALCHEMY V2
+# /code/app/routers/ladders.py - REFACTORED: Removed LadderNumber lookup table dependency
 
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
-# CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate
-# CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
-from sqlalchemy import select     # select is imported from sqlalchemy now
+from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
@@ -19,10 +17,14 @@ from app.models.modules import Module
 from app.models.aisles import Aisle
 from app.models.sides import Side
 from app.models.ladders import Ladder
-from app.models.ladder_numbers import LadderNumber
+from app.models.shelves import Shelf
+from app.models.shelf_positions import ShelfPosition
+from app.models.trays import Tray
+from app.models.non_tray_items import NonTrayItem
 from app.schemas.ladders import (
     LadderInput,
     LadderUpdateInput,
+    LadderBulkUpdateInput,
     LadderListOutput,
     LadderDetailWriteOutput,
     LadderDetailReadOutput,
@@ -54,7 +56,6 @@ def get_ladder_list(
     Retrieve a paginated list of ladders.
     """
 
-    # Create a query to retrieve all Ladder
     query = (
         select(Ladder)
         .join(Side, Ladder.side_id == Side.id)
@@ -64,9 +65,7 @@ def get_ladder_list(
     )
 
     if search:
-        query = query.join(
-            LadderNumber, Ladder.ladder_number_id == LadderNumber.id
-        ).where(LadderNumber.number == search)
+        query = query.where(Ladder.ladder_number == int(search))
 
     if params.building_id:
         query = query.where(Building.id == params.building_id)
@@ -79,7 +78,6 @@ def get_ladder_list(
 
     # Validate and Apply sorting based on sort_params
     if sort_params.sort_by:
-        # Apply sorting using BaseSorter
         sorter = LadderSorter(Ladder)
         query = sorter.apply_sorting(query, sort_params)
 
@@ -112,33 +110,10 @@ def create_ladder(
     ladder_input: LadderInput, session: Session = Depends(get_session)
 ) -> Ladder:
     """
-    Create a ladder:
+    Create a ladder.
     """
     try:
-        # Check if ladder # or ladder_number_id
-        ladder_number = ladder_input.ladder_number
-        ladder_number_id = ladder_input.ladder_number_id
-        mutated_data = ladder_input.model_dump(exclude="ladder_number")
-        if not ladder_number_id and not ladder_number:
-            raise ValidationException(
-                detail=f"ladder_number_id OR ladder_number required"
-            )
-        elif ladder_number and not ladder_number_id:
-            # get ladder_number_id from ladder number
-            # CRITICAL V2 FIX: session.query().filter().first() -> session.execute(select(...)).scalars().first()
-            ladder_num_object = (
-                session.execute(select(LadderNumber).filter(LadderNumber.number == ladder_number))
-                .scalars()
-                .first()
-            )
-            if not ladder_num_object:
-                raise ValidationException(
-                    detail=f"No ladder_number entity exists for ladder number {ladder_number}"
-                )
-            mutated_data["ladder_number_id"] = ladder_num_object.id
-
-        # new_ladder = Ladder(**ladder_input.model_dump())
-        new_ladder = Ladder(**mutated_data)
+        new_ladder = Ladder(**ladder_input.model_dump())
         session.add(new_ladder)
         session.commit()
         session.refresh(new_ladder)
@@ -188,6 +163,23 @@ def delete_ladder(id: int, session: Session = Depends(get_session)):
     ladder = session.get(Ladder, id)
 
     if ladder:
+        # Check for items on any shelf belonging to this ladder
+        items_count_query = (
+            select(func.count(ShelfPosition.id))
+            .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
+            .where(Shelf.ladder_id == id)
+            .where(
+                (ShelfPosition.tray != None) | (ShelfPosition.non_tray_item != None)
+            )
+        )
+        items_count = session.execute(items_count_query).scalar()
+
+        if items_count > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot delete Ladder {ladder.ladder_number}: {items_count} items are shelved on its shelves."
+            )
+
         session.delete(ladder)
         session.commit()
 
@@ -196,3 +188,35 @@ def delete_ladder(id: int, session: Session = Depends(get_session)):
         )
 
     raise NotFound(detail=f"Ladder ID {id} Not Found")
+
+
+@router.patch("/bulk", response_model=List[LadderDetailWriteOutput])
+def bulk_update_ladders(
+    updates: List[LadderBulkUpdateInput],
+    session: Session = Depends(get_session),
+):
+    """
+    Bulk update ladders. Each item must include an 'id' field.
+    Designed for batch-editing sort_priority.
+    """
+    results = []
+    for update in updates:
+        data = update.model_dump(exclude_unset=True)
+        ladder_id = data.pop("id")
+
+        ladder = session.get(Ladder, ladder_id)
+        if not ladder:
+            raise NotFound(detail=f"Ladder ID {ladder_id} Not Found")
+
+        for key, value in data.items():
+            setattr(ladder, key, value)
+
+        setattr(ladder, "update_dt", datetime.now(timezone.utc))
+        session.add(ladder)
+        results.append(ladder)
+
+    session.commit()
+    for r in results:
+        session.refresh(r)
+
+    return results

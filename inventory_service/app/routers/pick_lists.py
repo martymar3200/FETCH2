@@ -86,13 +86,13 @@ def sort_order_priority(session: Session, pick_list, requests):
             location = get_location(session, shelf_position)
 
             aisle_priority = (
-                location["aisle"].sort_priority or location["aisle_number"].number
+                location["aisle"].sort_priority or location["aisle"].aisle_number
             )
             ladder_priority = (
-                location["ladder"].sort_priority or location["ladder_number"].number
+                location["ladder"].sort_priority or location["ladder"].ladder_number
             )
             shelf_priority = (
-                location["shelf"].sort_priority or location["shelf_number"].number
+                location["shelf"].sort_priority or location["shelf"].shelf_number
             )
 
             request_data.append(

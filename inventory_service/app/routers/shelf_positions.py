@@ -1,19 +1,16 @@
-# /code/app/routers/shelf_positions.py - REFACRORED TO SQLALCHEMY V2
+# /code/app/routers/shelf_positions.py - REFACTORED: Removed ShelfPositionNumber lookup table dependency
 
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
-# CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate
-# CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
-from sqlalchemy import select     # select is imported from sqlalchemy now
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 from datetime import datetime, timezone
 
 from app.database.session import get_session
 from app.filter_params import SortParams
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.shelf_positions import ShelfPosition
 from app.models.shelves import Shelf
 from app.schemas.shelf_positions import (
@@ -70,16 +67,14 @@ def get_shelf_position_list(
         statement = select(ShelfPosition)
 
     if search:
-        statement = statement.join(ShelfPositionNumber).where(
-            ShelfPositionNumber.number == search)
+        statement = statement.where(ShelfPosition.position_number == int(search))
 
     # Validate and Apply sorting based on sort_params
     if sort_params.sort_by:
         sorter = ShelvesSorter(ShelfPosition)
         statement = sorter.apply_sorting(statement, sort_params)
 
-    # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(statement)
+    return paginate(session, statement)
 
 
 @router.get("/{id}", response_model=ShelfPositionDetailReadOutput)
@@ -101,27 +96,19 @@ def create_shelf_position(
     session: Session = Depends(get_session),
 ) -> ShelfPosition:
     """
-    Create a new shelf position.
+    Create a new shelf position. Also generates location string.
     """
-    # V2 FIX: session.query(Model).get(id) -> session.get(Model, id)
     shelf = session.get(Shelf, shelf_position_input.shelf_id)
-    shelf_type = shelf.shelf_type
-    shelf_position_number = session.get(
-        ShelfPositionNumber, shelf_position_input.shelf_position_number_id
-    )
+
     if not shelf:
         raise NotFound(detail=f"Shelf ID {shelf_position_input.shelf_id} Not Found")
 
-    if not shelf_position_number:
-        raise NotFound(
-            detail=f"Shelf Position Number ID {shelf_position_input.shelf_position_number_id} Not Found"
-        )
-
-    shelf_position = shelf_position_number.number
+    shelf_type = shelf.shelf_type
+    position_number = shelf_position_input.position_number
 
     if len(shelf.shelf_positions) >= shelf_type.max_capacity:
         raise ValidationException(
-            detail=f"Shelf Position {shelf_position} for Shelf ID"
+            detail=f"Shelf Position {position_number} for Shelf ID"
             f" {shelf.id} exceeds "
             f"max capacity of {shelf_type.max_capacity}"
         )
@@ -132,6 +119,8 @@ def create_shelf_position(
     session.add(new_shelf_position)
     session.commit()
     session.refresh(new_shelf_position)
+
+    # Location string auto-generated via @property
 
     return new_shelf_position
 
@@ -156,15 +145,6 @@ def update_shelf_position(
         if not shelf:
             raise NotFound(
                 detail=f"Shelf ID {existing_shelf_position.shelf_id} Not Found"
-            )
-
-        shelf_position_number = session.get(
-            ShelfPositionNumber, existing_shelf_position.shelf_position_number_id
-        )
-
-        if not shelf_position_number:
-            raise NotFound(
-                detail=f"Shelf Position Number ID {existing_shelf_position.shelf_position_number_id} Not Found"
             )
 
         mutated_data = shelf_position.model_dump(exclude_unset=True)

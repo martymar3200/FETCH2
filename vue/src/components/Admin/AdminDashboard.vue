@@ -44,16 +44,16 @@
     </div>
   </div>
 
-  <!-- routing modal whenever user selects any nested building field ex: modules, aisles ect-->
-  <AdminLocationManagerRouting
-    v-if="showLocationManageRouteModal !== null"
-    :location-title="showLocationManageRouteModal"
-    @hide="showLocationManageRouteModal = null; resetBuildingStore();"
-  />
-
+  <!-- bulk upload modal -->
   <AdminLocationManagerBulkUpload
     v-if="showBulkUploadLocationModal"
     @hide="showBulkUploadLocationModal = false"
+  />
+
+  <!-- bulk update modal -->
+  <AdminLocationManagerBulkUpdate
+    v-if="showBulkUpdateLocationModal"
+    @hide="showBulkUpdateLocationModal = false"
   />
 </template>
 
@@ -63,8 +63,8 @@ import { useRouter } from 'vue-router'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useBuildingStore } from '@/stores/building-store'
 import EssentialLink from '@/components/EssentialLink.vue'
-import AdminLocationManagerRouting from '@/components/Admin/AdminLocationManagerRouting.vue'
 import AdminLocationManagerBulkUpload from '@/components/Admin/AdminLocationManagerBulkUpload.vue'
+import AdminLocationManagerBulkUpdate from '@/components/Admin/AdminLocationManagerBulkUpdate.vue'
 
 const router = useRouter()
 
@@ -148,22 +148,13 @@ const adminLinkList = computed(() => {
       title: 'Location Manager',
       sublinks: [
         {
-          title: 'Buildings'
+          title: 'Manage Locations'
         },
         {
-          title: 'Modules'
+          title: 'Bulk Create Shelves/Ladder'
         },
         {
-          title: 'Aisles'
-        },
-        {
-          title: 'Ladders'
-        },
-        {
-          title: 'Shelves'
-        },
-        {
-          title: 'Bulk Upload Ladders/Shelves'
+          title: 'Bulk Edit Shelves'
         }
       ],
       hidden: !checkUserPermission('can_manage_locations')
@@ -182,8 +173,8 @@ const adminLinkList = computed(() => {
     }
   })
 })
-const showLocationManageRouteModal = ref(null)
 const showBulkUploadLocationModal = ref(false)
+const showBulkUpdateLocationModal = ref(false)
 
 // Logic
 onBeforeMount(() => {
@@ -192,8 +183,8 @@ onBeforeMount(() => {
 
 const handleRouting = (link) => {
   switch (link.title) {
-    case 'Buildings':
-      router.push({ name: 'admin-location-manage-buildings' })
+    case 'Manage Locations':
+      router.push({ name: 'admin-location-explorer' })
       break
     case 'Barcode Types':
       router.push({ name: 'admin-manage-barcode-type' })
@@ -207,8 +198,11 @@ const handleRouting = (link) => {
     case 'Shipping Module':
       router.push({ name: 'admin-manage-shipping' })
       break
-    case 'Bulk Upload Ladders/Shelves':
+    case 'Bulk Create Shelves/Ladder':
       showBulkUploadLocationModal.value = true
+      break
+    case 'Bulk Edit Shelves':
+      showBulkUpdateLocationModal.value = true
       break
     case 'Add/Edit/Remove Owners':
       router.push({ name: 'admin-manage-owner' })
@@ -232,7 +226,6 @@ const handleRouting = (link) => {
       router.push({ name: 'admin-manage-request-type' })
       break
     default:
-      showLocationManageRouteModal.value = link.title
       break
   }
 }

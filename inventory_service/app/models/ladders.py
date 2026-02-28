@@ -1,4 +1,4 @@
-# /app/models/ladders.py - ULTIMATE, FINAL CORRECTED V2
+# /app/models/ladders.py - REFACTORED: Removed LadderNumber lookup table dependency
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,11 +9,11 @@ from typing import Optional, List
 from datetime import datetime, timezone
 from app.database.base import Base
 
-# Dependencies (MUST BE IMPORTED FOR ABSOLUTE FK REFERENCE)
-from app.models.sides import Side # <--- CRITICAL IMPORT
-from app.models.ladder_numbers import LadderNumber
+# Dependencies
+from app.models.sides import Side
 
-class Ladder(Base): # <--- Inherit from Base
+
+class Ladder(Base):
     """
     Model to represent Ladders table
     """
@@ -21,18 +21,17 @@ class Ladder(Base): # <--- Inherit from Base
     # NOTE: __tablename__ is handled by Base.
     __table_args__ = (
         UniqueConstraint(
-            "side_id", "ladder_number_id", name="uq_side_id_ladder_number_id"
+            "side_id", "ladder_number", name="uq_side_id_ladder_number"
         ),
     )
 
     # Primary Key
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
+    # Direct integer column (replaces ladder_number_id FK)
+    ladder_number: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+
     # Foreign Keys
-    # CRITICAL FIX: Use LadderNumber.__table__.c.id for explicit, unbreakable reference
-    ladder_number_id: Mapped[int] = mapped_column(ForeignKey(LadderNumber.__table__.c.id), nullable=False)
-    
-    # Standard FK
     side_id: Mapped[int] = mapped_column(ForeignKey("sides.id"), nullable=False)
 
     # Sort Priority
@@ -40,5 +39,7 @@ class Ladder(Base): # <--- Inherit from Base
     
     # --- RELATIONSHIPS ---
     side: Mapped[Side] = relationship(back_populates="ladders")
-    ladder_number: Mapped[LadderNumber] = relationship(back_populates="ladders")
-    shelves: Mapped[List["Shelf"]] = relationship(back_populates="ladder")
+    shelves: Mapped[List["Shelf"]] = relationship(
+        back_populates="ladder",
+        cascade="all, delete-orphan"
+    )

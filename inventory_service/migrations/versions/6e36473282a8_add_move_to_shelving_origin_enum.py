@@ -19,8 +19,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE shelving_origin ADD VALUE 'Move'")
+    op.execute("COMMIT")
+    op.execute("ALTER TYPE shelving_origin ADD VALUE 'Move'")
+    op.execute("BEGIN")
 
 
 def downgrade() -> None:

@@ -25,7 +25,6 @@ from app.models.non_tray_items import NonTrayItem, NonTrayItemStatus
 from app.models.barcodes import Barcode
 from app.models.container_types import ContainerType
 from app.models.owners import Owner
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.shelf_positions import ShelfPosition
 from app.models.shelves import Shelf
 from app.models.items import Item
@@ -306,10 +305,9 @@ def create_non_tray_item(
         new_non_tray_item = previous_non_tray_item
 
     session.add(new_non_tray_item)
+    update_shelf_space_after_non_tray(session, new_non_tray_item, None, None)
     session.commit()
     session.refresh(new_non_tray_item)
-
-    update_shelf_space_after_non_tray(new_non_tray_item, None, None)
 
     return new_non_tray_item
 
@@ -410,14 +408,14 @@ def update_non_tray_item(
 
     # Commit the changes to the database
     session.add(existing_non_tray_item)
-    session.commit()
-    session.refresh(existing_non_tray_item)
-
     update_shelf_space_after_non_tray(
+        session,
         existing_non_tray_item,
         existing_non_tray_item.shelf_position_id,
         non_tray_item.shelf_position_id,
     )
+    session.commit()
+    session.refresh(existing_non_tray_item)
 
     return existing_non_tray_item
 
@@ -430,7 +428,7 @@ def delete_non_tray_item(id: int, session: Session = Depends(get_session)):
     non_tray_item = session.get(NonTrayItem, id)
 
     if non_tray_item:
-        update_shelf_space_after_non_tray(None, None, non_tray_item.shelf_position_id)
+        update_shelf_space_after_non_tray(session, None, None, non_tray_item.shelf_position_id)
         session.delete(non_tray_item)
         session.commit()
 
@@ -493,7 +491,7 @@ def move_item(
     current_assigned_location = None
     if src_shelf:
         original_assigned_location = (src_shelf.location + "-" + str(
-            non_tray_item.shelf_position.shelf_position_number
+            non_tray_item.shelf_position.position_number
         ))
     if dest_shelf:
         current_assigned_location = (dest_shelf.location + "-" + str(
@@ -663,17 +661,7 @@ def move_item(
     destination_shelf_positions = dest_shelf.shelf_positions
     destination_shelf_position_id = None
     for destination_shelf_position in destination_shelf_positions:
-        # V2 FIX
-        shel_position_number = (
-            session.execute(select(ShelfPositionNumber)
-            .filter(
-                ShelfPositionNumber.id
-                == destination_shelf_position.shelf_position_number_id
-            ))
-            .scalars()
-            .first()
-        )
-        if shel_position_number.number == non_tray_item_input.shelf_position_number:
+        if destination_shelf_position.position_number == non_tray_item_input.shelf_position_number:
             destination_shelf_position_id = destination_shelf_position.id
             # V2 FIX
             tray_shelf_position = (
@@ -724,13 +712,12 @@ def move_item(
     session.add(non_tray_item)
     session.add(src_shelf)
     session.add(dest_shelf)
+    update_shelf_space_after_non_tray(
+        session, non_tray_item, destination_shelf_position_id, old_shelf_position_id
+    )
     session.commit()
     session.refresh(non_tray_item)
     session.refresh(src_shelf)
     session.refresh(dest_shelf)
-
-    update_shelf_space_after_non_tray(
-        non_tray_item, destination_shelf_position_id, old_shelf_position_id
-    )
 
     return non_tray_item

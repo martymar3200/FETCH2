@@ -111,9 +111,7 @@ class NonTrayItemRetrievalEventDetailOutput(NonTrayItemRetrievalEventBaseOutput)
                     "shelf_position": {
                         "id": 1,
                         "shelf_id": 1,
-                        "shelf_position_number": {
-                            "number": 1
-                        }
+                        "position_number": 1
                     },
                     "shelf_position_proposed_id": 1,
                     "container_type_id": 2,

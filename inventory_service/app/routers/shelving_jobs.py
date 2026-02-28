@@ -33,7 +33,6 @@ from app.models.items import Item
 from app.models.shelving_jobs import ShelvingJob, ShelvingJobStatus
 from app.models.shelves import Shelf
 from app.models.shelf_positions import ShelfPosition
-from app.models.shelf_position_numbers import ShelfPositionNumber
 from app.models.barcodes import Barcode
 from app.models.shelving_job_discrepancies import ShelvingJobDiscrepancy
 from app.models.owners import Owner
@@ -746,26 +745,24 @@ def reassign_container_location(
             detail="Either shelf_id or shelf_barcode_value must be provided for shelf assignment."
         )
     
-    # get shelf position
-    # V2 FIX: session.exec().first() -> session.execute(select(...)).first()
-    shelf_position_position_number_join = (
-        select(ShelfPosition, ShelfPositionNumber)
-        .join(ShelfPositionNumber)
-        .where(ShelfPosition.shelf_id == shelf_id)
-        .where(ShelfPositionNumber.number == reassignment_input.shelf_position_number)
+    # get shelf position - direct query on position_number
+    shelf_position = (
+        session.execute(
+            select(ShelfPosition)
+            .where(ShelfPosition.shelf_id == shelf_id)
+            .where(ShelfPosition.position_number == reassignment_input.shelf_position_number)
+        )
+        .scalars()
+        .first()
     )
-    shelf_position_position_number_join = session.execute(
-        shelf_position_position_number_join
-    ).first()
 
-    if not shelf_position_position_number_join:
+    if not shelf_position:
         raise ValidationException(
             detail=f"""Shelf Position Number {reassignment_input.shelf_position_number} does not exist on shelf {shelf_id}"""
         )
 
     # Check for Availability
-    shelf = shelf_position_position_number_join.ShelfPosition.shelf
-    shelf_position = shelf_position_position_number_join.ShelfPosition
+    shelf = shelf_position.shelf
 
     # check if tray or non-tray
     if container_type == "Tray":
@@ -973,21 +970,12 @@ def reassign_container_location(
                 if new_capacity > old_capacity:
                     new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
                     
-                    position_numbers_query = select(ShelfPositionNumber).where(
-                        ShelfPositionNumber.number.in_(new_position_numbers_range)
-                    )
-                    position_numbers_map = {
-                        p.number: p for p in session.execute(position_numbers_query).scalars().all()
-                    }
-                    
                     for position_num in new_position_numbers_range:
-                        shelf_pos_num_obj = position_numbers_map.get(position_num)
-                        if shelf_pos_num_obj:
-                            new_position = ShelfPosition(
-                                shelf_id=shelf.id,
-                                shelf_position_number_id=shelf_pos_num_obj.id,
-                            )
-                            session.add(new_position)
+                        new_position = ShelfPosition(
+                            shelf_id=shelf.id,
+                            position_number=position_num,
+                        )
+                        session.add(new_position)
                     
                     session.flush()  # Ensure positions are created before recalculating
                 
@@ -1054,17 +1042,16 @@ def reassign_container_location(
 
     session.add(container)
     start_session_with_audit_info(audit_info, session)
-    session.commit()
-    session.refresh(container)
-
     if container.container_type_id == 1:
         update_shelf_space_after_tray(
-            container, container.shelf_position_id, old_shelf_position_id
+            session, container, container.shelf_position_id, old_shelf_position_id
         )
     else:
         update_shelf_space_after_non_tray(
-            container, container.shelf_position_id, old_shelf_position_id
+            session, container, container.shelf_position_id, old_shelf_position_id
         )
+    session.commit()
+    session.refresh(container)
 
     # Create ShelvingJobContainer record for unified container tracking
     shelving_container = _create_or_get_shelving_container(
@@ -1126,29 +1113,24 @@ def reassign_container_proposed_location(
             detail=f"No shelves were found"
         )
 
-    # get shelf position
-    # V2 FIX: session.exec().first() -> session.execute(select(...)).first()
-    shelf_position_position_number_join = (
-        select(ShelfPosition, ShelfPositionNumber)
-        .join(ShelfPositionNumber)
-        .where(ShelfPosition.shelf_id == shelf_id)
-        .where(
-            ShelfPositionNumber.number == reassignment_input.shelf_position_number
+    # get shelf position - direct query on position_number
+    shelf_position = (
+        session.execute(
+            select(ShelfPosition)
+            .where(ShelfPosition.shelf_id == shelf_id)
+            .where(ShelfPosition.position_number == reassignment_input.shelf_position_number)
         )
+        .scalars()
+        .first()
     )
-    shelf_position_position_number_join = session.execute(
-        shelf_position_position_number_join
-    ).first()
 
-    if not shelf_position_position_number_join:
+    if not shelf_position:
         raise ValidationException(
             detail=f"""Shelf Position Number {reassignment_input.shelf_position_number} does not exist on shelf"""
-
         )
 
     # Check for Availability
-    shelf = shelf_position_position_number_join.ShelfPosition.shelf
-    shelf_position = shelf_position_position_number_join.ShelfPosition
+    shelf = shelf_position.shelf
     non_tray_container = None
 
     # V2 FIX
@@ -1305,21 +1287,12 @@ def reassign_container_proposed_location(
                 if new_capacity > old_capacity:
                     new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
                     
-                    position_numbers_query = select(ShelfPositionNumber).where(
-                        ShelfPositionNumber.number.in_(new_position_numbers_range)
-                    )
-                    position_numbers_map = {
-                        p.number: p for p in session.execute(position_numbers_query).scalars().all()
-                    }
-                    
                     for position_num in new_position_numbers_range:
-                        shelf_pos_num_obj = position_numbers_map.get(position_num)
-                        if shelf_pos_num_obj:
-                            new_position = ShelfPosition(
-                                shelf_id=shelf.id,
-                                shelf_position_number_id=shelf_pos_num_obj.id,
-                            )
-                            session.add(new_position)
+                        new_position = ShelfPosition(
+                            shelf_id=shelf.id,
+                            position_number=position_num,
+                        )
+                        session.add(new_position)
                     
                     session.flush()  # Ensure positions are created before recalculating
                 
@@ -1381,11 +1354,11 @@ def reassign_container_proposed_location(
         )
         if container.container_type_id == 1:
             update_shelf_space_after_tray(
-                container, container.shelf_position_id, old_shelf_position_id
+                session, container, container.shelf_position_id, old_shelf_position_id
             )
         else:
             update_shelf_space_after_non_tray(
-                container, container.shelf_position_id, old_shelf_position_id
+                session, container, container.shelf_position_id, old_shelf_position_id
             )
 
     session.add(container)
@@ -1682,16 +1655,11 @@ def override_container_location(
                 select(Shelf).where(Shelf.barcode_id == barcode.id)
             ).scalars().first()
             if shelf and override_input.shelf_position_number:
-                position_num = session.execute(
-                    select(ShelfPositionNumber)
-                    .where(ShelfPositionNumber.number == override_input.shelf_position_number)
+                shelf_position = session.execute(
+                    select(ShelfPosition)
+                    .where(ShelfPosition.shelf_id == shelf.id)
+                    .where(ShelfPosition.position_number == override_input.shelf_position_number)
                 ).scalars().first()
-                if position_num:
-                    shelf_position = session.execute(
-                        select(ShelfPosition)
-                        .where(ShelfPosition.shelf_id == shelf.id)
-                        .where(ShelfPosition.shelf_position_number_id == position_num.id)
-                    ).scalars().first()
     
     if not shelf_position:
         raise NotFound(detail="Shelf position not found")

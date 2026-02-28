@@ -201,54 +201,14 @@ const breadcrumbList = computed(() => {
         { text: 'Manage Barcode Types' }
       ]
       break
-    case 'admin-location-manage-buildings':
+    case 'admin-location-explorer':
       breadCrumbs = [
         ...breadCrumbs,
         {
           text: 'Admin',
           to: '/admin'
         },
-        { text: 'Manage Buildings' }
-      ]
-      break
-    case 'admin-location-manage-modules':
-      breadCrumbs = [
-        ...breadCrumbs,
-        {
-          text: 'Admin',
-          to: '/admin'
-        },
-        { text: 'Manage Modules' }
-      ]
-      break
-    case 'admin-location-manage-aisles':
-      breadCrumbs = [
-        ...breadCrumbs,
-        {
-          text: 'Admin',
-          to: '/admin'
-        },
-        { text: 'Manage Aisles' }
-      ]
-      break
-    case 'admin-location-manage-ladders':
-      breadCrumbs = [
-        ...breadCrumbs,
-        {
-          text: 'Admin',
-          to: '/admin'
-        },
-        { text: 'Manage Ladders' }
-      ]
-      break
-    case 'admin-location-manage-shelves':
-      breadCrumbs = [
-        ...breadCrumbs,
-        {
-          text: 'Admin',
-          to: '/admin'
-        },
-        { text: 'Manage Shelves' }
+        { text: 'Location Manager' }
       ]
       break
     case 'picklist':

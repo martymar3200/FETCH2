@@ -30,7 +30,6 @@ from app.filter_params import (
     MoveDiscrepancyParams,
 )
 from app.models.accession_jobs import AccessionJob
-from app.models.aisle_numbers import AisleNumber
 from app.models.barcodes import Barcode
 from app.models.item_withdrawals import ItemWithdrawal
 from app.models.items import Item
@@ -740,7 +739,7 @@ def get_aisle_item_counts_query(params, sort_params=None):
     query = (
         select(
             Aisle.id.label("aisle_id"),
-            AisleNumber.number.label("aisle_number"),
+            Aisle.aisle_number.label("aisle_number"),
             func.count(distinct(Shelf.id)).label("shelf_count"),
             func.count(distinct(Tray.id)).label("tray_count"),
             func.count(distinct(Item.id)).label("item_count"),
@@ -749,7 +748,6 @@ def get_aisle_item_counts_query(params, sort_params=None):
                 func.count(distinct(Item.id)) + func.count(distinct(NonTrayItem.id))
             ).label("total_item_count"),
         )
-        .join(AisleNumber, Aisle.aisle_number_id == AisleNumber.id)
         .join(Module, Aisle.module_id == Module.id)
         .join(Side, Side.aisle_id == Aisle.id, isouter=True)
         .join(Ladder, Ladder.side_id == Side.id, isouter=True)
@@ -761,13 +759,13 @@ def get_aisle_item_counts_query(params, sort_params=None):
             NonTrayItem, NonTrayItem.shelf_position_id == ShelfPosition.id, isouter=True
         )
         .filter(Module.building_id == params.building_id)
-        .group_by(Aisle.id, AisleNumber.number)
+        .group_by(Aisle.id, Aisle.aisle_number)
     )
 
     if params.aisle_num_from is not None:
-        query = query.filter(AisleNumber.number >= params.aisle_num_from)
+        query = query.filter(Aisle.aisle_number >= params.aisle_num_from)
     if params.aisle_num_to is not None:
-        query = query.filter(AisleNumber.number <= params.aisle_num_to)
+        query = query.filter(Aisle.aisle_number <= params.aisle_num_to)
 
     # Validate and Apply sorting based on sort_params
     if sort_params is not None and sort_params.sort_by:
@@ -776,7 +774,7 @@ def get_aisle_item_counts_query(params, sort_params=None):
         query = sorter.apply_sorting(query, sort_params)
     else:
         # Apply default sorting
-        query = query.order_by(asc(AisleNumber.number))
+        query = query.order_by(asc(Aisle.aisle_number))
 
     return query
 
@@ -910,7 +908,6 @@ def get_non_tray_item_counts_query(params, sort_params=None):
         .join(Ladder, Ladder.id == Shelf.ladder_id)
         .join(Side, Side.id == Ladder.side_id)
         .join(Aisle, Aisle.id == Side.aisle_id)
-        .join(AisleNumber, Aisle.aisle_number_id == AisleNumber.id)
         .join(SizeClass, NonTrayItem.size_class_id == SizeClass.id)
         .join(Module, Module.id == Aisle.module_id)
         .where(Module.building_id == params.building_id)
@@ -925,9 +922,9 @@ def get_non_tray_item_counts_query(params, sort_params=None):
     if params.size_class_id:
         query = query.where(NonTrayItem.size_class_id.in_(params.size_class_id))
     if params.aisle_num_from is not None:
-        query = query.where(AisleNumber.number >= params.aisle_num_from)
+        query = query.where(Aisle.aisle_number >= params.aisle_num_from)
     if params.aisle_num_to is not None:
-        query = query.where(AisleNumber.number <= params.aisle_num_to)
+        query = query.where(Aisle.aisle_number <= params.aisle_num_to)
     if params.from_dt:
         query = query.where(NonTrayItem.shelved_dt >= params.from_dt)
     if params.to_dt:
@@ -1084,7 +1081,6 @@ def get_tray_item_counts_query(params, sort_params=None):
         .join(Ladder, Ladder.id == Shelf.ladder_id)
         .join(Side, Side.id == Ladder.side_id)
         .join(Aisle, Aisle.id == Side.aisle_id)
-        .join(AisleNumber, Aisle.aisle_number_id == AisleNumber.id)
         .join(SizeClass, Tray.size_class_id == SizeClass.id)
         .join(Module, Module.id == Aisle.module_id)
         .where(Module.building_id == params.building_id)
@@ -1097,9 +1093,9 @@ def get_tray_item_counts_query(params, sort_params=None):
     if params.module_id:
         query = query.where(Module.id == params.module_id)
     if params.aisle_num_from is not None:
-        query = query.where(AisleNumber.number >= params.aisle_num_from)
+        query = query.where(Aisle.aisle_number >= params.aisle_num_from)
     if params.aisle_num_to is not None:
-        query = query.where(AisleNumber.number <= params.aisle_num_to)
+        query = query.where(Aisle.aisle_number <= params.aisle_num_to)
     if params.from_dt:
         query = query.where(Tray.shelved_dt >= params.from_dt)
     if params.to_dt:

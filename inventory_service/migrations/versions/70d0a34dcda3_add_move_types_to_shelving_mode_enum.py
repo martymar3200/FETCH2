@@ -19,9 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE shelving_mode ADD VALUE 'MoveTrayItem'")
-        op.execute("ALTER TYPE shelving_mode ADD VALUE 'MoveShelf'")
+    op.execute("COMMIT")
+    op.execute("ALTER TYPE shelving_mode ADD VALUE 'MoveTrayItem'")
+    op.execute("ALTER TYPE shelving_mode ADD VALUE 'MoveShelf'")
+    op.execute("BEGIN")
 
 
 def downgrade() -> None:

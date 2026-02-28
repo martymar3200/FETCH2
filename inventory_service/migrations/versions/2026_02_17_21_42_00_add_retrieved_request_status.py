@@ -8,6 +8,7 @@ Create Date: 2026-02-17 21:42:00.000000
 from typing import Sequence, Union
 
 from alembic import op
+import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '2026_02_17_21_42_00'
@@ -18,7 +19,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add 'Retrieved' value to the request_status PostgreSQL enum type
-    op.execute("ALTER TYPE request_status ADD VALUE IF NOT EXISTS 'Retrieved'")
+    # CRITICAL: ALTER TYPE ADD VALUE cannot run inside a transaction block.
+    # We must COMMIT the current transaction, add the value, then BEGIN a new one.
+    conn = op.get_bind()
+    res = conn.execute(sa.text(
+        "SELECT 1 FROM pg_enum JOIN pg_type ON pg_type.oid = pg_enum.enumtypid "
+        "WHERE pg_type.typname = 'request_status' AND pg_enum.enumlabel = 'Retrieved'"
+    )).scalar()
+    if not res:
+        op.execute("COMMIT")
+        op.execute("ALTER TYPE request_status ADD VALUE 'Retrieved'")
+        op.execute("BEGIN")
 
 
 def downgrade() -> None:
