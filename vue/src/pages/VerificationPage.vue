@@ -45,17 +45,12 @@ const { setMainNavDrawerOpen } = globalStore
 const handlePageOffset = inject('handle-page-offset')
 
 
-// Watch for changes in the jobId to control the drawer state
+// Close the drawer when entering a job page
 watch(() => route.params.jobId, (newJobId) => {
   if (newJobId) {
-    // If a jobId exists, we are on a job page, so close the drawer.
     setMainNavDrawerOpen(false)
-  } else {
-    // If no jobId exists, we are on the dashboard, so open the drawer.
-    setMainNavDrawerOpen(true)
   }
 }, {
-  // This makes the watcher run immediately on component load, just like onMounted.
   immediate: true
 })
 

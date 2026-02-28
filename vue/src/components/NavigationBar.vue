@@ -103,12 +103,13 @@
     <q-drawer
       v-if="userData.user_id"
       v-model="mainNavDrawerOpen"
-      show-if-above
+      overlay
       class="nav-side bg-sidebar-theme"
     >
       <q-list
         class="nav-list"
         role="group"
+        @click.capture="setMainNavDrawerOpen(false)"
       >
         <q-item
           class="q-my-lg align-center"
@@ -302,6 +303,11 @@ const showOfflineBanner = ref(false)
 const refreshWhenOnline = ref(false)
 
 // Logic
+
+// Auto-close the navigation drawer when the route changes
+watch(route, () => {
+  setMainNavDrawerOpen(false)
+})
 
 
 onMounted(() => {
