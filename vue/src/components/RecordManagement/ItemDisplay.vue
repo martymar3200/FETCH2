@@ -96,9 +96,26 @@
       <!-- History Section -->
       <div class="col-xs-12 col-md-6">
         <div class="section-card">
-          <h2 class="section-title text-h6 text-bold q-mb-md">
-            History
-          </h2>
+          <div
+            class="row items-center justify-between q-mb-md"
+            style="border-bottom: 1px solid rgba(0, 0, 0, 0.1); padding-bottom: 0.5rem; margin-bottom: 1rem;"
+          >
+            <h2
+              class="text-h6 text-bold text-primary q-ma-none"
+              style="line-height: normal;"
+            >
+              History
+            </h2>
+            <q-btn
+              flat
+              dense
+              color="primary"
+              label="View Full History"
+              no-caps
+              size="sm"
+              @click="showAuditTrailModal = true"
+            />
+          </div>
           <div class="section-content">
 
             <!-- Accession Job -->
@@ -241,6 +258,13 @@
       @success="handleEditSuccess"
       @hide="isEditModalVisible = false"
     />
+
+    <AuditTrail
+      v-if="showAuditTrailModal"
+      @reset="showAuditTrailModal = false"
+      :entity-type="itemDetails.container_type?.type === 'Non-Tray' ? 'non_tray_items' : 'items'"
+      :entity-id="itemDetails.id"
+    />
   </div>
 </template>
 
@@ -257,6 +281,7 @@ import EssentialTable from '@/components/EssentialTable.vue'
 import EssentialLink from '@/components/EssentialLink.vue'
 import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import EditNonTrayItemModal from '@/components/EditNonTrayItemModal.vue'
+import AuditTrail from '@/components/AuditTrail.vue'
 
 const router = useRouter()
 const { currentScreenSize } = useCurrentScreenSize()
@@ -272,8 +297,9 @@ const { appIsLoadingData } = storeToRefs(useGlobalStore())
 const userStore = useUserStore()
 const { canEditNonTrayItem } = storeToRefs(userStore)
 
-// Edit Modal Logic
+// Edit & History Modal Logic
 const isEditModalVisible = ref(false)
+const showAuditTrailModal = ref(false)
 
 const isEditHidden = computed(() => {
   if (!itemDetails.value?.id) {

@@ -52,6 +52,7 @@ from app.config.exceptions import (
 from app.utilities import manage_transition, get_module_shelf_position
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/withdraw-jobs",
@@ -159,6 +160,15 @@ def create_withdraw_job(
     session.commit()
     session.refresh(new_withdraw_job)
 
+    log_audit_event(
+        session,
+        AuditEventType.JOB_CREATED,
+        f"Withdrawal Job {new_withdraw_job.id} created",
+        job_type="withdraw_jobs",
+        job_id=new_withdraw_job.id,
+    )
+    session.commit()
+
     return new_withdraw_job
 
 
@@ -185,6 +195,7 @@ def update_withdraw_job(
     
     # Capture original status before changes
     original_status = existing_withdraw_job.status
+    original_assigned_user_id = existing_withdraw_job.assigned_user_id
     
     # Handle auto-assignment when user starts job
     if withdraw_job_input.status:
@@ -507,12 +518,52 @@ def update_withdraw_job(
     )
 
     for key, value in mutated_data.items():
-        setattr(existing_withdraw_job, key, value)
-
-    setattr(existing_withdraw_job, "update_dt", updated_dt)
-    start_session_with_audit_info(audit_info, session)
+       if withdraw_job_input.status and withdraw_job_input.status != original_status:
+        existing_withdraw_job.last_transition = datetime.now(timezone.utc)
+        
+    session.add(existing_withdraw_job)
     session.commit()
     session.refresh(existing_withdraw_job)
+
+    target_assigned_user = (
+        withdraw_job_input.assigned_user_id
+        if withdraw_job_input.assigned_user_id is not None
+        else getattr(existing_withdraw_job, "assigned_user_id", None)
+    )
+
+    if original_assigned_user_id != target_assigned_user:
+        user_msg = "Reassigned" if original_assigned_user_id else "Assigned"
+        if target_assigned_user:
+            assigned_to_user = session.get(User, target_assigned_user)
+            assigned_name = assigned_to_user.first_name + " " + assigned_to_user.last_name if assigned_to_user else str(target_assigned_user)
+            log_audit_event(
+                session,
+                AuditEventType.JOB_ASSIGNED,
+                f"Withdraw Job {id} {user_msg.lower()} to {assigned_name}",
+                job_type="withdraw_jobs",
+                job_id=id,
+            )
+        else:
+            log_audit_event(
+                session,
+                AuditEventType.JOB_ASSIGNED,
+                f"Withdraw Job {id} unassigned",
+                job_type="withdraw_jobs",
+                job_id=id,
+            )
+        session.commit()
+
+    # Log status change if status was updated
+    new_status_val = mutated_data.get("status")
+    if new_status_val and new_status_val != original_status:
+        log_audit_event(
+            session,
+            AuditEventType.JOB_STATUS_CHANGED,
+            f"Status changed from {original_status} to {new_status_val}",
+            job_type="withdraw_jobs",
+            job_id=id,
+        )
+        session.commit()
 
     return existing_withdraw_job
 
@@ -575,6 +626,14 @@ def delete_withdraw_job(job_id: int, session: Session = Depends(get_session)):
 
     if existing_batch_upload:
         session.execute(update(BatchUpload).where(BatchUpload.withdraw_job_id == job_id).values(withdraw_job_id=None, update_dt=update_dt))
+
+    log_audit_event(
+        session,
+        AuditEventType.JOB_DELETED,
+        f"Withdrawal Job {job_id} deleted",
+        job_type="withdraw_jobs",
+        job_id=job_id,
+    )
     session.delete(withdraw_job)
     session.commit()
 
@@ -760,6 +819,19 @@ def add_items_to_withdraw_job(
     session.commit()
     session.refresh(withdraw_job)
 
+    entity_type = "items" if item else ("non_tray_items" if non_tray_item else "trays")
+    entity_id = item.id if item else (non_tray_item.id if non_tray_item else tray.id)
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_ADDED,
+        f"{lookup_barcode_value} added to Withdrawal Job {job_id}",
+        job_type="withdraw_jobs",
+        job_id=job_id,
+        entity_type=entity_type,
+        entity_id=entity_id,
+    )
+    session.commit()
+
     # For return, construct manual dict if relationships aren't loaded, or rely on lazy loading
     return withdraw_job
 
@@ -891,5 +963,14 @@ def remove_items_from_withdraw_job(
 
     session.commit()
     session.refresh(withdraw_job)
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_REMOVED,
+        f"{lookup_barcode_value} removed from Withdrawal Job {job_id}",
+        job_type="withdraw_jobs",
+        job_id=job_id,
+    )
+    session.commit()
 
     return withdraw_job

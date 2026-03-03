@@ -51,6 +51,7 @@ from app.sorting import ItemSorter
 from app.tasks import process_tray_item_move
 
 from app.auth.dependencies import RequiresPermission
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/items",
@@ -308,6 +309,23 @@ def create_item(item_input: ItemInput, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(new_item)
 
+    # Determine job context — items are linked to accession jobs via tray
+    item_job_id = getattr(new_item, 'accession_job_id', None)
+    if not item_job_id and hasattr(new_item, 'tray') and new_item.tray:
+        item_job_id = new_item.tray.accession_job_id
+
+    item_barcode = new_item.barcode.value if new_item.barcode else str(new_item.id)
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_CREATED,
+        f"Item {item_barcode} scanned for accession",
+        entity_type="items",
+        entity_id=new_item.id,
+        job_type="accession_jobs" if item_job_id else None,
+        job_id=item_job_id,
+    )
+    session.commit()
+
     return new_item
 
 
@@ -375,10 +393,38 @@ def update_item(
             setattr(existing_item, key, value)
         setattr(existing_item, "update_dt", datetime.now(timezone.utc))
 
-        # Commit the changes to the database
         session.add(existing_item)
         session.commit()
         session.refresh(existing_item)
+
+        # Determine active job context for this item update
+        item_job_type = None
+        item_job_id = None
+        if getattr(existing_item, 'verification_job_id', None):
+            item_job_type = "verification_jobs"
+            item_job_id = existing_item.verification_job_id
+        elif hasattr(existing_item, 'tray') and existing_item.tray:
+            if existing_item.tray.verification_job_id:
+                item_job_type = "verification_jobs"
+                item_job_id = existing_item.tray.verification_job_id
+            elif existing_item.tray.shelving_job_id:
+                item_job_type = "shelving_jobs"
+                item_job_id = existing_item.tray.shelving_job_id
+            elif existing_item.tray.accession_job_id:
+                item_job_type = "accession_jobs"
+                item_job_id = existing_item.tray.accession_job_id
+
+        item_bc = existing_item.barcode.value if existing_item.barcode else str(id)
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_UPDATED,
+            f"Item {item_bc} updated",
+            entity_type="items",
+            entity_id=id,
+            job_type=item_job_type,
+            job_id=item_job_id,
+        )
+        session.commit()
 
         return existing_item
 
@@ -395,6 +441,14 @@ def delete_item(id: int, session: Session = Depends(get_session)):
     item = session.get(Item, id)
 
     if item:
+        item_del_bc = item.barcode.value if item.barcode else str(id)
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_DELETED,
+            f"Item {item_del_bc} deleted",
+            entity_type="items",
+            entity_id=id,
+        )
         session.delete(item)
         session.commit()
 

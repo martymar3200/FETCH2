@@ -37,9 +37,17 @@ AppSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, c
 
 # --- DEPENDENCY INJECTION / GENERATOR FUNCTION ---
 # Note: Since you are using synchronous connections, this is a standard generator.
-def get_session() -> Generator[Session, None, None]:
+def get_session(request: Request = None) -> Generator[Session, None, None]:
     with Session(engine, autoflush=False) as session: # Session is now from sqlalchemy.orm
         with session.no_autoflush:
+            # Transfer audit_info from middleware session to this DI session
+            if request and hasattr(request, 'state') and hasattr(request.state, 'db_session'):
+                middleware_session = request.state.db_session
+                audit_info = getattr(middleware_session, "audit_info", None)
+                if audit_info:
+                    setattr(session, "audit_info", audit_info)
+                    from app.utilities import start_session_with_audit_info
+                    start_session_with_audit_info(audit_info, session)
             try:
                 yield session
             except Exception:

@@ -42,6 +42,7 @@ from app.helpers.system_setting_helpers import get_setting_value
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/pick-lists",
@@ -261,6 +262,15 @@ def create_pick_list(
     session.commit()
     session.refresh(new_pick_list)
 
+    log_audit_event(
+        session,
+        AuditEventType.JOB_CREATED,
+        f"Picklist {new_pick_list.id} created with {len(pick_list_input.request_ids)} requests",
+        job_type="pick_lists",
+        job_id=new_pick_list.id,
+    )
+    session.commit()
+
     if errored_request_ids:
         setattr(new_pick_list, "errored_request_ids", errored_request_ids)
 
@@ -288,8 +298,9 @@ def update_pick_list(
         if not existing_pick_list:
             raise NotFound(detail=f"Pick List ID {id} Not Found")
         
-        # Capture original status before changes
+        # Capture original status and assigned user before changes
         original_status = existing_pick_list.status
+        original_assigned_user_id = existing_pick_list.assigned_user_id
         
         # Handle auto-assignment when user starts job
         if pick_list.status:
@@ -434,6 +445,47 @@ def update_pick_list(
         session.commit()
         session.refresh(existing_pick_list)
 
+        # Log status change if status was updated
+        mutated_data = pick_list.model_dump(exclude_unset=True, exclude={"run_timestamp"})
+        new_status_val = mutated_data.get("status")
+        if new_status_val and new_status_val != original_status:
+            log_audit_event(
+                session,
+                AuditEventType.JOB_STATUS_CHANGED,
+                f"Status changed from {original_status} to {new_status_val}",
+                job_type="pick_lists",
+                job_id=id,
+            )
+            session.commit()
+
+        target_assigned_user = (
+            pick_list.assigned_user_id
+            if pick_list.assigned_user_id is not None
+            else getattr(existing_pick_list, "assigned_user_id", None)
+        )
+
+        if original_assigned_user_id != target_assigned_user:
+            user_msg = "Reassigned" if original_assigned_user_id else "Assigned"
+            if target_assigned_user:
+                assigned_to_user = session.get(User, target_assigned_user)
+                assigned_name = assigned_to_user.first_name + " " + assigned_to_user.last_name if assigned_to_user else str(target_assigned_user)
+                log_audit_event(
+                    session,
+                    AuditEventType.JOB_ASSIGNED,
+                    f"Picklist {id} {user_msg.lower()} to {assigned_name}",
+                    job_type="pick_lists",
+                    job_id=id,
+                )
+            else:
+                log_audit_event(
+                    session,
+                    AuditEventType.JOB_ASSIGNED,
+                    f"Picklist {id} unassigned",
+                    job_type="pick_lists",
+                    job_id=id,
+                )
+            session.commit()
+
         return sort_order_priority(
             session, existing_pick_list, existing_pick_list.requests
         )
@@ -506,6 +558,18 @@ def add_request_to_pick_list(
     session.commit()
     session.refresh(pick_list)
 
+    for req in existing_requests:
+        log_audit_event(
+            session,
+            AuditEventType.REQUEST_ADDED,
+            f"Request {req.id} added to Picklist {pick_list_id}",
+            job_type="pick_lists",
+            job_id=pick_list_id,
+            entity_type="items" if req.item_id else "non_tray_items",
+            entity_id=req.item_id or req.non_tray_item_id,
+        )
+    session.commit()
+
     if errored_request_ids:
         setattr(pick_list, "errored_request_ids", errored_request_ids)
 
@@ -569,6 +633,22 @@ def update_request_for_pick_list(
 
     session.commit()
     session.refresh(existing_pick_list)
+
+    # Get human readable barcode
+    barcode_value = str(request_id)
+    if request.item and request.item.barcode:
+        barcode_value = request.item.barcode.value
+    elif request.non_tray_item and request.non_tray_item.barcode:
+        barcode_value = request.non_tray_item.barcode.value
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_PICKED,
+        f"Barcode # {barcode_value} retrieved",
+        job_type="pick_lists",
+        job_id=pick_list_id,
+    )
+    session.commit()
 
     # Check for batch completion for the single request
     request = session.get(Request, request_id)
@@ -661,6 +741,15 @@ def remove_request_from_pick_list(
     session.commit()
     session.refresh(pick_list)
 
+    log_audit_event(
+        session,
+        AuditEventType.REQUEST_REMOVED,
+        f"Request {request_id} removed from Picklist {pick_list_id}",
+        job_type="pick_lists",
+        job_id=pick_list_id,
+    )
+    session.commit()
+
     return sort_order_priority(session, pick_list, pick_list.requests)
 
 
@@ -709,6 +798,13 @@ def delete_pick_list(id: int, session: Session = Depends(get_session)):
         )
     )
 
+    log_audit_event(
+        session,
+        AuditEventType.JOB_DELETED,
+        f"Picklist {id} deleted",
+        job_type="pick_lists",
+        job_id=id,
+    )
     session.delete(pick_list)
     session.commit()
 

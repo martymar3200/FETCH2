@@ -36,6 +36,7 @@ from app.utilities import manage_transition, get_location
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/refile-jobs",
@@ -324,6 +325,15 @@ def create_refile_job(
     session.commit()
     session.refresh(new_refile_job)
 
+    log_audit_event(
+        session,
+        AuditEventType.JOB_CREATED,
+        f"Refile Job {new_refile_job.id} created with {len(refile_items) + len(refile_non_tray_items)} items",
+        job_type="refile_jobs",
+        job_id=new_refile_job.id,
+    )
+    session.commit()
+
     if not new_refile_job.items and not new_refile_job.non_tray_items:
         return new_refile_job
     return sorted_requests(session, new_refile_job)
@@ -351,7 +361,8 @@ def update_refile_job(
     
     # Capture original status before changes
     original_status = existing_refile_job.status
-    
+    original_assigned_user_id = existing_refile_job.assigned_user_id
+
     # Handle auto-assignment when user starts job
     if refile_job.status:
         auto_assign_on_start(
@@ -381,6 +392,46 @@ def update_refile_job(
     session.add(existing_refile_job)
     session.commit()
     session.refresh(existing_refile_job)
+
+    # Log status change if status was updated
+    new_status_val = mutated_data.get("status")
+    if new_status_val and new_status_val != original_status:
+        log_audit_event(
+            session,
+            AuditEventType.JOB_STATUS_CHANGED,
+            f"Status changed from {original_status} to {new_status_val}",
+            job_type="refile_jobs",
+            job_id=id,
+        )
+        session.commit()
+    
+    target_assigned_user = (
+        refile_job.assigned_user_id
+        if refile_job.assigned_user_id is not None
+        else getattr(existing_refile_job, "assigned_user_id", None)
+    )
+
+    if original_assigned_user_id != target_assigned_user:
+        user_msg = "Reassigned" if original_assigned_user_id else "Assigned"
+        if target_assigned_user:
+            assigned_to_user = session.get(User, target_assigned_user)
+            assigned_name = assigned_to_user.first_name + " " + assigned_to_user.last_name if assigned_to_user else str(target_assigned_user)
+            log_audit_event(
+                session,
+                AuditEventType.JOB_ASSIGNED,
+                f"Refile Job {id} {user_msg.lower()} to {assigned_name}",
+                job_type="refile_jobs",
+                job_id=id,
+            )
+        else:
+            log_audit_event(
+                session,
+                AuditEventType.JOB_ASSIGNED,
+                f"Refile Job {id} unassigned",
+                job_type="refile_jobs",
+                job_id=id,
+            )
+        session.commit()
 
     if not existing_refile_job.items and not existing_refile_job.non_tray_items:
         return existing_refile_job
@@ -452,6 +503,13 @@ def delete_refile_job(id: int, session: Session = Depends(get_session)):
         delete(RefileNonTrayItem).where(RefileNonTrayItem.refile_job_id == id)
     )
     # Delete refile job
+    log_audit_event(
+        session,
+        AuditEventType.JOB_DELETED,
+        f"Refile Job {id} deleted",
+        job_type="refile_jobs",
+        job_id=id,
+    )
     session.delete(refile_job)
     session.commit()
 
@@ -595,6 +653,21 @@ def add_items_to_refile_job(
     session.commit()
     session.refresh(refile_job)
 
+    for barcode in barcodes:
+        item = items_map.get(barcode.id)
+        nt = non_tray_items_map.get(barcode.id)
+        if item or nt:
+            log_audit_event(
+                session,
+                AuditEventType.ITEM_ADDED,
+                f"Item {barcode.value} added to Refile Job {job_id}",
+                job_type="refile_jobs",
+                job_id=job_id,
+                entity_type="items" if item else "non_tray_items",
+                entity_id=item.id if item else nt.id,
+            )
+    session.commit()
+
     if not refile_job.items and not refile_job.non_tray_items:
         return refile_job
     return sorted_requests(session, refile_job)
@@ -709,8 +782,20 @@ def update_item_in_refile_job(
     setattr(existing_item, "scanned_for_refile_dt", update_dt)
     setattr(existing_item, "shipping_bin_id", None)
     setattr(existing_item, "scanned_for_shipping", False)
-    # Commit the changes to the database
     session.add(existing_item)
+    session.commit()
+
+    item_barcode = existing_item.barcode.value if existing_item.barcode else str(item_id)
+    tray_barcode = existing_item.tray.barcode.value if existing_item.tray and existing_item.tray.barcode else "Unknown Tray"
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_REFILED,
+        f"Item {item_barcode} refiled to Tray {tray_barcode}",
+        job_type="refile_jobs",
+        job_id=job_id,
+        entity_type="items",
+        entity_id=item_id,
+    )
     session.commit()
 
     session.refresh(refile_job)
@@ -758,9 +843,21 @@ def update_non_tray_item_in_refile_job(
     setattr(existing_item, "scanned_for_refile_dt", update_dt)
     setattr(existing_item, "shipping_bin_id", None)
     setattr(existing_item, "scanned_for_shipping", False)
-
-    # Commit the changes to the database
     session.add(existing_item)
+    session.commit()
+
+    item_barcode = existing_item.barcode.value if existing_item.barcode else str(non_tray_item_id)
+    location = existing_item.shelf_position.location if existing_item.shelf_position else "Unknown Location"
+    
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_REFILED,
+        f"Non-tray item {item_barcode} refiled to Shelf Position {location}",
+        job_type="refile_jobs",
+        job_id=job_id,
+        entity_type="non_tray_items",
+        entity_id=non_tray_item_id,
+    )
     session.commit()
 
     session.refresh(refile_job)

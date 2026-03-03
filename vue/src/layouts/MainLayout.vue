@@ -178,7 +178,7 @@ const formatDateTime = (dateTime) => {
 
   //check if the passed in dateTime has missing timezone offset or Z in the ISO string add the z if not
   if (dateTime && /([zZ]|([+-]\d{2}:?\d{2}))$/.test(dateTime) == false) {
-    dateTime + 'Z'
+    dateTime = dateTime + 'Z'
   }
 
   const localTimeFormat = new Date(dateTime).toLocaleString()

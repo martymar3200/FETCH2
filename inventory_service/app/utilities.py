@@ -11,7 +11,7 @@ import pandas as pd
 import pytz
 from datetime import timezone
 # UPDATED IMPORTS: Remove sqlmodel, import select from sqlalchemy, Session from sqlalchemy.orm
-from sqlalchemy import and_, text, asc, desc, func, column, or_, not_, select
+from sqlalchemy import and_, text, asc, desc, func, column, or_, not_, select, cast, String
 from sqlalchemy.orm import joinedload, aliased, RelationshipProperty, Session # Session is now imported from sqlalchemy.orm
 from sqlalchemy.inspection import inspect
 from fastapi import Header, Depends
@@ -19,14 +19,13 @@ from fastapi import Header, Depends
 from app.database.session import get_session, session_manager
 from app.config.exceptions import NotFound, BadRequest
 from app.logger import inventory_logger
-from app.models.aisle_numbers import AisleNumber
+
 from app.models.barcodes import Barcode
 from app.models.buildings import Building
 from app.models.container_types import ContainerType
 from app.models.delivery_locations import DeliveryLocation
 from app.models.item_withdrawals import ItemWithdrawal
 from app.models.items import Item
-from app.models.ladder_numbers import LadderNumber
 from app.models.media_types import MediaType
 from app.models.modules import Module
 from app.models.aisles import Aisle
@@ -36,8 +35,7 @@ from app.models.owners import Owner
 from app.models.priorities import Priority
 from app.models.request_types import RequestType
 from app.models.requests import Request
-from app.models.shelf_numbers import ShelfNumber
-from app.models.shelf_position_numbers import ShelfPositionNumber
+
 from app.models.shelf_positions import ShelfPosition
 from app.models.side_orientations import SideOrientation
 from app.models.sides import Side
@@ -174,8 +172,7 @@ def process_containers_for_shelving(
         select(
             ShelfPosition.id.label("shelf_position_id"),
             ShelfPosition.shelf_id,
-            ShelfPosition.location,
-            ShelfPositionNumber.number,
+            ShelfPosition.position_number.label("number"),
             Shelf.owner_id,
             Shelf.ladder_id,
             Ladder.side_id,
@@ -183,10 +180,6 @@ def process_containers_for_shelving(
             Aisle.module_id,
             Module.building_id,
             ShelfType.size_class_id,
-        )
-        .join(
-            ShelfPositionNumber,
-            ShelfPositionNumber.id == ShelfPosition.shelf_position_number_id,
         )
         .join(Shelf, Shelf.id == ShelfPosition.shelf_id)
         .join(ShelfType, ShelfType.id == Shelf.shelf_type_id)
@@ -237,7 +230,7 @@ def process_containers_for_shelving(
                     *conditions,
                 )
             )
-            .order_by(asc(ShelfPosition.location))
+            .order_by(ShelfPosition.id)
             .limit(num_to_assign)
         )
 
@@ -430,17 +423,24 @@ def get_refile_queue(params):
             Item.id.label("id"),
             Barcode.value.label("barcode_value"),
             ShelfPosition.id.label("shelf_position_id"),
-            ShelfPosition.location.label("location"),
-            ShelfPosition.internal_location.label("internal_location"),
-            ShelfPositionNumber.number.label("shelf_position_number"),
+            func.concat(
+                 Building.name, "-", Module.module_number, "-", Aisle.aisle_number, "-",
+                 func.substr(cast(SideOrientation.name, String), 1, 1), "-", Ladder.ladder_number, "-",
+                 Shelf.shelf_number, "-", ShelfPosition.position_number
+            ).label("location"),
+            func.concat(
+                 cast(Building.id, String), "-", cast(Module.id, String), "-", cast(Aisle.id, String), "-", cast(Side.id, String), "-",
+                 cast(Ladder.id, String), "-", cast(Shelf.id, String), "-", cast(ShelfPosition.id, String)
+            ).label("internal_location"),
+            ShelfPosition.position_number.label("shelf_position_number"),
             ShelfPosition.shelf_id.label("shelf_id"),
-            ShelfNumber.number.label("shelf_number"),
+            Shelf.shelf_number.label("shelf_number"),
             Ladder.id.label("ladder_id"),
-            LadderNumber.number.label("ladder_number"),
+            Ladder.ladder_number.label("ladder_number"),
             Side.id.label("side_id"),
             SideOrientation.name.label("side_orientation"),
             Aisle.id.label("aisle_id"),
-            AisleNumber.number.label("aisle_number"),
+            Aisle.aisle_number.label("aisle_number"),
             Module.id.label("module_id"),
             Module.module_number.label("module_number"),
             Item.scanned_for_refile_queue.label("scanned_for_refile_queue"),
@@ -454,18 +454,11 @@ def get_refile_queue(params):
         .join(Tray, Item.tray_id == Tray.id)
         .join(ContainerType, Tray.container_type_id == ContainerType.id)
         .join(ShelfPosition, Tray.shelf_position_id == ShelfPosition.id)
-        .join(
-            ShelfPositionNumber,
-            ShelfPosition.shelf_position_number_id == ShelfPositionNumber.id,
-        )
         .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
-        .join(ShelfNumber, Shelf.shelf_number_id == ShelfNumber.id)
         .join(Ladder, Shelf.ladder_id == Ladder.id)
-        .join(LadderNumber, Ladder.ladder_number_id == LadderNumber.id)
         .join(Side, Ladder.side_id == Side.id)
         .join(SideOrientation, Side.side_orientation_id == SideOrientation.id)
         .join(Aisle, Side.aisle_id == Aisle.id)
-        .join(AisleNumber, Aisle.aisle_number_id == AisleNumber.id)
         .join(Module, Aisle.module_id == Module.id)
         .join(Building, Module.building_id == Building.id)
         .join(MediaType, Item.media_type_id == MediaType.id)
@@ -481,17 +474,24 @@ def get_refile_queue(params):
             NonTrayItem.id.label("id"),
             Barcode.value.label("barcode_value"),
             ShelfPosition.id.label("shelf_position_id"),
-            ShelfPosition.location.label("location"),
-            ShelfPosition.internal_location.label("internal_location"),
-            ShelfPositionNumber.number.label("shelf_position_number"),
+            func.concat(
+                 Building.name, "-", Module.module_number, "-", Aisle.aisle_number, "-",
+                 func.substr(cast(SideOrientation.name, String), 1, 1), "-", Ladder.ladder_number, "-",
+                 Shelf.shelf_number, "-", ShelfPosition.position_number
+            ).label("location"),
+            func.concat(
+                 cast(Building.id, String), "-", cast(Module.id, String), "-", cast(Aisle.id, String), "-", cast(Side.id, String), "-",
+                 cast(Ladder.id, String), "-", cast(Shelf.id, String), "-", cast(ShelfPosition.id, String)
+            ).label("internal_location"),
+            ShelfPosition.position_number.label("shelf_position_number"),
             ShelfPosition.shelf_id.label("shelf_id"),
-            ShelfNumber.number.label("shelf_number"),
+            Shelf.shelf_number.label("shelf_number"),
             Ladder.id.label("ladder_id"),
-            LadderNumber.number.label("ladder_number"),
+            Ladder.ladder_number.label("ladder_number"),
             Side.id.label("side_id"),
             SideOrientation.name.label("side_orientation"),
             Aisle.id.label("aisle_id"),
-            AisleNumber.number.label("aisle_number"),
+            Aisle.aisle_number.label("aisle_number"),
             Module.id.label("module_id"),
             Module.module_number.label("module_number"),
             NonTrayItem.scanned_for_refile_queue.label("scanned_for_refile_queue"),
@@ -505,19 +505,12 @@ def get_refile_queue(params):
         )
         .select_from(NonTrayItem)
         .join(ShelfPosition, NonTrayItem.shelf_position_id == ShelfPosition.id)
-        .join(
-            ShelfPositionNumber,
-            ShelfPosition.shelf_position_number_id == ShelfPositionNumber.id,
-        )
         .join(ContainerType, NonTrayItem.container_type_id == ContainerType.id)
         .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
-        .join(ShelfNumber, Shelf.shelf_number_id == ShelfNumber.id)
         .join(Ladder, Shelf.ladder_id == Ladder.id)
-        .join(LadderNumber, Ladder.ladder_number_id == LadderNumber.id)
         .join(Side, Ladder.side_id == Side.id)
         .join(SideOrientation, Side.side_orientation_id == SideOrientation.id)
         .join(Aisle, Side.aisle_id == Aisle.id)
-        .join(AisleNumber, Aisle.aisle_number_id == AisleNumber.id)
         .join(Module, Aisle.module_id == Module.id)
         .join(Building, Module.building_id == Building.id)
         .join(MediaType, NonTrayItem.media_type_id == MediaType.id)

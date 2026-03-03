@@ -81,9 +81,26 @@
       <!-- History Section -->
       <div class="col-xs-12 col-md-6">
         <div class="section-card">
-          <h2 class="section-title text-h6 text-bold q-mb-md">
-            History
-          </h2>
+          <div
+            class="row items-center justify-between q-mb-md"
+            style="border-bottom: 1px solid rgba(0, 0, 0, 0.1); padding-bottom: 0.5rem; margin-bottom: 1rem;"
+          >
+            <h2
+              class="text-h6 text-bold text-primary q-ma-none"
+              style="line-height: normal;"
+            >
+              History
+            </h2>
+            <q-btn
+              flat
+              dense
+              color="primary"
+              label="View Full History"
+              no-caps
+              size="sm"
+              @click="showAuditTrailModal = true"
+            />
+          </div>
           <div class="section-content">
             <!-- Accession Job -->
             <div class="history-row">
@@ -175,6 +192,13 @@
       @success="handleEditSuccess"
       @hide="isEditModalVisible = false"
     />
+
+    <AuditTrail
+      v-if="showAuditTrailModal"
+      @reset="showAuditTrailModal = false"
+      entity-type="trays"
+      :entity-id="trayDetails.id"
+    />
   </div>
 </template>
 
@@ -189,6 +213,7 @@ import EssentialTable from 'src/components/EssentialTable.vue'
 import EssentialLink from '@/components/EssentialLink.vue'
 import MoreOptionsMenu from '@/components/MoreOptionsMenu.vue'
 import EditTrayModal from '@/components/EditTrayModal.vue'
+import AuditTrail from '@/components/AuditTrail.vue'
 
 const router = useRouter()
 const { currentScreenSize } = useCurrentScreenSize()
@@ -211,6 +236,7 @@ const isEditHidden = computed(() => {
 
 // Modal Control
 const isEditModalVisible = ref(false)
+const showAuditTrailModal = ref(false)
 
 const openEditTrayModal = () => {
   isEditModalVisible.value = true

@@ -48,6 +48,7 @@ from app.tasks import (
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/verification-jobs",
@@ -277,6 +278,15 @@ def create_verification_job(
         session.commit()
         session.refresh(verification_job)
 
+        log_audit_event(
+            session,
+            AuditEventType.JOB_CREATED,
+            f"Verification Job {verification_job.id} created",
+            job_type="verification_jobs",
+            job_id=verification_job.id,
+        )
+        session.commit()
+
         return verification_job
 
     except IntegrityError as e:
@@ -309,6 +319,7 @@ def update_verification_job(
 
         # capture original status for process check
         original_status = existing_verification_job.status
+        original_assigned_user_id = existing_verification_job.assigned_user_id
 
         # Update the tray record with the mutated data
         mutated_data = verification_job.model_dump(exclude_unset=True)
@@ -349,6 +360,18 @@ def update_verification_job(
         setattr(existing_verification_job, "update_dt", datetime.now(timezone.utc))
 
         existing_verification_job = commit_record(session, existing_verification_job)
+
+        # Log status change if status was updated
+        new_status_val = mutated_data.get("status")
+        if new_status_val and new_status_val != original_status:
+            log_audit_event(
+                session,
+                AuditEventType.JOB_STATUS_CHANGED,
+                f"Status changed from {original_status} to {new_status_val}",
+                job_type="verification_jobs",
+                job_id=id,
+            )
+            session.commit()
 
         if mutated_data.get("status") == "Completed":
             audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"}).copy()
@@ -429,6 +452,14 @@ def delete_verification_job(id: int, session: Session = Depends(get_session)):
             )
 
         session.delete(verification_job)
+
+        log_audit_event(
+            session,
+            AuditEventType.JOB_DELETED,
+            f"Verification Job {id} deleted",
+            job_type="verification_jobs",
+            job_id=id,
+        )
         session.commit()
 
         return HTTPException(
@@ -531,6 +562,17 @@ def add_item_to_verification_job(
     verification_job.update_dt = datetime.now(timezone.utc)
     session.refresh(verification_job)
 
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_ADDED,
+        f"Item {input.barcode_value} added to Verification Job {id}",
+        job_type="verification_jobs",
+        job_id=id,
+        entity_type="items" if item else ("trays" if tray else "non_tray_items"),
+        entity_id=(item.id if item else (tray.id if tray else non_tray_item.id)),
+    )
+    session.commit()
+
     return verification_job
 
 
@@ -622,5 +664,16 @@ def remove_item_from_verification_job(
 
     verification_job.update_dt = datetime.now(timezone.utc)
     session.refresh(verification_job)
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_REMOVED,
+        f"Item {input.barcode_value} removed from Verification Job {id}",
+        job_type="verification_jobs",
+        job_id=id,
+        entity_type="items" if item else ("trays" if tray else "non_tray_items"),
+        entity_id=(item.id if item else (tray.id if tray else non_tray_item.id)),
+    )
+    session.commit()
 
     return verification_job

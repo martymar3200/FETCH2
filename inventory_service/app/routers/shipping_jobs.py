@@ -34,6 +34,7 @@ from app.schemas.shipping_jobs import (
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.helpers.system_setting_helpers import get_setting_value
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.services.audit_service import log_audit_event, AuditEventType
 from app.config.exceptions import (
     NotFound,
     ValidationException,
@@ -108,7 +109,16 @@ def create_shipping_job(
     session.add(new_job)
     session.commit()
     session.refresh(new_job)
-    
+
+    log_audit_event(
+        session,
+        AuditEventType.JOB_CREATED,
+        f"Shipping Job {new_job.id} created",
+        job_type="shipping_jobs",
+        job_id=new_job.id,
+    )
+    session.commit()
+
     return new_job
 
 @router.get("/{id}", response_model=ShippingJobOutput)
@@ -143,6 +153,7 @@ def update_shipping_job(
         raise NotFound(detail=f"Shipping Job {id} not found")
         
     original_status = job.status
+    original_assigned_user_id = job.assigned_user_id
     
     # Auto-assign logic
     if input_data.status:
@@ -163,6 +174,48 @@ def update_shipping_job(
     session.add(job)
     session.commit()
     session.refresh(job)
+
+    target_assigned_user = (
+        input_data.assigned_user_id
+        if input_data.assigned_user_id is not None
+        else getattr(job, "assigned_user_id", None)
+    )
+
+    if original_assigned_user_id != target_assigned_user:
+        user_msg = "Reassigned" if original_assigned_user_id else "Assigned"
+        if target_assigned_user:
+            assigned_to_user = session.get(User, target_assigned_user)
+            assigned_name = assigned_to_user.first_name + " " + assigned_to_user.last_name if assigned_to_user else str(target_assigned_user)
+            log_audit_event(
+                session,
+                AuditEventType.JOB_ASSIGNED,
+                f"Shipping Job {id} {user_msg.lower()} to {assigned_name}",
+                job_type="shipping_jobs",
+                job_id=id,
+            )
+        else:
+            log_audit_event(
+                session,
+                AuditEventType.JOB_ASSIGNED,
+                f"Shipping Job {id} unassigned",
+                job_type="shipping_jobs",
+                job_id=id,
+            )
+        session.commit()
+
+    # Log status change if status was updated
+    data = input_data.model_dump(exclude_unset=True)
+    new_status_val = data.get("status")
+    if new_status_val and new_status_val != original_status:
+        log_audit_event(
+            session,
+            AuditEventType.JOB_STATUS_CHANGED,
+            f"Status changed from {original_status} to {new_status_val}",
+            job_type="shipping_jobs",
+            job_id=id,
+        )
+        session.commit()
+
     return job
 
 @router.delete("/{id}", status_code=204, dependencies=[Depends(RequiresPermission("delete_shipping_jobs"))])
@@ -197,6 +250,13 @@ def delete_shipping_job(
             )
         )
         
+    log_audit_event(
+        session,
+        AuditEventType.JOB_DELETED,
+        f"Shipping Job {id} deleted",
+        job_type="shipping_jobs",
+        job_id=id,
+    )
     session.delete(job) # Cascades to bins
     session.commit()
     
@@ -252,6 +312,16 @@ def scan_bin(
     session.add(new_bin)
     session.commit()
     session.refresh(new_bin)
+
+    log_audit_event(
+        session,
+        AuditEventType.BIN_SCANNED,
+        f"Bin {barcode} scanned into Shipping Job {id}",
+        job_type="shipping_jobs",
+        job_id=id,
+    )
+    session.commit()
+
     session.refresh(new_bin)
     return new_bin
 
@@ -419,7 +489,18 @@ def scan_item_into_bin(
     session.add(item)
     session.add(bin_obj)
     session.commit()
-    
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_SCANNED,
+        f"Item {item_barcode} scanned into Bin {bin_obj.barcode}",
+        job_type="shipping_jobs",
+        job_id=id,
+        entity_type="items",
+        entity_id=item.id,
+    )
+    session.commit()
+
     # Re-query bin with delivery_location eagerly loaded
     bin_query = select(ShippingBin).where(ShippingBin.id == bin_obj.id).options(
         selectinload(ShippingBin.items).selectinload(Item.barcode),
@@ -446,6 +527,18 @@ def remove_item_from_bin(
     
     session.add(item)
     session.commit()
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_REMOVED,
+        f"Item {item_id} removed from Bin {bin_id}",
+        job_type="shipping_jobs",
+        job_id=id,
+        entity_type="items",
+        entity_id=item_id,
+    )
+    session.commit()
+
     return {"message": "Item removed"}
 
 @router.patch("/{id}/complete", response_model=ShippingJobOutput, dependencies=[Depends(RequiresPermission("process_shipping_jobs"))])
@@ -510,6 +603,16 @@ def complete_shipping_job(
     session.add(job)
     session.commit()
     session.refresh(job)
+
+    log_audit_event(
+        session,
+        AuditEventType.JOB_COMPLETED,
+        f"Shipping Job {id} completed",
+        job_type="shipping_jobs",
+        job_id=id,
+    )
+    session.commit()
+
     return job
 
 @router.post("/bins/clear", dependencies=[Depends(RequiresPermission("process_shipping_jobs"))])
@@ -547,6 +650,16 @@ def clear_bin(
     
     session.add(bin_obj)
     session.commit()
+
+    log_audit_event(
+        session,
+        AuditEventType.BIN_CLEARED,
+        f"Bin {barcode} cleared",
+        job_type="shipping_jobs",
+        job_id=bin_obj.shipping_job_id,
+    )
+    session.commit()
+
     return {"message": f"Bin {barcode} cleared"}
     
 @router.get("/{id}/manifest", response_model=ShippingJobOutput, dependencies=[Depends(RequiresPermission("can_access_shipping"))])

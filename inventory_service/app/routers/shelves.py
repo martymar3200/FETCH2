@@ -42,6 +42,7 @@ from app.sorting import ShelvingSorter
 from app.utilities import start_session_with_audit_info
 
 from app.auth.dependencies import RequiresPermission
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/shelves",
@@ -390,6 +391,15 @@ def create_shelf(
         session.commit()
         session.refresh(new_shelf)
 
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_CREATED,
+            f"Shelf created at {new_shelf.location or 'unknown location'}",
+            entity_type="shelves",
+            entity_id=new_shelf.id,
+        )
+        session.commit()
+
         return new_shelf
     except ValidationException:
         session.rollback()
@@ -651,6 +661,15 @@ def update_shelf(
     session.commit()
     session.refresh(existing_shelf)
 
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_UPDATED,
+        f"Shelf {id} updated",
+        entity_type="shelves",
+        entity_id=id,
+    )
+    session.commit()
+
     return existing_shelf
 
 
@@ -679,6 +698,13 @@ def delete_shelf(id: int, session: Session = Depends(get_session)):
                 detail=f"Cannot delete Shelf {shelf.shelf_number}: {items_count} items are shelved on it."
             )
 
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_DELETED,
+            f"Shelf {id} deleted",
+            entity_type="shelves",
+            entity_id=id,
+        )
         session.delete(shelf)
         session.commit()
 
@@ -717,5 +743,15 @@ def bulk_update_shelves(
     session.commit()
     for r in results:
         session.refresh(r)
+
+    for r in results:
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_UPDATED,
+            f"Shelf {r.id} bulk updated",
+            entity_type="shelves",
+            entity_id=r.id,
+        )
+    session.commit()
 
     return results

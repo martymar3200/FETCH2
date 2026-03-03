@@ -21,7 +21,7 @@
     <!-- Sections Container -->
     <div class="row q-col-gutter-md q-mb-lg">
       <!-- General Section -->
-      <div class="col-xs-12 col-md-4">
+      <div class="col-xs-12 col-sm-6 col-md-3">
         <div class="section-card">
           <h2 class="section-title text-h6 text-bold q-mb-md">
             General
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Dimensions Section -->
-      <div class="col-xs-12 col-md-4">
+      <div class="col-xs-12 col-sm-6 col-md-3">
         <div class="section-card">
           <h2 class="section-title text-h6 text-bold q-mb-md">
             Dimensions
@@ -71,7 +71,7 @@
       </div>
 
       <!-- Available Space Section -->
-      <div class="col-xs-12 col-md-4">
+      <div class="col-xs-12 col-sm-6 col-md-3">
         <div class="section-card">
           <h2 class="section-title text-h6 text-bold q-mb-md">
             Available Space
@@ -88,6 +88,30 @@
             <div class="detail-row">
               <span class="detail-label">Available Quantity</span>
               <span class="detail-value">{{ shelfDetails.available_space ?? '—' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="col-xs-12 col-sm-6 col-md-3">
+        <div class="section-card">
+          <h2 class="section-title text-h6 text-bold q-mb-md">
+            History
+          </h2>
+          <div
+            class="section-content column flex-center"
+            style="height: calc(100% - 60px);"
+          >
+            <q-btn
+              outline
+              color="primary"
+              label="View Full History"
+              no-caps
+              @click="showAuditTrailModal = true"
+            />
+            <div class="text-caption text-grey-7 q-mt-sm text-center">
+              Comprehensive audit log for this shelf.
             </div>
           </div>
         </div>
@@ -122,6 +146,13 @@
         </EssentialTable>
       </div>
     </div>
+
+    <AuditTrail
+      v-if="showAuditTrailModal"
+      @reset="showAuditTrailModal = false"
+      entity-type="shelves"
+      :entity-id="shelfDetails.id"
+    />
   </div>
 </template>
 
@@ -134,9 +165,11 @@ import { useRecordManagementStore } from '@/stores/record-management-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { storeToRefs } from 'pinia'
 import EssentialTable from '@/components/EssentialTable.vue'
+import AuditTrail from '@/components/AuditTrail.vue'
 
 const router = useRouter()
 const { currentScreenSize } = useCurrentScreenSize()
+const showAuditTrailModal = ref(false)
 
 // Store Data
 const { getShelfContainers } = useRecordManagementStore()

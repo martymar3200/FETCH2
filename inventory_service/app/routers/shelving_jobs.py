@@ -59,6 +59,7 @@ logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/shelving-jobs",
@@ -348,6 +349,16 @@ def create_shelving_job(
 
         # For Direct origin, job is created empty - containers added during execution
         session.refresh(new_job)
+
+        log_audit_event(
+            session,
+            AuditEventType.JOB_CREATED,
+            f"Shelving Job {new_job.id} created (origin={shelving_job_input.origin})",
+            job_type="shelving_jobs",
+            job_id=new_job.id,
+        )
+        session.commit()
+
         return get_shelving_position(session, new_job)
 
     except IntegrityError as e:
@@ -388,6 +399,7 @@ def update_shelving_job(
 
         # Capture original status before changes
         original_status = existing_shelving_job.status
+        original_assigned_user_id = existing_shelving_job.assigned_user_id
         
         # Handle auto-assignment when user starts job
         if shelving_job.status:
@@ -430,6 +442,46 @@ def update_shelving_job(
         session.add(existing_shelving_job)
         session.commit()
         session.refresh(existing_shelving_job)
+
+        # Log status change if status was updated
+        new_status_val = mutated_data.get("status")
+        if new_status_val and str(new_status_val) != str(original_status):
+            log_audit_event(
+                session,
+                AuditEventType.JOB_STATUS_CHANGED,
+                f"Status changed from {original_status} to {new_status_val}",
+                job_type="shelving_jobs",
+                job_id=id,
+            )
+            session.commit()
+
+        target_assigned_user = (
+            shelving_job.assigned_user_id
+            if shelving_job.assigned_user_id is not None
+            else getattr(existing_shelving_job, "assigned_user_id", None)
+        )
+
+        if original_assigned_user_id != target_assigned_user:
+            user_msg = "Reassigned" if original_assigned_user_id else "Assigned"
+            if target_assigned_user:
+                assigned_to_user = session.get(User, target_assigned_user)
+                assigned_name = assigned_to_user.first_name + " " + assigned_to_user.last_name if assigned_to_user else str(target_assigned_user)
+                log_audit_event(
+                    session,
+                    AuditEventType.JOB_ASSIGNED,
+                    f"Shelving Job {id} {user_msg.lower()} to {assigned_name}",
+                    job_type="shelving_jobs",
+                    job_id=id,
+                )
+            else:
+                log_audit_event(
+                    session,
+                    AuditEventType.JOB_ASSIGNED,
+                    f"Shelving Job {id} unassigned",
+                    job_type="shelving_jobs",
+                    job_id=id,
+                )
+            session.commit()
 
         return get_shelving_position(session, existing_shelving_job)
 
@@ -522,6 +574,13 @@ def delete_shelving_job(id: int, session: Session = Depends(get_session)):
                     .where(ShelvingJobDiscrepancy.id.in_(discrepancy_ids))
                 )
 
+        log_audit_event(
+            session,
+            AuditEventType.JOB_DELETED,
+            f"Shelving Job {id} deleted",
+            job_type="shelving_jobs",
+            job_id=id,
+        )
         session.delete(shelving_job)
         session.commit()
 
@@ -1065,6 +1124,20 @@ def reassign_container_location(
     session.commit()
     session.refresh(shelving_container)
 
+    # Log shelving audit event
+    barcode_obj = session.get(Barcode, container.barcode_id) if hasattr(container, 'barcode_id') else None
+    barcode_val = barcode_obj.value if barcode_obj else str(container.id)
+    log_audit_event(
+        session,
+        AuditEventType.CONTAINER_SHELVED,
+        f"{barcode_val} shelved at position {shelf_position.position_number} on shelf {shelf.barcode.value if shelf.barcode else shelf.id}",
+        job_type="shelving_jobs",
+        job_id=id,
+        entity_type="trays" if container_type == "Tray" else "non_tray_items",
+        entity_id=container.id,
+    )
+    session.commit()
+
     # Calculate next available position for frontend auto-suggest
     from app.routers.shelves import get_next_available_position
     
@@ -1548,7 +1621,16 @@ def add_container_to_shelving_job(
     session.add(new_container)
     session.commit()
     session.refresh(new_container)
-    
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_ADDED,
+        f"Container {container_input.container_barcode} added to Shelving Job {id}",
+        job_type="shelving_jobs",
+        job_id=id,
+    )
+    session.commit()
+
     return _build_container_output(session, new_container)
 
 
@@ -1572,6 +1654,19 @@ def remove_container_from_shelving_job(
     if container.status == ShelvingJobContainerStatus.SHELVED:
         raise ValidationException(detail="Cannot remove a container that has already been shelved")
     
+    container_barcode_value = str(container_id)
+    if container.tray:
+        container_barcode_value = container.tray.barcode.value if container.tray.barcode else f"Tray {container.tray.id}"
+    elif container.non_tray_item:
+        container_barcode_value = container.non_tray_item.barcode.value if container.non_tray_item.barcode else f"NTI {container.non_tray_item.id}"
+
+    log_audit_event(
+        session,
+        AuditEventType.ITEM_REMOVED,
+        f"Container {container_barcode_value} removed from Shelving Job {id}",
+        job_type="shelving_jobs",
+        job_id=id,
+    )
     session.delete(container)
     session.commit()
     return None

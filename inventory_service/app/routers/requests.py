@@ -45,6 +45,7 @@ from app.sorting import RequestSorter
 from app.utilities import get_module_shelf_position, check_batch_completion
 
 from app.auth.dependencies import RequiresPermission
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/requests",
@@ -390,10 +391,18 @@ def create_request(
 
     new_request = Request(**request_input.model_dump(exclude={"barcode_value"}))
 
-    # Add the new request to the database
     session.add(new_request)
     session.commit()
     session.refresh(new_request)
+
+    log_audit_event(
+        session,
+        AuditEventType.REQUEST_CREATED,
+        f"Request {new_request.id} created for {lookup_barcode_value}",
+        entity_type="items" if item else "non_tray_items",
+        entity_id=item.id if item else non_tray_item.id,
+    )
+    session.commit()
 
     return new_request
 
@@ -442,6 +451,15 @@ def update_request(
         session.commit()
         session.refresh(existing_request)
 
+        log_audit_event(
+            session,
+            AuditEventType.REQUEST_UPDATED,
+            f"Request {id} updated",
+            entity_type="items" if existing_request.item_id else "non_tray_items",
+            entity_id=existing_request.item_id or existing_request.non_tray_item_id,
+        )
+        session.commit()
+
         # Check for batch completion
         if existing_request.status == RequestStatus.Completed and existing_request.batch_upload_id:
             check_batch_completion(session, existing_request.batch_upload_id)
@@ -489,6 +507,15 @@ def delete_request(id: int, session: Session = Depends(get_session)):
         # Deleting request (Soft Delete)
         request.deleted = True
         session.add(request)
+        session.commit()
+
+        log_audit_event(
+            session,
+            AuditEventType.REQUEST_DELETED,
+            f"Request {id} deleted",
+            entity_type="items" if request.item_id else "non_tray_items",
+            entity_id=request.item_id or request.non_tray_item_id,
+        )
         session.commit()
 
         raise HTTPException(

@@ -84,8 +84,20 @@ export const useReportsStore = defineStore('reports-store', {
           delete item.original_values
           delete item.new_values
           return item
-        })
-          .filter(item => item.last_action && item.last_action.trim() !== '')
+        }).filter(item => item.last_action && item.last_action.trim() !== '')
+      } catch (error) {
+        throw error
+      }
+    },
+    async getEntityAuditTrailData (entityType, entityId) {
+      try {
+        this.auditTrailData = []
+        const res = await this.$api.get(`${inventoryServiceApi.history}entity/${entityType}/${entityId}`)
+        this.auditTrailData = res.data.map(item => {
+          delete item.original_values
+          delete item.new_values
+          return item
+        }).filter(item => item.last_action && item.last_action.trim() !== '')
       } catch (error) {
         throw error
       }

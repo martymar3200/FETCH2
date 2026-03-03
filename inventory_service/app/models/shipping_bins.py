@@ -64,9 +64,6 @@ class ShippingBin(Base):
         Index("idx_shipping_bin_barcode_uncleared", "barcode", "cleared_dt"),
     )
 
-    @property
-    def create_dt(self) -> Optional[datetime]:
-        return self.shipping_job.create_dt if self.shipping_job else None
 
     @property
     def item_count(self) -> int:

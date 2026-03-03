@@ -8,10 +8,9 @@
     <template v-if="!pageInitLoading">
       <RefileDashboard v-if="!route.params.jobId" />
       <RefileExecute
-        v-else-if="refileJob?.status === 'Running' || refileJob?.status === 'Paused'"
+        v-else
         :job-id="route.params.jobId"
       />
-      <RefileJobDetails v-else />
     </template>
   </q-page>
 </template>
@@ -25,14 +24,12 @@ import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import RefileDashboard from '@/components/Refile/RefileDashboard.vue'
-import RefileJobDetails from '@/components/Refile/RefileJobDetails.vue'
 import RefileExecute from '@/components/Refile/RefileExecute.vue'
 
 const route = useRoute()
 
 // Store Data
 const { getRefileJob } = useRefileStore()
-const { refileJob } = storeToRefs(useRefileStore())
 const { getOptions } = useOptionStore()
 const { pageInitLoading } = storeToRefs(useGlobalStore())
 

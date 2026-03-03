@@ -31,6 +31,7 @@ from app.schemas.accession_jobs import (
     AccessionJobDetailOutput,
 )
 from app.utilities import start_session_with_audit_info
+from app.services.audit_service import log_audit_event, AuditEventType
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
@@ -177,6 +178,15 @@ def create_accession_job(
         session.commit()
         session.refresh(new_accession_job)
 
+        log_audit_event(
+            session,
+            AuditEventType.JOB_CREATED,
+            f"Accession Job {new_accession_job.id} created",
+            job_type="accession_jobs",
+            job_id=new_accession_job.id,
+        )
+        session.commit()
+
         return new_accession_job
 
     except IntegrityError as e:
@@ -205,6 +215,7 @@ def update_accession_job(
         raise NotFound(detail=f"Accession Job ID {id} Not Found")
 
     original_status = existing_accession_job.status
+    original_assigned_user_id = existing_accession_job.assigned_user_id
     mutated_data = accession_job.model_dump(exclude_unset=True)
     
     # Handle auto-assignment when user starts job
@@ -246,6 +257,18 @@ def update_accession_job(
     setattr(existing_accession_job, "container_type_id", container_type.id)
 
     existing_accession_job = commit_record(session, existing_accession_job)
+
+    # Log status change if status was updated
+    new_status = mutated_data.get("status")
+    if new_status and new_status != original_status:
+        log_audit_event(
+            session,
+            AuditEventType.JOB_STATUS_CHANGED,
+            f"Status changed from {original_status} to {new_status}",
+            job_type="accession_jobs",
+            job_id=id,
+        )
+        session.commit()
 
     if mutated_data.get("status") == "Completed" and original_status != "Completed":
         # V2 BATCH UPDATE FIX
@@ -319,6 +342,13 @@ def delete_accession_job(id: int, session: Session = Depends(get_session)):
     accession_job = session.get(AccessionJob, id)
 
     if accession_job:
+        log_audit_event(
+            session,
+            AuditEventType.JOB_DELETED,
+            f"Accession Job {id} deleted",
+            job_type="accession_jobs",
+            job_id=id,
+        )
         session.delete(accession_job)
         session.commit()
 

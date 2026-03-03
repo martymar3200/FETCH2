@@ -215,6 +215,14 @@
         </q-list>
       </q-card-section>
     </q-card>
+
+    <!-- Audit Trail Modal -->
+    <AuditTrail
+      v-if="showAuditTrailModal"
+      :job-type="'shipping_jobs'"
+      :job-id="Number(jobId)"
+      @hide="showAuditTrailModal = false"
+    />
   </div>
 </template>
 
@@ -225,6 +233,7 @@ import { storeToRefs } from 'pinia'
 import { useShippingStore } from '@/stores/shipping-store'
 import TextInput from '@/components/TextInput.vue'
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
+import AuditTrail from '@/components/AuditTrail.vue'
 import { Notify, useQuasar } from 'quasar'
 
 const $q = useQuasar()
@@ -241,6 +250,7 @@ const pendingItem = ref(null)
 const isBinLocked = ref(false)
 const lastMessage = ref('')
 const lastMessageType = ref('') // 'text-positive' or 'text-negative'
+const showAuditTrailModal = ref(false)
 
 const binInputRef = ref(null)
 const itemInputRef = ref(null)
@@ -514,6 +524,13 @@ const menuOptions = computed(() => {
         name: 'shipping-manifest',
         params: { jobId }
       })
+    }
+  })
+
+  options.push({
+    label: 'View History',
+    action: () => {
+      showAuditTrailModal.value = true
     }
   })
 

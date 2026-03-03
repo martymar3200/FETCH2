@@ -44,6 +44,7 @@ from app.config.exceptions import (
 from app.sorting import BaseSorter, ItemSorter
 
 from app.auth.dependencies import RequiresPermission
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/trays",
@@ -177,6 +178,18 @@ def create_tray(tray_input: TrayInput, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(new_tray)
 
+    tray_barcode = new_tray.barcode.value if new_tray.barcode else str(new_tray.id)
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_CREATED,
+        f"Tray {tray_barcode} scanned for accession",
+        entity_type="trays",
+        entity_id=new_tray.id,
+        job_type="accession_jobs" if new_tray.accession_job_id else None,
+        job_id=new_tray.accession_job_id,
+    )
+    session.commit()
+
     return new_tray
 
 
@@ -281,6 +294,31 @@ def update_tray(
     session.commit()
     session.refresh(existing_tray)
 
+    # Determine active job context for this tray update
+    tray_job_type = None
+    tray_job_id = None
+    if existing_tray.verification_job_id:
+        tray_job_type = "verification_jobs"
+        tray_job_id = existing_tray.verification_job_id
+    elif existing_tray.shelving_job_id:
+        tray_job_type = "shelving_jobs"
+        tray_job_id = existing_tray.shelving_job_id
+    elif existing_tray.accession_job_id:
+        tray_job_type = "accession_jobs"
+        tray_job_id = existing_tray.accession_job_id
+
+    tray_bc = existing_tray.barcode.value if existing_tray.barcode else str(id)
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_UPDATED,
+        f"Tray {tray_bc} updated",
+        entity_type="trays",
+        entity_id=id,
+        job_type=tray_job_type,
+        job_id=tray_job_id,
+    )
+    session.commit()
+
     return existing_tray
 
 
@@ -301,6 +339,14 @@ def delete_tray(id: int, session: Session = Depends(get_session)):
             session.commit()
 
         update_shelf_space_after_tray(session, None, None, tray.shelf_position_id)
+        tray_del_bc = tray.barcode.value if tray.barcode else str(id)
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_DELETED,
+            f"Tray {tray_del_bc} deleted",
+            entity_type="trays",
+            entity_id=id,
+        )
         session.delete(tray)
         session.commit()
 
@@ -549,6 +595,30 @@ def move_tray(
     session.add(tray)
     update_shelf_space_after_tray(
         session, tray, destination_shelf_position_id, old_shelf_position_id
+    )
+    session.commit()
+
+    # Determine active job context for this tray move
+    tray_job_type = None
+    tray_job_id = None
+    if tray.verification_job_id:
+        tray_job_type = "verification_jobs"
+        tray_job_id = tray.verification_job_id
+    elif tray.shelving_job_id:
+        tray_job_type = "shelving_jobs"
+        tray_job_id = tray.shelving_job_id
+    elif tray.accession_job_id:
+        tray_job_type = "accession_jobs"
+        tray_job_id = tray.accession_job_id
+
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_MOVED,
+        f"Tray {barcode_value} moved to position {tray_input.shelf_position_number} on shelf {tray_input.shelf_barcode_value}",
+        entity_type="trays",
+        entity_id=tray.id,
+        job_type=tray_job_type,
+        job_id=tray_job_id,
     )
     session.commit()
 

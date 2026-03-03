@@ -47,6 +47,7 @@ from app.config.exceptions import NotFound, ValidationException
 from app.sorting import ItemSorter
 
 from app.auth.dependencies import RequiresPermission
+from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/non_tray_items",
@@ -309,6 +310,18 @@ def create_non_tray_item(
     session.commit()
     session.refresh(new_non_tray_item)
 
+    nti_barcode = new_non_tray_item.barcode.value if new_non_tray_item.barcode else str(new_non_tray_item.id)
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_CREATED,
+        f"Non-tray item {nti_barcode} scanned for accession",
+        entity_type="non_tray_items",
+        entity_id=new_non_tray_item.id,
+        job_type="accession_jobs" if new_non_tray_item.accession_job_id else None,
+        job_id=new_non_tray_item.accession_job_id,
+    )
+    session.commit()
+
     return new_non_tray_item
 
 
@@ -417,6 +430,31 @@ def update_non_tray_item(
     session.commit()
     session.refresh(existing_non_tray_item)
 
+    # Determine active job context for this non-tray item update
+    nti_job_type = None
+    nti_job_id = None
+    if existing_non_tray_item.verification_job_id:
+        nti_job_type = "verification_jobs"
+        nti_job_id = existing_non_tray_item.verification_job_id
+    elif existing_non_tray_item.shelving_job_id:
+        nti_job_type = "shelving_jobs"
+        nti_job_id = existing_non_tray_item.shelving_job_id
+    elif existing_non_tray_item.accession_job_id:
+        nti_job_type = "accession_jobs"
+        nti_job_id = existing_non_tray_item.accession_job_id
+
+    nti_bc = existing_non_tray_item.barcode.value if existing_non_tray_item.barcode else str(id)
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_UPDATED,
+        f"Non-tray item {nti_bc} updated",
+        entity_type="non_tray_items",
+        entity_id=id,
+        job_type=nti_job_type,
+        job_id=nti_job_id,
+    )
+    session.commit()
+
     return existing_non_tray_item
 
 
@@ -429,6 +467,14 @@ def delete_non_tray_item(id: int, session: Session = Depends(get_session)):
 
     if non_tray_item:
         update_shelf_space_after_non_tray(session, None, None, non_tray_item.shelf_position_id)
+        nti_del_bc = non_tray_item.barcode.value if non_tray_item.barcode else str(id)
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_DELETED,
+            f"Non-tray item {nti_del_bc} deleted",
+            entity_type="non_tray_items",
+            entity_id=id,
+        )
         session.delete(non_tray_item)
         session.commit()
 
@@ -719,5 +765,29 @@ def move_item(
     session.refresh(non_tray_item)
     session.refresh(src_shelf)
     session.refresh(dest_shelf)
+
+    # Determine active job context for this non-tray item move
+    nti_job_type = None
+    nti_job_id = None
+    if non_tray_item.verification_job_id:
+        nti_job_type = "verification_jobs"
+        nti_job_id = non_tray_item.verification_job_id
+    elif non_tray_item.shelving_job_id:
+        nti_job_type = "shelving_jobs"
+        nti_job_id = non_tray_item.shelving_job_id
+    elif non_tray_item.accession_job_id:
+        nti_job_type = "accession_jobs"
+        nti_job_id = non_tray_item.accession_job_id
+
+    log_audit_event(
+        session,
+        AuditEventType.ENTITY_MOVED,
+        f"Non-tray item {barcode_value} moved to position {non_tray_item_input.shelf_position_number} on shelf {non_tray_item_input.shelf_barcode_value}",
+        entity_type="non_tray_items",
+        entity_id=non_tray_item.id,
+        job_type=nti_job_type,
+        job_id=nti_job_id,
+    )
+    session.commit()
 
     return non_tray_item

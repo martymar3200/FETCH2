@@ -26,6 +26,7 @@ from app.models.workflows import Workflow
 from app.database.session import commit_record, session_manager
 from app.schemas.verification_jobs import VerificationJobInput
 from app.utilities import start_session_with_audit_info
+from app.services.audit_service import log_audit_event, AuditEventType
 
 
 def complete_accession_job(accession_job_id: int, original_status: str, audit_info: dict):
@@ -128,6 +129,16 @@ def complete_accession_job(accession_job_id: int, original_status: str, audit_in
                     session.add(item)
 
             session.commit()
+
+            log_audit_event(
+                session,
+                AuditEventType.JOB_COMPLETED,
+                f"Accession Job {accession_job_id} completed — Verification Job {new_verification_job.id} auto-created",
+                job_type="accession_jobs",
+                job_id=accession_job_id,
+            )
+            session.commit()
+
             print(f"--- BACKGROUND TASK COMPLETE: Accession Job {accession_job_id} ---")
 
     except Exception as e:
@@ -180,6 +191,15 @@ def complete_verification_job(verification_job_id: int, audit_info: dict):
                          item.status = ItemStatus.Verified
                     session.add(item)
 
+            session.commit()
+
+            log_audit_event(
+                session,
+                AuditEventType.JOB_COMPLETED,
+                f"Verification Job {verification_job_id} completed",
+                job_type="verification_jobs",
+                job_id=verification_job_id,
+            )
             session.commit()
     except Exception as e:
         inventory_logger.error(f"Error in complete_verification_job: {e}")
@@ -241,6 +261,15 @@ def manage_accession_job_transition(
                     barcode = session.execute(barcode_query).scalars().first()
                     if barcode:
                         session.delete(barcode)
+
+            if accession_job.status == "Cancelled":
+                log_audit_event(
+                    session,
+                    AuditEventType.JOB_CANCELLED,
+                    f"Accession Job {accession_job_id} cancelled — entities deleted",
+                    job_type="accession_jobs",
+                    job_id=accession_job_id,
+                )
 
             session.commit()
     except Exception as e:
@@ -646,6 +675,14 @@ def complete_shelving_job(shelving_job_id: int, audit_info: dict):
                 for non_tray_item in shelving_job.non_tray_items:
                     non_tray_item.status = NonTrayItemStatus.In
                     session.add(non_tray_item)
+
+            log_audit_event(
+                session,
+                AuditEventType.JOB_COMPLETED,
+                f"Shelving Job {shelving_job_id} completed — item statuses set to In",
+                job_type="shelving_jobs",
+                job_id=shelving_job_id,
+            )
 
             session.commit()
     except Exception as e:
