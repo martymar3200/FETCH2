@@ -57,7 +57,7 @@ def get_barcode_list(
         sorter = BaseSorter(Barcode)
         query = sorter.apply_sorting(query, sort_params)
 
-    return paginate(query)
+    return paginate(session, query)
 
 
 @router.get("/value/{value}", response_model=BarcodeDetailReadOutput)

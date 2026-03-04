@@ -54,7 +54,7 @@ def get_audit_trails_list(
         sorter = BaseSorter(AuditTrail)
         query = sorter.apply_sorting(query, sort_params)
 
-    return paginate(query)
+    return paginate(session, query)
 
 
 @router.get("/{table_name}/{record_id}", response_model=List[AuditTrailDetailOutput])

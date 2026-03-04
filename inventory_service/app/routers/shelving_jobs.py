@@ -58,7 +58,7 @@ from app.helpers.system_setting_helpers import get_setting_value
 logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
-from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment, validate_assignment_lock
 from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
@@ -596,11 +596,18 @@ def reassign_container_location(
     id: int,
     reassignment_input: ReAssignmentInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Re-Assign container shelf position OR Move Item to Tray, given a container id/barcode.
     Supports unified shelving and move operations.
     """
+    shelving_job = session.get(ShelvingJob, id)
+    if not shelving_job:
+        raise NotFound(detail=f"Shelving Job ID {id} Not Found")
+        
+    validate_assignment_lock(shelving_job, current_user.id)
+    
     audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"})
     
     # ---------------------------------------------------------

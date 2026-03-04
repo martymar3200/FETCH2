@@ -47,7 +47,7 @@ from app.tasks import (
 )
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
-from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment, validate_assignment_lock
 from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
@@ -211,7 +211,7 @@ def get_verification_job_list_lite(
     )
 
     # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(query)
+    return paginate(session, query)
 
 
 @router.get("/{id}", response_model=VerificationJobDetailOutput)
@@ -475,7 +475,8 @@ def delete_verification_job(id: int, session: Session = Depends(get_session)):
 def add_item_to_verification_job(
     id: int,
     input: VerificationJobAddInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Add an item to a verification job.
@@ -485,6 +486,8 @@ def add_item_to_verification_job(
 
     if not verification_job:
         raise NotFound(detail=f"Verification Job ID {id} Not Found")
+        
+    validate_assignment_lock(verification_job, current_user.id)
 
     # V2 FIX: session.query().filter().first() -> session.execute(select(...)).scalars().first()
     barcode = (
@@ -581,7 +584,8 @@ def add_item_to_verification_job(
 def remove_item_from_verification_job(
     id: int,
     input: VerificationJobRemoveInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Remove an item from a verification job.
@@ -590,6 +594,8 @@ def remove_item_from_verification_job(
 
     if not verification_job:
         raise NotFound(detail=f"Verification Job ID {id} Not Found")
+        
+    validate_assignment_lock(verification_job, current_user.id)
 
     # V2 FIX
     barcode = (

@@ -1703,8 +1703,8 @@ def get_verification_change_summary(
     query = get_verification_change_query(params, sort_params)
     query = query.subquery()
 
-    # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(select(query))
+    # CRITICAL FIX: Paginate needs both session and query for SQLAlchemy 2.0
+    return paginate(session, select(query))
 
 
 @router.get("/verification-changes/summary/download", response_class=StreamingResponse)

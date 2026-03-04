@@ -113,8 +113,8 @@ def get_item_list(
         sorter = ItemSorter(Item)
         item_queryset = sorter.apply_sorting(item_queryset, sort_params)
 
-    # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(item_queryset)
+    # CRITICAL FIX: Paginate needs both session and query for SQLAlchemy 2.0
+    return paginate(session, item_queryset)
 
 
 @router.get("/download", response_class=StreamingResponse)

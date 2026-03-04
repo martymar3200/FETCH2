@@ -53,7 +53,7 @@ def get_shelf_number_list(
         query = sorter.apply_sorting(query, sort_params)
 
     # CRITICAL FIX: Paginate now takes only the query object
-    return paginate(query)
+    return paginate(session, query)
 
 
 @router.get("/numbers/{id}", response_model=ShelfNumberDetailOutput)

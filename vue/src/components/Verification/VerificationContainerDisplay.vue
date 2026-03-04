@@ -457,11 +457,11 @@
           no-caps
           unelevated
           color="accent"
-          label="Complete & Print"
-          class="btn-no-wrap text-body1 full-width"
+          label="Complete"
+          class="text-body1 full-width"
           :loading="appActionIsLoadingData"
           @click="
-            handleConfirmationModal('completePrint')
+            handleConfirmationModal('completeJob')
           "
         />
 
@@ -471,11 +471,11 @@
           no-caps
           unelevated
           color="accent"
-          label="Complete"
-          class="text-body1 full-width"
+          label="Complete & Print"
+          class="btn-no-wrap text-body1 full-width"
           :loading="appActionIsLoadingData"
           @click="
-            handleConfirmationModal('completeJob')
+            handleConfirmationModal('completePrint')
           "
         />
 

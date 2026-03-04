@@ -109,3 +109,24 @@ def validate_status_transition(current_status: str, new_status: str, job_assigne
             raise ValidationException(
                 detail="Cannot set status to Assigned without assigned_user_id"
             )
+
+
+def validate_assignment_lock(job, current_user_id: int):
+    """
+    Validate that the current user is allowed to perform operations on the job.
+    
+    This acts as a strict lock to prevent users from completing tasks on jobs
+    that have been reassigned to someone else while they were working on it.
+    
+    Args:
+        job: The job object to check
+        current_user_id: ID of the user attempting the operation
+        
+    Raises:
+        Forbidden: If the job is assigned to someone else
+    """
+    if job.assigned_user_id is not None and job.assigned_user_id != current_user_id:
+        raise Forbidden(
+            detail=f"This job is currently assigned to another user (ID: {job.assigned_user_id}). "
+                   f"Only the assigned user can perform operations."
+        )

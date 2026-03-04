@@ -21,7 +21,42 @@
         </p>
         <slot />
       </q-card-section>
-      <q-card-actions align="right">
+      <q-card-actions
+        v-if="completeJobMode"
+        class="row justify-evenly q-gutter-sm q-pt-sm"
+      >
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Complete"
+          class="col-grow text-body1"
+          :loading="loading"
+          :disable="loading"
+          @click="$emit('confirm', false)"
+        />
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Complete & Print"
+          class="col-grow text-body1"
+          :loading="loading"
+          :disable="loading"
+          @click="$emit('confirm', true)"
+        />
+        <q-btn
+          outline
+          no-caps
+          :label="cancelLabel"
+          class="col-grow text-body1"
+          v-close-popup
+        />
+      </q-card-actions>
+      <q-card-actions
+        v-else
+        align="right"
+      >
         <q-btn
           flat
           :label="cancelLabel"
@@ -87,6 +122,10 @@ defineProps({
     default: 'Cancel'
   },
   loading: {
+    type: Boolean,
+    default: false
+  },
+  completeJobMode: {
     type: Boolean,
     default: false
   }

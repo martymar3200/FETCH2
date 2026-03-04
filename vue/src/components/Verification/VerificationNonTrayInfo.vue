@@ -314,12 +314,47 @@
     aria-label="confirmationModal"
   >
     <template #footer-content="{ hideModal }">
-      <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+      <q-card-section
+        v-if="showConfirmationModal.type === 'complete'"
+        class="row no-wrap justify-between items-center q-pt-sm"
+      >
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Complete & Print"
+          class="btn-no-wrap text-body1 full-width"
+          :loading="appActionIsLoadingData"
+          @click="handleConfirmationAction('completePrint')"
+        />
+        <q-space class="q-mx-xs" />
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Complete"
+          class="text-body1 full-width"
+          :loading="appActionIsLoadingData"
+          @click="handleConfirmationAction('complete')"
+        />
+        <q-space class="q-mx-xs" />
+        <q-btn
+          outline
+          no-caps
+          label="Cancel"
+          class="text-body1 full-width"
+          @click="hideModal"
+        />
+      </q-card-section>
+      <q-card-section
+        v-else
+        class="row no-wrap justify-between items-center q-pt-sm"
+      >
         <q-btn
           no-caps
           unelevated
           :color="showConfirmationModal.type === 'cancel' ? 'negative' : 'positive'"
-          :label="showConfirmationModal.type === 'cancel' ? 'Cancel Verification' : (showConfirmationModal.type === 'addItem' ? 'Add Item' : 'Complete Job')"
+          :label="showConfirmationModal.type === 'cancel' ? 'Cancel Verification' : 'Add Item'"
           class="text-body1 full-width"
           :loading="appActionIsLoadingData"
           @click="handleConfirmationAction"
@@ -625,13 +660,15 @@ const triggerItemScan = async () => {
   }
 }
 
-const handleConfirmationAction = () => {
+const handleConfirmationAction = (actionType) => {
   if (showConfirmationModal.value.type === 'cancel') {
     cancelVerification()
   } else if (showConfirmationModal.value.type === 'addItem') {
     addItemToJob()
+  } else if (actionType === 'completePrint') {
+    completeVerificationJob(true)
   } else {
-    completeVerificationJob()
+    completeVerificationJob(false)
   }
 }
 
@@ -728,13 +765,18 @@ const cancelVerification = async () => {
   }
 }
 
-const completeVerificationJob = async () => {
+const completeVerificationJob = async (shouldPrint = false) => {
   try {
     appActionIsLoadingData.value = true
     await patchVerificationJob({
       id: verificationJob.value.id,
       status: 'Completed'
     })
+
+    if (shouldPrint) {
+      emit('print')
+    }
+
     Notify.create({
       type: 'positive',
       message: 'Job Completed'

@@ -203,26 +203,14 @@
       </q-card-section>
     </q-card>
 
-    <!-- Dialogs -->
     <JobConfirmDialog
       v-model="showCompleteDialog"
-      :title="shippingEnabled ? 'Complete & Send to Shipping?' : 'Complete Job?'"
-      :message="shippingEnabled ? 'Items will be marked as Retrieved. Proceed to Shipping?' : 'Are you sure you want to complete this pick list job?'"
-      confirm-label="Complete & Print"
-      confirm-color="positive"
+      title="Complete Job"
+      message="Are you sure you want to complete this Picklist job?"
       :loading="actionLoading"
-      @confirm="completeJob(true)"
-    >
-      <template #extra-actions>
-        <q-btn
-          flat
-          no-caps
-          label="Complete Only"
-          color="positive"
-          @click="completeJob(false)"
-        />
-      </template>
-    </JobConfirmDialog>
+      :complete-job-mode="shippingEnabled"
+      @confirm="(print) => completeJob(print)"
+    />
 
     <JobConfirmDialog
       v-model="showCancelDialog"

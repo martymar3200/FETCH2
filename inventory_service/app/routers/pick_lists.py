@@ -41,7 +41,7 @@ from app.utilities import get_location, manage_transition, check_batch_completio
 from app.helpers.system_setting_helpers import get_setting_value
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
-from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment, validate_assignment_lock
 from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
@@ -499,6 +499,7 @@ def add_request_to_pick_list(
     pick_list_id: int,
     pick_list_input: PickListInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Add a request to an existing pick list.
@@ -507,6 +508,9 @@ def add_request_to_pick_list(
         raise BadRequest(detail="Pick List ID Not Found")
 
     pick_list = session.get(PickList, pick_list_id)
+    
+    if pick_list:
+        validate_assignment_lock(pick_list, current_user.id)
     update_dt = datetime.now(timezone.utc)
     errored_request_ids = []
 
@@ -584,6 +588,7 @@ def update_request_for_pick_list(
     request_id: int,
     pick_list_request_input: PickListUpdateRequestInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Update a request for an existing pick list.
@@ -603,6 +608,8 @@ def update_request_for_pick_list(
         raise NotFound(
             detail=f"Pick List ID {pick_list_id} or Request ID {request_id} Not Found"
         )
+        
+    validate_assignment_lock(existing_pick_list, current_user.id)
 
     existing_pick_list.update_dt = update_dt
     
@@ -662,7 +669,10 @@ def update_request_for_pick_list(
     "/{pick_list_id}/remove_request/{request_id}", response_model=PickListDetailOutput, dependencies=[Depends(RequiresPermission("process_pick_lists"))]
 )
 def remove_request_from_pick_list(
-    pick_list_id: int, request_id: int, session: Session = Depends(get_session)
+    pick_list_id: int, 
+    request_id: int, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Remove a request from an existing pick list.
@@ -672,6 +682,8 @@ def remove_request_from_pick_list(
 
     if not pick_list:
         raise NotFound(detail=f"Pick List ID {pick_list_id} Not Found")
+        
+    validate_assignment_lock(pick_list, current_user.id)
 
     if pick_list.status == "Completed":
         raise BadRequest(detail="Pick List Already Completed")

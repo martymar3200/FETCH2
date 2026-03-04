@@ -35,7 +35,7 @@ from app.sorting import RefileJobSorter
 from app.utilities import manage_transition, get_location
 
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
-from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment
+from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment, validate_assignment_lock
 from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
@@ -523,6 +523,7 @@ def add_items_to_refile_job(
     job_id: int,
     refile_job_input: RefileJobInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Add an item to a refile job.
@@ -537,6 +538,8 @@ def add_items_to_refile_job(
 
     if not refile_job:
         raise NotFound(detail=f"Refile Job ID {job_id} Not Found")
+        
+    validate_assignment_lock(refile_job, current_user.id)
 
     if refile_job.status in ["Running", "Completed"]:
         raise BadRequest(
@@ -678,6 +681,7 @@ def remove_item_from_refile_job(
     job_id: int,
     refile_job_input: RefileJobInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Remove an item from a refile job.
@@ -693,6 +697,8 @@ def remove_item_from_refile_job(
 
     if not refile_job:
         raise NotFound(detail=f"Refile Job ID {job_id} Not Found")
+        
+    validate_assignment_lock(refile_job, current_user.id)
 
     # V2 FIX
     barcodes = (
@@ -752,12 +758,13 @@ def remove_item_from_refile_job(
     return sorted_requests(session, refile_job)
 
 
-@router.patch("/{job_id}/update_item/{item_id}", response_model=RefileJobDetailOutput)
+@router.patch("/{job_id}/update_item/{item_id}", response_model=RefileJobDetailOutput, dependencies=[Depends(RequiresPermission("process_refile_jobs"))])
 def update_item_in_refile_job(
     job_id: int,
     item_id: int,
     refile_job_item_input: ItemUpdateInput,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions),
 ):
     """
     Update an item in a refile job.
@@ -767,6 +774,8 @@ def update_item_in_refile_job(
 
     if not refile_job:
         raise NotFound(detail=f"Refile Job ID {job_id} not found")
+        
+    validate_assignment_lock(refile_job, current_user.id)
 
     # V2 FIX
     existing_item = session.execute(select(Item).filter(Item.id == item_id)).scalars().first()
