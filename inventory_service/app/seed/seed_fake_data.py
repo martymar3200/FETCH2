@@ -242,7 +242,7 @@ fake_data = [
 ]
 
 
-def seed_fake_data():
+def seed_fake_data(lightweight=False):
     inventory_logger.disabled = False
     inventory_logger.info("Staring process to seed fake data...")
     session = get_seeder_session()
@@ -255,6 +255,10 @@ def seed_fake_data():
 
         seeder.seed(load_seed(elements[0], elements[1]))
         seeder.session.commit()
+        
+    if lightweight:
+        inventory_logger.info("Skipping heavy generation loops for lightweight seed.")
+        return
     """
     Ladders would need either 8 files,
     so instead we'll script to generate ladders 1-38

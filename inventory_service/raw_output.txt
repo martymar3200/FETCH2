@@ -1,0 +1,711 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-7.4.4, pluggy-1.6.0
+rootdir: /Users/matthewmartin/workspace/FETCH2/inventory_service
+configfile: pytest.ini
+plugins: anyio-4.11.0, html-4.1.1, metadata-3.1.1
+collected 1 item
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions 
+-------------------------------- live log setup --------------------------------
+INFO     root:conftest.py:62 Docker container started successfully.
+
+SETUP    S init_db
+    SETUP    M session
+    SETUP    M client (fixtures used: session)INFO     tests.fixtures.configtest:configtest.py:63 Populating table: buildings
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Building 1'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/buildings "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/buildings/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: modules
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'building_id': 1, 'module_number': '1'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/modules "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/modules/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: aisle_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/aisles/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: aisles
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'aisle_number_id': 1, 'module_id': 1, 'sort_priority': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/aisles "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/aisles/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: side_orientations
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Left'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/sides/orientations "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: sides
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'aisle_id': 1, 'side_orientation_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/sides "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/sides/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: barcode_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'qrcode', 'allowed_pattern': '.*'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/types "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: barcodes
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'type_id': 1, 'value': '5901234123457'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_position_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/positions/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: ladder_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/ladders/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: ladders
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'ladder_number_id': 1, 'side_id': 1, 'sort_priority': 2}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/ladders "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/ladders/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: owner_tiers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'level': 1, 'name': 'organization'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/owners/tiers "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: owners
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Special Collection Directorate', 'owner_tier_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/owners "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/owners/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: container_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'type': 'Tray'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/container-types "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/container-types/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: size_class
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Small', 'short_name': 'S', 'height': 1.0, 'width': 1.0, 'depth': 1.0}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/size_class "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/size_class/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Regular', 'prefix': 'RS'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelf-types "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelf-types/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelves
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'container_type_id': 1, 'depth': 27, 'height': 15.7, 'ladder_id': 1, 'owner_id': 1, 'shelf_number_id': 1, 'width': 30.33, 'shelf_type_id': 1, 'sort_priority': 3}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_positions
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'shelf_id': 1, 'shelf_position_number_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/positions/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: subcollections
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'A Song of Ice and Fire'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/subcollections "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/subcollections/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: media_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Paper'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/media-types "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/media-types/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: users
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'first_name': 'John', 'last_name': 'Wick'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/users "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/users/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: accession_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'container_type_id': 1, 'run_time': '03:25:15', 'status': 'Created', 'last_transition': '2023-11-27T12:34:56.789123Z', 'trayed': True, 'owner_id': 1, 'user_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/accession-jobs "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/accession-jobs/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: verification_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'accession_job_id': 1, 'container_type_id': 1, 'last_transition': '2023-11-27T12:34:56.789123Z', 'owner_id': 1, 'run_time': '03:25:15', 'status': 'Created', 'trayed': True, 'user_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/verification-jobs "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/verification-jobs/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelving_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'building_id': 1, 'origin': 'Verification', 'status': 'Created', 'user_id': 1, 'verification_jobs': [1]}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: PATCH http://testserver/verification-jobs/1 "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: trays
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'accession_job_id': 1, 'verification_job_id': 1, 'container_type_id': 1, 'size_class_id': 1, 'owner_id': 1, 'media_type_id': 1, 'shelf_position_id': 1, 'conveyance_bin_id': 1, 'accession_dt': '2024-01-01T00:00:00.000000', 'shelved_dt': '2024-01-01T00:00:00.000000', 'withdrawal_dt': '2024-01-01T00:00:00.000000'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/conveyance-bins "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/conveyance-bins/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/trays "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/trays/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: items
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'status': 'In', 'accession_dt': '2023-10-08T20:46:56.764426', 'accession_job_id': 1, 'arbitrary_data': 'Signed copy', 'condition': 'Good', 'container_type_id': 1, 'media_type_id': 1, 'owner_id': 1, 'subcollection_id': 1, 'title': 'Lord of The Rings', 'tray_id': 1, 'size_class_id': 1, 'verification_job_id': 1, 'volume': 'I', 'withdrawal_dt': '2023-10-08T20:46:56.764426'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/items "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/items/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelving_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'building_id': 1, 'origin': 'Verification', 'status': 'Created', 'user_id': 1, 'verification_jobs': [1]}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: PATCH http://testserver/verification-jobs/1 "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: permissions
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'admin'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/permissions "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/permissions/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: groups
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Test Group'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/groups "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/groups/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: pick_lists
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'user_id': 1, 'status': 'Created'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/pick-lists "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/pick-lists/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: request_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'type': 'General Delivery'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/requests/types "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: requests
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'barcode_value': 'RS4321', 'request_type_id': 1, 'delivery_location_id': 1, 'requestor_name': 'Bilbo Baggins', 'scanned_for_pick_list': False, 'pick_list_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/requests "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/requests/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: refile_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'assigned_user_id': 1, 'run_time': '00:00:00', 'status': 'Created'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/refile-jobs "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/refile-jobs/ "HTTP/1.1 401 Unauthorized"
+
+    SETUP    M test_database (fixtures used: client, init_db)
+        tests/domain/test_location_hierarchy.py::test_shelf_creation_positions (fixtures used: client, init_db, session, test_database)FAILED
+    TEARDOWN M test_database
+    TEARDOWN M client
+    TEARDOWN M session
+TEARDOWN S init_db
+
+=================================== FAILURES ===================================
+________________________ test_shelf_creation_positions _________________________
+
+client = <starlette.testclient.TestClient object at 0x10f6cc6b0>
+session = <sqlalchemy.orm.session.Session object at 0x10f6335f0>
+test_database = None
+
+    def test_shelf_creation_positions(client: TestClient, session: Session, test_database):
+        """
+        Verify that when a new Shelf is created with a specific max_capacity (via SizeClass/ShelfType),
+        exactly that number of ShelfPosition objects are automatically generated.
+        """
+        from app.models.shelf_types import ShelfType
+        from app.main import app
+        from app.auth.dependencies import get_current_user_with_permissions
+        from app.models.users import User
+    
+        # Mock authentication to avoid 403 Forbidden
+        def override_get_current_user_with_permissions():
+            # A mock user object is sufficient since RequiresPermission checks user.groups.permissions
+            # But actually RequiresPermission expects a db User object.
+            # Since we use dependency override on the base `get_current_user_with_permissions`,
+            # we can just return a real user from the test DB that has the permissions,
+            # or mock the `RequiresPermission` directly.
+            # Mocking the user is easier if we have one, but let's just create a dummy object
+            # that passes the `.groups.permissions` check.
+            class MockPermission:
+                name = "can_manage_locations"
+            class MockGroup:
+                permissions = [MockPermission()]
+            class MockUser:
+                groups = [MockGroup()]
+            return MockUser()
+    
+        app.dependency_overrides[get_current_user_with_permissions] = override_get_current_user_with_permissions
+    
+        try:
+            # Needs a seeded ShelfType.
+            shelf_type = session.query(ShelfType).first()
+>           assert shelf_type is not None, "A ShelfType must exist for this test."
+E           AssertionError: A ShelfType must exist for this test.
+E           assert None is not None
+
+tests/domain/test_location_hierarchy.py:132: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+Loading settings for local
+---------------------------- Captured stderr setup -----------------------------
+Traceback (most recent call last):
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 711, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 306, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+    self.__connect()
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: could not translate host name "inventory-database" to address: nodename nor servname provided, or not known
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/bin/alembic", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/config.py", line 1033, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/config.py", line 1023, in main
+    self.run_cmd(cfg, options)
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/config.py", line 957, in run_cmd
+    fn(
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/migrations/env.py", line 138, in <module>
+    run_migrations_online()
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/migrations/env.py", line 122, in run_migrations_online
+    with connectable.connect() as connection:
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2440, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 711, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 306, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+    self.__connect()
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) could not translate host name "inventory-database" to address: nodename nor servname provided, or not known
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-04 18:19:35,830 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '22', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/buildings/', 'method': 'POST', 'response_status': 401, 'process_time': 4.0531158447265625e-06}
+2026-03-04 18:19:35,832 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '40', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/modules/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,836 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '58', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/aisles/', 'method': 'POST', 'response_status': 401, 'process_time': 1.6689300537109375e-06}
+2026-03-04 18:19:35,837 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '16', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/sides/orientations', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,839 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '41', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/sides/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,840 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '43', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/barcodes/types', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,842 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '40', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/barcodes/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,846 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '57', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/ladders/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,847 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '36', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/owners/tiers', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,849 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '62', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/owners/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,851 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '16', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/container-types/', 'method': 'POST', 'response_status': 401, 'process_time': 1.1920928955078125e-06}
+2026-03-04 18:19:35,853 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '79', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/size_class/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,855 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '35', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/shelf-types/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,857 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '42', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/barcodes/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,858 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '162', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/shelves/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,859 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '46', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/shelves/positions/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,861 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '34', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/subcollections/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,863 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '17', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/media-types/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,864 - security-log - INFO - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '43', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/users', 'method': 'POST', 'response_status': 307, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,865 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '43', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/users/', 'method': 'POST', 'response_status': 401, 'process_time': 9.5367431640625e-07}
+2026-03-04 18:19:35,867 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '164', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/accession-jobs/', 'method': 'POST', 'response_status': 401, 'process_time': 1.1920928955078125e-06}
+2026-03-04 18:19:35,869 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '187', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/verification-jobs/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,870 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '23', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/verification-jobs/1', 'method': 'PATCH', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,872 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '42', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/barcodes/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,873 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '20', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/conveyance-bins/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,875 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '313', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/trays/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,877 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '42', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/barcodes/', 'method': 'POST', 'response_status': 401, 'process_time': 1.6689300537109375e-06}
+2026-03-04 18:19:35,879 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '373', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/items/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,880 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '23', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/verification-jobs/1', 'method': 'PATCH', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,881 - security-log - INFO - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '17', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/permissions', 'method': 'POST', 'response_status': 307, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,882 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '17', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/permissions/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,883 - security-log - INFO - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '22', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/groups', 'method': 'POST', 'response_status': 307, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,884 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '22', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/groups/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,886 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '35', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/pick-lists/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+2026-03-04 18:19:35,887 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '28', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/requests/types', 'method': 'POST', 'response_status': 401, 'process_time': 1.6689300537109375e-06}
+2026-03-04 18:19:35,889 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '162', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/requests/', 'method': 'POST', 'response_status': 401, 'process_time': 1.9073486328125e-06}
+2026-03-04 18:19:35,890 - security-log - WARNING - {'ip': 'testclient', 'user': 'unknown', 'user-agent': 'testclient', 'referer': 'unknown', 'headers': {'host': 'testserver', 'accept': '*/*', 'accept-encoding': 'gzip, deflate', 'connection': 'keep-alive', 'user-agent': 'testclient', 'content-length': '68', 'content-type': 'application/json'}, 'query-params': {}, 'url': '/refile-jobs/', 'method': 'POST', 'response_status': 401, 'process_time': 2.1457672119140625e-06}
+------------------------------ Captured log setup ------------------------------
+INFO     root:conftest.py:62 Docker container started successfully.
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: buildings
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Building 1'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/buildings "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/buildings/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: modules
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'building_id': 1, 'module_number': '1'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/modules "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/modules/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: aisle_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/aisles/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: aisles
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'aisle_number_id': 1, 'module_id': 1, 'sort_priority': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/aisles "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/aisles/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: side_orientations
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Left'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/sides/orientations "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: sides
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'aisle_id': 1, 'side_orientation_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/sides "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/sides/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: barcode_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'qrcode', 'allowed_pattern': '.*'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/types "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: barcodes
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'type_id': 1, 'value': '5901234123457'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_position_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/positions/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: ladder_numbers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'number': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/ladders/numbers "HTTP/1.1 405 Method Not Allowed"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: ladders
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'ladder_number_id': 1, 'side_id': 1, 'sort_priority': 2}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/ladders "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/ladders/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: owner_tiers
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'level': 1, 'name': 'organization'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/owners/tiers "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: owners
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Special Collection Directorate', 'owner_tier_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/owners "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/owners/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: container_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'type': 'Tray'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/container-types "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/container-types/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: size_class
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Small', 'short_name': 'S', 'height': 1.0, 'width': 1.0, 'depth': 1.0}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/size_class "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/size_class/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Regular', 'prefix': 'RS'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelf-types "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelf-types/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelves
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'container_type_id': 1, 'depth': 27, 'height': 15.7, 'ladder_id': 1, 'owner_id': 1, 'shelf_number_id': 1, 'width': 30.33, 'shelf_type_id': 1, 'sort_priority': 3}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelf_positions
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'shelf_id': 1, 'shelf_position_number_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/shelves/positions/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: subcollections
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'A Song of Ice and Fire'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/subcollections "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/subcollections/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: media_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Paper'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/media-types "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/media-types/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: users
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'first_name': 'John', 'last_name': 'Wick'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/users "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/users/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: accession_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'container_type_id': 1, 'run_time': '03:25:15', 'status': 'Created', 'last_transition': '2023-11-27T12:34:56.789123Z', 'trayed': True, 'owner_id': 1, 'user_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/accession-jobs "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/accession-jobs/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: verification_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'accession_job_id': 1, 'container_type_id': 1, 'last_transition': '2023-11-27T12:34:56.789123Z', 'owner_id': 1, 'run_time': '03:25:15', 'status': 'Created', 'trayed': True, 'user_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/verification-jobs "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/verification-jobs/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelving_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'building_id': 1, 'origin': 'Verification', 'status': 'Created', 'user_id': 1, 'verification_jobs': [1]}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: PATCH http://testserver/verification-jobs/1 "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: trays
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'accession_job_id': 1, 'verification_job_id': 1, 'container_type_id': 1, 'size_class_id': 1, 'owner_id': 1, 'media_type_id': 1, 'shelf_position_id': 1, 'conveyance_bin_id': 1, 'accession_dt': '2024-01-01T00:00:00.000000', 'shelved_dt': '2024-01-01T00:00:00.000000', 'withdrawal_dt': '2024-01-01T00:00:00.000000'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/conveyance-bins "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/conveyance-bins/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/trays "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/trays/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: items
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'status': 'In', 'accession_dt': '2023-10-08T20:46:56.764426', 'accession_job_id': 1, 'arbitrary_data': 'Signed copy', 'condition': 'Good', 'container_type_id': 1, 'media_type_id': 1, 'owner_id': 1, 'subcollection_id': 1, 'title': 'Lord of The Rings', 'tray_id': 1, 'size_class_id': 1, 'verification_job_id': 1, 'volume': 'I', 'withdrawal_dt': '2023-10-08T20:46:56.764426'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/barcodes/ "HTTP/1.1 401 Unauthorized"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/items "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/items/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: shelving_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'building_id': 1, 'origin': 'Verification', 'status': 'Created', 'user_id': 1, 'verification_jobs': [1]}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: PATCH http://testserver/verification-jobs/1 "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: permissions
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'admin'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/permissions "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/permissions/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: groups
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'name': 'Test Group'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/groups "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/groups/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: pick_lists
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'user_id': 1, 'status': 'Created'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/pick-lists "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/pick-lists/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: request_types
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'type': 'General Delivery'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/requests/types "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: requests
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'barcode_value': 'RS4321', 'request_type_id': 1, 'delivery_location_id': 1, 'requestor_name': 'Bilbo Baggins', 'scanned_for_pick_list': False, 'pick_list_id': 1}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/requests "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/requests/ "HTTP/1.1 401 Unauthorized"
+INFO     tests.fixtures.configtest:configtest.py:63 Populating table: refile_jobs
+INFO     tests.fixtures.configtest:configtest.py:64 Request Data : {'assigned_user_id': 1, 'run_time': '00:00:00', 'status': 'Created'}
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/refile-jobs "HTTP/1.1 307 Temporary Redirect"
+DEBUG    asyncio:selector_events.py:64 Using selector: KqueueSelector
+INFO     httpx:_client.py:1013 HTTP Request: POST http://testserver/refile-jobs/ "HTTP/1.1 401 Unauthorized"
+--------------------------- Captured stdout teardown ---------------------------
+Deleted Images:
+untagged: postgres:15
+deleted: sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
+deleted: sha256:c5e4f1f70d5a5afc5e2bebea1ce71b8805f44938b22a822718ae3ef06051e115
+deleted: sha256:b965785b53f9b7af5b947389933c6747bb18bc9b6c0e188e562082e4acb453cb
+
+Total reclaimed space: 162.4MB
+Deleted Volumes:
+tests_test-db-volume
+
+Total reclaimed space: 40.12MB
+--------------------------- Captured stderr teardown ---------------------------
+time="2026-03-04T18:19:36-05:00" level=warning msg="/Users/matthewmartin/workspace/FETCH2/inventory_service/tests/test-docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test_postgres Stopping 
+ Container test_postgres Stopped 
+ Container test_postgres Removing 
+ Container test_postgres Removed 
+ Network tests_test Removing 
+ Network tests_test Removed 
+=============================== warnings summary ===============================
+app/config/config.py:11
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/app/config/config.py:11: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+app/schemas/requests.py:395
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/app/schemas/requests.py:395: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class RequestListOutput(RequestBaseOutput):
+
+app/schemas/withdraw_jobs.py:255
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/app/schemas/withdraw_jobs.py:255: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class WithdrawJobWriteOutput(WithdrawJobListOutput):
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:443: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    return conn.scalar(sql)
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:443: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    return conn.scalar(sql)
+
+tests/domain/test_location_hierarchy.py: 112 warnings
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/tests/conftest.py:126: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    Base.metadata.create_all(engine)
+
+tests/domain/test_location_hierarchy.py: 112 warnings
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/tests/conftest.py:126: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    Base.metadata.create_all(engine)
+
+tests/domain/test_location_hierarchy.py: 30 warnings
+  /opt/homebrew/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    return next(self.gen)
+
+tests/domain/test_location_hierarchy.py: 30 warnings
+  /opt/homebrew/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    return next(self.gen)
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/tests/domain/test_location_hierarchy.py:131: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    shelf_type = session.query(ShelfType).first()
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/tests/domain/test_location_hierarchy.py:131: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    shelf_type = session.query(ShelfType).first()
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:649: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    conn.execute(sa.text(text))
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:649: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    conn.execute(sa.text(text))
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:653: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    conn.execute(sa.text(text))
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:653: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    conn.execute(sa.text(text))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+======================= 1 failed, 295 warnings in 32.49s =======================

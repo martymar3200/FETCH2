@@ -71,21 +71,24 @@ def init_db():
     subprocess.run(DOCKER_CLEANUP_VOLUME_COMMAND.split())
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def session():
     """
     Fixture that provides a session object for testing.
     Yields:
     - Session: The session object.
     """
-    session = Session(engine)
+    session = Session(engine, autoflush=False)
     yield session
 
     # Close the session after the test is done
-    session.close()
+    try:
+        session.close()
+    except Exception as e:
+        logger.warning(f"Ignored exception during session teardown: {e}")
 
 
-@pytest.fixture(name="client", scope="module")
+@pytest.fixture(name="client", scope="session")
 def client(session):
     """
     Fixture that returns a TestClient instance for testing FastAPI application.
@@ -97,10 +100,42 @@ def client(session):
 
     # Dependency override for the session
     def get_session_override():
-        return session
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise
 
-    # Override the dependency with the test session
+    from app.auth.dependencies import get_current_user_with_permissions
+    class MockSuperUser:
+        id = 999
+        first_name = "GlobalMock"
+        last_name = "User"
+        username = "mockadmin"
+        
+        @property
+        def groups(self):
+            class MockPerm:
+                def __init__(self, name):
+                    self.name = name
+            class MockGroup:
+                # Provide a wide set of permissions for generic legacy tests
+                permissions = [
+                    MockPerm("can_access_users"), MockPerm("can_create_user"), 
+                    MockPerm("can_update_user"), MockPerm("can_delete_user"),
+                    MockPerm("can_access_trays"), MockPerm("can_create_trays"),
+                    MockPerm("can_update_trays"), MockPerm("can_delete_trays"),
+                    MockPerm("manage_all_settings")
+                ]
+            return [MockGroup()]
+
+    def get_user_override():
+        return MockSuperUser()
+
+    # Override the dependency with the test session and auth
     app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_current_user_with_permissions] = get_user_override
+    
     client = TestClient(app)
     yield client
 
@@ -109,7 +144,7 @@ def client(session):
 
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def test_database(client, init_db):
     """
     Initialize and test the database.
@@ -123,42 +158,46 @@ def test_database(client, init_db):
     if not database_exists(engine.url):
         create_database(engine.url)
 
-    Base.metadata.create_all(engine)
 
-    subprocess.run(ALEMBIC_UPGRADE_COMMAND.split())
 
-    # Populate the database with sample data
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "buildings")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "modules")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "aisle_numbers")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "aisles")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "side_orientations")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "sides")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "barcode_types")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "barcodes")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelf_numbers")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelf_position_numbers")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "ladder_numbers")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "ladders")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "owner_tiers")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "owners")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "container_types")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "size_class")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelf_types")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelves")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelf_positions")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "subcollections")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "media_types")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "users")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "accession_jobs")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "verification_jobs")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelving_jobs")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "trays")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "items")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "shelving_jobs")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "permissions")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "groups")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "pick_lists")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "request_types")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "requests")
-    populate_record(client, CREATE_DATA_SAMPLER_FIXTURE, "refile_jobs")
+    # Ensure Alembic uses the test database URL instead of the default network name 
+    env = os.environ.copy()
+    env["DATABASE_URL"] = TEST_DATABASE_URL
+    subprocess.run(ALEMBIC_UPGRADE_COMMAND.split(), env=env)
+    session = Session(engine, autoflush=False)
+    try:
+        import app.seed.seed_fake_data
+        
+        def get_test_seeder_session():
+            return Session(engine, autoflush=False)
+
+        # Patch the seeder session generator to use our test engine
+        app.seed.seed_fake_data.get_seeder_session = get_test_seeder_session
+        
+        # Patch the permissions seeder session
+        import app.seed.seed_permissions_adhoc
+        app.seed.seed_permissions_adhoc.get_session = get_test_seeder_session
+        
+        # Ensure all models are loaded so relationships don't throw InvalidRequestError
+        from app.main import _force_load_all_models
+        _force_load_all_models()
+        
+        # Seed Permissions first (idempotent, relies on explicit json load)
+        app.seed.seed_permissions_adhoc.seed_new_permissions()
+        
+        # Run the official seed script
+        app.seed.seed_fake_data.seed_fake_data(lightweight=True)
+    finally:
+        session.close()
+
+@pytest.fixture(autouse=True, scope="session")
+def _patch_session_manager():
+    """
+    Redirect session_manager (used by background tasks and fallback routes) to test DB.
+    Without this, they try to connect to the raw 'inventory-database'.
+    """
+    import app.database.session as sess_mod
+    original_engine = sess_mod.engine
+    sess_mod.engine = engine
+    yield
+    sess_mod.engine = original_engine

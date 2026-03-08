@@ -53,6 +53,61 @@ router = APIRouter(
 LOGGER = logging.getLogger("app.routers.shelves")
 
 
+def _adjust_shelf_positions(session: Session, shelf_id: int, old_type_id: int, new_type_id: int):
+    """
+    Adjust ShelfPosition records when a shelf's shelf_type changes.
+    Adds positions if the new capacity is larger, removes empty positions
+    from the end if the new capacity is smaller.
+    Raises ValidationException if occupied positions would be removed.
+    """
+    old_shelf_type = session.get(ShelfType, old_type_id)
+    new_shelf_type = session.get(ShelfType, new_type_id)
+
+    if not new_shelf_type:
+        raise ValidationException(detail=f"New Shelf Type ID {new_type_id} not found.")
+
+    old_capacity = old_shelf_type.max_capacity if old_shelf_type else 0
+    new_capacity = new_shelf_type.max_capacity
+
+    if new_capacity == old_capacity:
+        return
+
+    # --- DECREASING CAPACITY ---
+    if new_capacity < old_capacity:
+        num_to_remove = old_capacity - new_capacity
+
+        positions_to_check_query = (
+            select(ShelfPosition)
+            .where(ShelfPosition.shelf_id == shelf_id)
+            .order_by(ShelfPosition.position_number.desc())
+            .limit(num_to_remove)
+        )
+        positions_to_delete = session.execute(positions_to_check_query).scalars().all()
+        position_ids_to_delete = [p.id for p in positions_to_delete]
+
+        if position_ids_to_delete:
+            occupied_tray = session.execute(
+                select(Tray.id).where(Tray.shelf_position_id.in_(position_ids_to_delete)).limit(1)
+            ).first()
+            occupied_non_tray = session.execute(
+                select(NonTrayItem.id).where(NonTrayItem.shelf_position_id.in_(position_ids_to_delete)).limit(1)
+            ).first()
+
+            if occupied_tray or occupied_non_tray:
+                raise ValidationException(detail="Shelf is not Empty")
+
+            for pos in positions_to_delete:
+                session.delete(pos)
+
+    # --- INCREASING CAPACITY ---
+    elif new_capacity > old_capacity:
+        for position_num in range(old_capacity + 1, new_capacity + 1):
+            session.add(ShelfPosition(
+                shelf_id=shelf_id,
+                position_number=position_num,
+            ))
+
+
 @router.get("/", response_model=Page[ShelfListOutput])
 def get_shelf_list(
     session: Session = Depends(get_session),
@@ -543,6 +598,60 @@ def insert_shelf(
         raise InternalServerError(detail=f"Insert-and-shift failed: {e}")
 
 
+@router.patch("/bulk", response_model=List[ShelfDetailWriteOutput])
+def bulk_update_shelves(
+    updates: List[ShelfBulkUpdateInput],
+    session: Session = Depends(get_session),
+):
+    """
+    Bulk update shelves. Each item must include an 'id' field.
+    If shelf_type_id is changed, shelf positions are adjusted to match
+    the new max_capacity (same logic as single-shelf update).
+    """
+    results = []
+    for update in updates:
+        data = update.model_dump(exclude_unset=True)
+        shelf_id = data.pop("id")
+
+        shelf = session.get(Shelf, shelf_id)
+        if not shelf:
+            raise NotFound(detail=f"Shelf ID {shelf_id} Not Found")
+
+        # Adjust positions when shelf_type changes
+        if "shelf_type_id" in data and data["shelf_type_id"] != shelf.shelf_type_id:
+            _adjust_shelf_positions(session, shelf_id, shelf.shelf_type_id, data["shelf_type_id"])
+
+        for key, value in data.items():
+            setattr(shelf, key, value)
+
+        setattr(shelf, "update_dt", datetime.now(timezone.utc))
+        session.add(shelf)
+        session.flush()  # flush each shelf so position changes are visible
+
+        # Re-calculate available space
+        if hasattr(shelf, 'calc_available_space'):
+            shelf.calc_available_space(session=session)
+            session.add(shelf)
+
+        results.append(shelf)
+
+    session.commit()
+    for r in results:
+        session.refresh(r)
+
+    for r in results:
+        log_audit_event(
+            session,
+            AuditEventType.ENTITY_UPDATED,
+            f"Shelf {r.id} bulk updated",
+            entity_type="shelves",
+            entity_id=r.id,
+        )
+    session.commit()
+
+    return results
+
+
 @router.patch("/{id}", response_model=ShelfDetailWriteOutput)
 def update_shelf(
     id: int, shelf_input: ShelfUpdateInput, session: Session = Depends(get_session)
@@ -599,51 +708,8 @@ def update_shelf(
             mutated_data["barcode_id"] = new_barcode.id
 
     # --- LOGIC TO HANDLE SHELF CAPACITY CHANGES ---
-    
     if "shelf_type_id" in mutated_data and mutated_data["shelf_type_id"] != existing_shelf.shelf_type_id:
-        
-        old_shelf_type = session.get(ShelfType, existing_shelf.shelf_type_id)
-        new_shelf_type = session.get(ShelfType, mutated_data["shelf_type_id"])
-
-        if not new_shelf_type:
-            raise ValidationException(detail=f"New Shelf Type ID {mutated_data['shelf_type_id']} not found.")
-
-        old_capacity = old_shelf_type.max_capacity if old_shelf_type else 0
-        new_capacity = new_shelf_type.max_capacity
-
-        # --- PATH 1: DECREASING CAPACITY ---
-        if new_capacity < old_capacity:
-            num_to_remove = old_capacity - new_capacity
-
-            positions_to_check_query = (
-                select(ShelfPosition)
-                .where(ShelfPosition.shelf_id == id)
-                .order_by(ShelfPosition.position_number.desc())
-                .limit(num_to_remove)
-            )
-            positions_to_delete = session.execute(positions_to_check_query).scalars().all()
-            position_ids_to_delete = [p.id for p in positions_to_delete]
-
-            if position_ids_to_delete:
-                occupied_tray = session.execute(select(Tray.id).where(Tray.shelf_position_id.in_(position_ids_to_delete)).limit(1)).first()
-                occupied_non_tray = session.execute(select(NonTrayItem.id).where(NonTrayItem.shelf_position_id.in_(position_ids_to_delete)).limit(1)).first()
-
-                if occupied_tray or occupied_non_tray:
-                    raise ValidationException(detail="Shelf is not Empty")
-
-                for pos in positions_to_delete:
-                    session.delete(pos)
-        
-        # --- PATH 2: INCREASING CAPACITY ---
-        elif new_capacity > old_capacity:
-            new_position_numbers_range = list(range(old_capacity + 1, new_capacity + 1))
-            
-            for position_num in new_position_numbers_range:
-                new_position = ShelfPosition(
-                    shelf_id=id,
-                    position_number=position_num,
-                )
-                session.add(new_position)
+        _adjust_shelf_positions(session, id, existing_shelf.shelf_type_id, mutated_data["shelf_type_id"])
 
     # Apply all other attribute changes
     for key, value in mutated_data.items():
@@ -715,43 +781,5 @@ def delete_shelf(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Shelf ID {id} Not Found")
 
 
-@router.patch("/bulk", response_model=List[ShelfDetailWriteOutput])
-def bulk_update_shelves(
-    updates: List[ShelfBulkUpdateInput],
-    session: Session = Depends(get_session),
-):
-    """
-    Bulk update shelves. Each item must include an 'id' field.
-    Designed for batch-editing owner, shelf_type, container_type, sort_priority.
-    """
-    results = []
-    for update in updates:
-        data = update.model_dump(exclude_unset=True)
-        shelf_id = data.pop("id")
-
-        shelf = session.get(Shelf, shelf_id)
-        if not shelf:
-            raise NotFound(detail=f"Shelf ID {shelf_id} Not Found")
-
-        for key, value in data.items():
-            setattr(shelf, key, value)
-
-        setattr(shelf, "update_dt", datetime.now(timezone.utc))
-        session.add(shelf)
-        results.append(shelf)
-
-    session.commit()
-    for r in results:
-        session.refresh(r)
-
-    for r in results:
-        log_audit_event(
-            session,
-            AuditEventType.ENTITY_UPDATED,
-            f"Shelf {r.id} bulk updated",
-            entity_type="shelves",
-            entity_id=r.id,
-        )
-    session.commit()
-
-    return results
+# NOTE: /bulk must be registered BEFORE /{id} to avoid FastAPI route shadowing.
+# It has been moved here; the original was at the end of the file.

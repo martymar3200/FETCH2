@@ -22,7 +22,7 @@ class AuditTrail(AuditTrailBase):
     __tablename__ = "audit_log"
 
     # Primary Key
-    id: Mapped[Optional[int]] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
     # --- Legacy columns (kept for backward compat, now nullable) ---
     table_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)

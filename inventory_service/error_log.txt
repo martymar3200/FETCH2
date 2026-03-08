@@ -1,0 +1,219 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-7.4.4, pluggy-1.6.0
+rootdir: /Users/matthewmartin/workspace/FETCH2/inventory_service
+configfile: pytest.ini
+plugins: anyio-4.11.0, html-4.1.1, metadata-3.1.1
+collected 1 item
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions 
+-------------------------------- live log setup --------------------------------
+INFO     root:conftest.py:62 Docker container started successfully.
+ERROR                                                                    [100%]
+
+==================================== ERRORS ====================================
+_______________ ERROR at setup of test_shelf_creation_positions ________________
+tests/conftest.py:136: in test_database
+    from app.models.aisles import Aisle, AisleNumber
+E   ImportError: cannot import name 'AisleNumber' from 'app.models.aisles' (/Users/matthewmartin/workspace/FETCH2/inventory_service/app/models/aisles.py)
+---------------------------- Captured stdout setup -----------------------------
+Loading settings for local
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 2023_10_15_06_33_28, Add building table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_06_33_28 -> 2023_10_15_06_52_16, Add Module Number table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_06_52_16 -> 2023_10_15_06_54_53, Add Module table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_06_54_53 -> 2023_10_15_07_01_16, Add Side Orientation table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_07_01_16 -> 2023_10_15_07_03_48, Add Aisle table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_07_03_48 -> 2023_10_15_07_05_03, Add Side table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_07_05_03 -> 2023_10_15_12_21_17, Update aisles,sides,orientations,modules,buildings
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_15_12_21_17 -> 2023_10_16_10_00_05, Normalize aisle number
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_16_10_00_05 -> 2023_10_16_10_18_17, Unique constraint orientation name
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_16_10_18_17 -> 2023_10_18_06_29_39, aisle only building or module
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_18_06_29_39 -> 2023_10_18_07_44_56, aisle unique together update
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_18_07_44_56 -> 2023_10_19_11_37_46, Adding Barcode and Barcode Type table
+INFO  [alembic.runtime.migration] Running upgrade 2023_10_19_11_37_46 -> 2023_11_05_12_14_47, Add ladders
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_05_12_14_47 -> 2023_11_05_14_57_19, set unique_together side aisle_orientation
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_05_14_57_19 -> 2023_11_05_16_26_32, ladder unique_together side_ladder_number
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_05_16_26_32 -> 2023_11_07_11_25_48, Update ladder barcode id foregin key
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_07_11_25_48 -> 2023_11_16_11_18_56, Remove barcodes where necessary
+/Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/alembic/ddl/postgresql.py:192: UserWarning: autoincrement and existing_autoincrement only make sense for MySQL
+  super().alter_column(
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_16_11_18_56 -> 2023_11_24_12_19_22, Add shelves
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_24_12_19_22 -> 2023_11_27_10_01_55, Add owners table
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_27_10_01_55 -> 2023_11_27_11_26_47, Add owner to shelf
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_27_11_26_47 -> 2023_11_29_04_56_53, Add Accession Job
+INFO  [alembic.runtime.migration] Running upgrade 2023_11_29_04_56_53 -> 2023_12_27_12_13_12, Owner Parent Owner
+INFO  [alembic.runtime.migration] Running upgrade 2023_12_27_12_13_12 -> 2023_12_28_20_37_30, Add Verification Job
+INFO  [alembic.runtime.migration] Running upgrade 2023_12_28_20_37_30 -> 2024_01_10_07_33_41, trays
+INFO  [alembic.runtime.migration] Running upgrade 2024_01_10_07_33_41 -> 2024_01_10_07_53_48, mediatype
+INFO  [alembic.runtime.migration] Running upgrade 2024_01_10_07_53_48 -> 2024_01_10_08_09_01, sizeclass
+INFO  [alembic.runtime.migration] Running upgrade 2024_01_10_08_09_01 -> 2024_01_10_08_36_41, conveyance
+INFO  [alembic.runtime.migration] Running upgrade 2024_01_10_08_36_41 -> 2024_01_23_13_23_03, items
+INFO  [alembic.runtime.migration] Running upgrade 2024_01_23_13_23_03 -> 2024_01_25_09_09_29, nontray
+INFO  [alembic.runtime.migration] Running upgrade 2024_01_25_09_09_29 -> 2024_02_01_13_37_50, Add Shelving Job and Association tables
+INFO  [alembic.runtime.migration] Running upgrade 2024_02_01_13_37_50 -> 2024_02_06_12_41_18, Adjust ShelvingJobAssociation Subcollections
+INFO  [alembic.runtime.migration] Running upgrade 2024_02_06_12_41_18 -> 2024_02_17_21_05_55, Update shelving job association table
+INFO  [alembic.runtime.migration] Running upgrade 2024_02_17_21_05_55 -> 2024_02_23_18_28_49, Updating size class table
+INFO  [alembic.runtime.migration] Running upgrade 2024_02_23_18_28_49 -> 2024_02_28_14_04_47, Removing Cancel Verificationjob
+INFO  [alembic.runtime.migration] Running upgrade 2024_02_28_14_04_47 -> 2024_03_01_16_54_20, Updating size class field
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_01_16_54_20 -> 2024_03_05_14_30_35, Added status items non tray
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_05_14_30_35 -> 2024_03_15_14_56_00, tray_scanned_for_accession
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_15_14_56_00 -> 2024_03_15_15_11_16, item_scanned_for_accession
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_15_15_11_16 -> 2024_03_15_15_16_21, tray_collection_accessioned
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_15_15_16_21 -> 2024_03_15_15_22_10, non_tray_scanned_for_accession
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_15_15_22_10 -> 2024_03_15_16_32_03, accession_job_media_type
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_15_16_32_03 -> 2024_03_21_16_31_23, accession_size_class
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_21_16_31_23 -> 2024_03_22_09_28_10, barcode_fk_unique_ref_models
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_22_09_28_10 -> 2024_03_25_13_10_09, Added permissions table
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_25_13_10_09 -> 2024_03_28_10_27_07, scannedverification
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_28_10_27_07 -> 2024_03_29_12_24_09, ver_media_size
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_29_12_24_09 -> 2024_03_31_00_30_10, add_user_table
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_31_00_30_10 -> 2024_03_31_12_25_37, add_groups
+INFO  [alembic.runtime.migration] Running upgrade 2024_03_31_12_25_37 -> 2024_04_15_08_44_57, remove_shelving_m2m_assoc
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_15_08_44_57 -> 2024_04_15_10_19_50, shelvingjob_tray
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_15_10_19_50 -> 2024_04_15_11_44_30, shelvingjob_nontray
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_15_11_44_30 -> 2024_04_15_18_05_21, distinguish_container_pos
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_15_18_05_21 -> 2024_04_15_18_12_02, remove_uq_proposed_constraint
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_15_18_12_02 -> 2024_04_17_11_42_46, shelvingjob_building
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_17_11_42_46 -> 2024_04_22_16_35_56, scanned_for_shelving
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_22_16_35_56 -> 2024_04_23_10_49_16, shelving_origin
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_23_10_49_16 -> 2024_04_29_09_49_57, Updating enum fields
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_29_09_49_57 -> 2024_04_30_13_41_54, Updating Group Permission
+INFO  [alembic.runtime.migration] Running upgrade 2024_04_30_13_41_54 -> 2024_05_14_10_09_52, add_requests
+INFO  [alembic.runtime.migration] Running upgrade 2024_05_14_10_09_52 -> 2024_05_16_12_49_11, barcode_allowed_pattern
+INFO  [alembic.runtime.migration] Running upgrade 2024_05_16_12_49_11 -> 2024_05_21_12_12_55, acc_ver_run_time
+INFO  [alembic.runtime.migration] Running upgrade 2024_05_21_12_12_55 -> 2024_06_10_09_05_29, pick_list_support
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_10_09_05_29 -> 2024_06_11_13_53_01, Adding Refile Jobs table
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_11_13_53_01 -> 2024_06_12_19_26_05, Added scan for refile
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_12_19_26_05 -> 2024_06_14_14_15_54, Adding refile queue dt
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_14_14_15_54 -> 2024_06_18_13_47_03, Added last_transition to refilejob
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_18_13_47_03 -> 2024_06_18_14_45_27, Removing scanned for refile
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_18_14_45_27 -> 2024_06_18_21_54_21, Added condition to non tray
+INFO  [alembic.runtime.migration] Running upgrade 2024_06_18_21_54_21 -> 2024_07_10_09_09_37, user_email_auth_token
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_10_09_09_37 -> 2024_07_11_10_00_00, Added withdraw jobs tables
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_11_10_00_00 -> 2024_07_11_15_19_45, Update Item status
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_11_15_19_45 -> 2024_07_17_07_36_41, remove_building_from_aisles
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_17_07_36_41 -> 2024_07_17_12_52_38, Remove Module Numbers table
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_17_12_52_38 -> 2024_07_25_16_30_47, auth_expiration
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_25_16_30_47 -> 2024_07_27_15_55_29, Added Batch Upload Table
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_27_15_55_29 -> 2024_07_31_20_28_08, Create audit_table
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_31_20_28_08 -> 2024_07_31_20_45_18, Create pg_triggers
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_31_20_45_18 -> 2024_07_31_20_51_58, Add Trigger To Tables
+INFO  [alembic.runtime.migration] Running upgrade 2024_07_31_20_51_58 -> 2024_08_06_13_14_38, workflow
+INFO  [alembic.runtime.migration] Running upgrade 2024_08_06_13_14_38 -> 2024_08_06_18_46_38, Adding ID to Refileitems
+INFO  [alembic.runtime.migration] Running upgrade 2024_08_06_18_46_38 -> 2024_08_06_21_11_16, Added barcode and refile changes
+INFO  [alembic.runtime.migration] Running upgrade 2024_08_06_21_11_16 -> 2024_08_06_21_32_59, Added shelf available space
+INFO  [alembic.runtime.migration] Running upgrade 2024_08_06_21_32_59 -> 2024_10_01_18_24_22, Updating dt field default
+INFO  [alembic.runtime.migration] Running upgrade 2024_10_01_18_24_22 -> 2024_10_16_12_33_26, Adding location generation
+INFO  [alembic.runtime.migration] Running upgrade 2024_10_16_12_33_26 -> 2024_10_24_16_04_48, location_memory
+INFO  [alembic.runtime.migration] Running upgrade 2024_10_24_16_04_48 -> 2024_11_01_21_14_45, Added Shelf Type table
+INFO  [alembic.runtime.migration] Running upgrade 2024_11_01_21_14_45 -> 2024_11_03_20_14_57, Added onwers size class link table
+INFO  [alembic.runtime.migration] Running upgrade 2024_11_03_20_14_57 -> 2024_11_23_19_52_08, created_by_jobs
+INFO  [alembic.runtime.migration] Running upgrade 2024_11_23_19_52_08 -> 2024_11_24_21_51_13, shelf_location
+INFO  [alembic.runtime.migration] Running upgrade 2024_11_24_21_51_13 -> 2024_12_09_21_49_15, Remove Required Shelf Barcode
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_09_21_49_15 -> 2024_12_11_16_20_00, Updating nullable barcodes
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_11_16_20_00 -> 2024_12_11_21_54_12, Removing assigned field
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_11_21_54_12 -> 2024_12_16_14_07_39, uq_shelf_type_three
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_16_14_07_39 -> 2024_12_16_19_34_01, shelf_type_alter_uq
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_16_19_34_01 -> 2024_12_16_20_53_02, s_j_discrepancy
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_16_20_53_02 -> 2024_12_19_16_50_19, Adding Pick List Status
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_19_16_50_19 -> 2024_12_21_23_24_21, computed_shelf_space
+INFO  [alembic.runtime.migration] Running upgrade 2024_12_21_23_24_21 -> 2025_01_07_14_51_50, expand_s_discrep
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_07_14_51_50 -> 2025_01_07_14_55_01, expand2_s_j_discrep
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_07_14_55_01 -> 2025_01_07_16_22_10, Updating audit log table
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_07_16_22_10 -> 2025_01_17_01_40_55, sc_short_increase
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_17_01_40_55 -> 2025_01_18_21_02_44, index_more_coluns
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_18_21_02_44 -> 2025_01_20_08_03_38, nt_shelved_dt_
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_20_08_03_38 -> 2025_01_27_19_52_01, Added verificationchange table
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_27_19_52_01 -> 2025_01_28_19_18_07, Update verification change Enum
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_28_19_18_07 -> 2025_01_28_20_31_54, Added Retrieval Event tables
+INFO  [alembic.runtime.migration] Running upgrade 2025_01_28_20_31_54 -> 2025_02_06_18_27_45, remove_sc_owner_rel
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_06_18_27_45 -> 2025_02_08_19_01_09, store_av_space_again
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_08_19_01_09 -> 2025_02_12_23_48_29, checkpoint_update
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_12_23_48_29 -> 2025_02_13_01_19_51, tz_aware_dates
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_13_01_19_51 -> 2025_02_18_08_31_03, withdrawn_loc
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_18_08_31_03 -> 2025_02_23_10_49_47, withdrawn_loc_bcodes
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_23_10_49_47 -> 2025_02_23_15_11_21, withdrawn_loc_bc_tray
+INFO  [alembic.runtime.migration] Running upgrade 2025_02_23_15_11_21 -> 2025_03_04_13_23_59, audit_log_hotfix
+INFO  [alembic.runtime.migration] Running upgrade 2025_03_04_13_23_59 -> 2025_03_04_18_05_54, audit_log_hotfix2
+INFO  [alembic.runtime.migration] Running upgrade 2025_03_04_18_05_54 -> 2025_03_17_14_15_08, Add Request Status Field
+INFO  [alembic.runtime.migration] Running upgrade 2025_03_17_14_15_08 -> 2025_03_19_14_02_01, Remove triggers and clear audit_log table
+INFO  [alembic.runtime.migration] Running upgrade 2025_03_19_14_02_01 -> 2025_04_13_15_19_26, bcode_uuid_default
+INFO  [alembic.runtime.migration] Running upgrade 2025_03_19_14_02_01 -> 2025_04_07_14_59_52, Update ShelvingJobDiscrepancy table
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_07_14_59_52 -> 2025_04_09_09_43_23, Updating RefileNonTrayItem table
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_09_09_43_23 -> 2025_04_10_11_51_05, Audit log add id and add triggers
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_10_11_51_05 -> 2025_04_11_17_22_40, Index Shelves
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_11_17_22_40, 2025_04_13_15_19_26 -> 7765c78711f7, empty message
+INFO  [alembic.runtime.migration] Running upgrade 7765c78711f7 -> 2025_04_21_12_28_43, Added MoveDiscrepancy table
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_21_12_28_43 -> 2025_04_21_20_43_30, uq_container_sp
+INFO  [alembic.runtime.migration] Running upgrade 7765c78711f7 -> 2025_04_21_13_25_13, Updating Request table
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_21_13_25_13, 2025_04_21_20_43_30 -> 8d08a42236e8, empty message
+INFO  [alembic.runtime.migration] Running upgrade 8d08a42236e8 -> 2025_04_24_18_29_11, Updating scanned_for_refile field
+INFO  [alembic.runtime.migration] Running upgrade 2025_04_24_18_29_11 -> 6bd613af0dd9, add accessioned status
+INFO  [alembic.runtime.migration] Running upgrade 6bd613af0dd9 -> bf01acb11b05, add verified status
+INFO  [alembic.runtime.migration] Running upgrade bf01acb11b05 -> a1b2c3d4e5f6, prevent duplicate verification jobs
+INFO  [alembic.runtime.migration] Running upgrade a1b2c3d4e5f6 -> 2025_12_21_10_36_00, Make container_type_id nullable on shelves
+INFO  [alembic.runtime.migration] Running upgrade 2025_12_21_10_36_00 -> 2025_12_28_19_12_00, Add system_settings table
+INFO  [alembic.runtime.migration] Running upgrade 2025_12_28_19_12_00 -> 2026_01_08_20_11_00, add owner_delivery_locations table
+INFO  [alembic.runtime.migration] Running upgrade 2026_01_08_20_11_00 -> 2026_01_16_18_10_00, Add shelve_by_list feature tables and columns
+INFO  [alembic.runtime.migration] Running upgrade 2026_01_16_18_10_00 -> b2c3d4e5f6g7, Backfill shelving_job_containers for Direct to Shelf jobs
+INFO  [alembic.runtime.migration] Running upgrade b2c3d4e5f6g7 -> 2026_01_24_15_00_46, Add destination_tray_id to shelving_job_containers
+INFO  [alembic.runtime.migration] Running upgrade 2026_01_24_15_00_46 -> 2026_01_24_15_04_33, Add item_id to shelving_job_containers
+INFO  [alembic.runtime.migration] Running upgrade 2026_01_24_15_04_33 -> 6e36473282a8, Add Move to shelving_origin enum
+INFO  [alembic.runtime.migration] Running upgrade 6e36473282a8 -> 70d0a34dcda3, Add Move types to shelving_mode enum
+INFO  [alembic.runtime.migration] Running upgrade 70d0a34dcda3 -> 2026_02_06_07_19_46, update_batch_status_enum_and_request_index
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_06_07_19_46 -> f17e1399a6d9, rename_user_id_to_assigned_user_id
+INFO  [alembic.runtime.migration] Running upgrade f17e1399a6d9 -> 2026_02_08_11_35_00, add_assigned_status_to_all_job_types
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_08_11_35_00 -> 2026_02_10_13_58_30, Rename InProgress to PickList
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_10_13_58_30 -> 2026_02_10_17_31_40, Add deleted column to requests
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_10_17_31_40 -> 2026_02_17_15_01_14, Add ShippingJob, ShippingBin, Item.Retrieved, Item.shipping_bin_id
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_17_15_01_14 -> 2026_02_17_21_42_00, add retrieved request status
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_17_21_42_00 -> 2026_02_21_01_32_09, Add default_building_id to User
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_21_01_32_09 -> c1d2e3f4g5h6, Remove number lookup tables and use direct integer columns
+INFO  [alembic.runtime.migration] Running upgrade c1d2e3f4g5h6 -> 2026_02_25_02_29_14, Fix module unique constraint
+INFO  [alembic.runtime.migration] Running upgrade 2026_02_25_02_29_14 -> remove_location, remove physical location strings
+INFO  [alembic.runtime.migration] Running upgrade remove_location -> 2026_02_28_22_45_00, App-level audit logging: add new columns, truncate old data, drop triggers
+------------------------------ Captured log setup ------------------------------
+INFO     root:conftest.py:62 Docker container started successfully.
+=============================== warnings summary ===============================
+app/config/config.py:11
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/app/config/config.py:11: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+app/schemas/requests.py:395
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/app/schemas/requests.py:395: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class RequestListOutput(RequestBaseOutput):
+
+app/schemas/withdraw_jobs.py:255
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/app/schemas/withdraw_jobs.py:255: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class WithdrawJobWriteOutput(WithdrawJobListOutput):
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:443: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    return conn.scalar(sql)
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:443: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    return conn.scalar(sql)
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:649: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    conn.execute(sa.text(text))
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:649: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    conn.execute(sa.text(text))
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:653: SADeprecationWarning: The argument signature for the "ConnectionEvents.before_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def before_execute(conn, clauseelement, multiparams, params, execution_options)"
+    conn.execute(sa.text(text))
+
+tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+  /Users/matthewmartin/workspace/FETCH2/inventory_service/.venv/lib/python3.12/site-packages/sqlalchemy_utils/functions/database.py:653: SADeprecationWarning: The argument signature for the "ConnectionEvents.after_execute" event listener has changed as of version 1.4, and conversion for the old argument signature will be removed in a future release.  The new signature is "def after_execute(conn, clauseelement, multiparams, params, execution_options, result)"
+    conn.execute(sa.text(text))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/domain/test_location_hierarchy.py::test_shelf_creation_positions
+======================== 9 warnings, 1 error in 30.96s =========================
