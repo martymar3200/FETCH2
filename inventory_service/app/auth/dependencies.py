@@ -11,13 +11,17 @@ from app.config.config import get_settings
 from app.models.groups import Group
 
 def get_current_user_with_permissions(request: Request, session: Session = Depends(get_session)) -> User:
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise HTTPException(status_code=401, detail="Missing Authorization Header")
+    # First check for the HttpOnly secure cookie
+    token = request.cookies.get("fetch_auth_token")
+    
+    # Fallback to Authorization header for API compatibility/testing
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing Authorization Token")
+        token = auth_header.split("Bearer ")[1]
 
     try:
-        # Assuming format "Bearer <token>"
-        token = auth_header.split("Bearer ")[1]
         decoded_token = jwt.decode(token, get_settings().SECRET_KEY, algorithms=['HS256'])
         email = decoded_token.get('email')
     except Exception:

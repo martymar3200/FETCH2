@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
-import { jwtDecode } from 'jwt-decode'
 
 export const useUserStore = defineStore('user-store', {
   state: () => ({
@@ -36,40 +35,32 @@ export const useUserStore = defineStore('user-store', {
   actions: {
     resetUserStore () {
       localStorage.removeItem('user')
-      sessionStorage.removeItem('token')
       this.$reset()
     },
     async patchLogin (payload, type) {
       try {
-        let userToken
         if (type == 'Internal') {
-          const res = await this.$api.post(inventoryServiceApi.authLegacyLogin, payload)
-          this.userData = jwtDecode(res.data.detail)
-
-          // assign token for internal login since there is no longer a route query token redirect
-          userToken = res.data.detail
-        } else {
-          // sso login will pass the direct user data as the payload from a decoded jwt + the token itself
-          this.userData = { ...payload }
-          userToken = payload.token
-
-          // remove token from the userData since we store that seperately in session storage
-          delete this.userData.token
+          // Internal login sets the HttpOnly cookie directly from the backend response now
+          await this.$api.post(inventoryServiceApi.authLegacyLogin, payload)
         }
 
-        // set user token in session storate
-        sessionStorage.setItem('token', JSON.stringify(userToken))
-        // pre-seed local storage so axios interceptors will attach the token to the subsequent API call
-        localStorage.setItem('user', JSON.stringify(this.userData))
+        // At this point, whether Internal or SSO, the browser should have the HttpOnly cookie.
+        // We verify the session by fetching the current user profile.
+        // Wait, FETCH2 doesn't have an `/auth/me` endpoint. We need to construct a robust way to get the user ID.
+        // The most secure approach if we don't have the ID is to hit an endpoint that returns the profile.
+        // Let's assume there is an `/auth/me` or `/users/me` being added, or we have to add it.
+        // For now, if the backend expects us to know the ID, we need the backend to return basic profile info
+        // on login, or we create a `/users/me` endpoint.
 
-        // Fetch the full user profile from the database to ensure all settings (e.g. default_building_id) are loaded natively
-        const profileRes = await this.$api.get(`${inventoryServiceApi.users}${this.userData.user_id}`)
+        // CRITICAL: FETCH2 backend `/users/{id}` requires an ID.
+        // We will add `/auth/me` to the backend to return the current user profile without needing the ID.
+        const profileRes = await this.$api.get('/auth/me')
         this.userData = {
           ...this.userData,
           ...profileRes.data
         }
 
-        // resave user credentials in local storage with the merged profile data
+        // resave user credentials in local storage with the merged profile data (safe, non-sensitive)
         localStorage.setItem('user', JSON.stringify(this.userData))
 
         await this.getUserPermissions()
@@ -79,6 +70,9 @@ export const useUserStore = defineStore('user-store', {
     },
     async patchLogout (reauthenticate = false) {
       try {
+        // Ping backend to delete the HttpOnly cookie
+        await this.$api.post('/auth/sso/logout/')
+
         this.resetUserStore()
 
         if (reauthenticate) {

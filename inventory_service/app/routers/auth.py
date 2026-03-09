@@ -13,6 +13,7 @@ from app.database.session import get_session
 from app.schemas.auth import LegacyUserInput
 from app.config.exceptions import NotFound
 from app.filter_params import AuthFilterParams
+from app.auth.dependencies import get_current_user_with_permissions
 
 from urllib.parse import urlparse
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
@@ -225,11 +226,33 @@ async def saml_acs(request: Request, session: Session = Depends(get_session)):
 
     # Retrieve RelayState from 'preserve_route' pass through
     relay_state = req.get('post_data').get('RelayState', "/")
+    
+    # CRITICAL FIX: Set token as HttpOnly secure cookie instead of URL parameter
+    response = RedirectResponse(url=f"{get_settings().VUE_HOST}/{relay_state}", status_code=status.HTTP_303_SEE_OTHER)
+    
+    # Determine Secure flag based on environment (local might be http)
+    is_secure = get_settings().APP_ENVIRONMENT not in ["debug", "local"]
+    
+    response.set_cookie(
+        key="fetch_auth_token",
+        value=token,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax", # Allows the redirect to send the cookie
+        max_age=900 # 15 minutes
+    )
 
-    return RedirectResponse(url=f"{get_settings().VUE_HOST}/?token={token}&preserve_route={relay_state}", status_code=status.HTTP_303_SEE_OTHER)
+    return response
+
+@router.post("/sso/logout")
+async def sso_logout():
+    """Clears the explicit HttpOnly authentication cookie."""
+    response = JSONResponse(content={"detail": "Logged out successfully"})
+    response.delete_cookie("fetch_auth_token")
+    return response
 
 if get_settings().APP_ENVIRONMENT in ['debug', 'local', 'develop', 'test']:
-    # Route only available in non prod envs
+        # Route only available in non prod envs
     @router.post('/legacy/login')
     async def legacy_login(request: Request, legacy_user: LegacyUserInput, session: Session = Depends(get_session)):
         user_query = select(User).where(User.email==legacy_user.email)
@@ -239,7 +262,40 @@ if get_settings().APP_ENVIRONMENT in ['debug', 'local', 'develop', 'test']:
             raise NotFound(detail=f"User not found for {legacy_user.email}")
 
         token = generate_token(user, session)
+        
+        response = JSONResponse({"detail": f"{token}"}, status_code=200)
+        
+        is_secure = get_settings().APP_ENVIRONMENT not in ["debug", "local"]
+        response.set_cookie(
+            key="fetch_auth_token",
+            value=token,
+            httponly=True,
+            secure=is_secure,
+            samesite="lax",
+            max_age=900
+        )
 
-        return JSONResponse({"detail": f"{token}"}, status_code=200)
+        return response
 
-        # return RedirectResponse(url=f"{get_settings().VUE_HOST}/?token={token}", status_code=status.HTTP_303_SEE_OTHER)
+@router.get('/me')
+async def get_current_user_profile(user: User = Depends(get_current_user_with_permissions)):
+    """
+    Returns the profile and permissions of the currently authenticated user.
+    Required by the frontend to initialize the User Store via HttpOnly cookies.
+    """
+    # Build a simplified response mirroring what jwt decoding + users API used to provide
+    permissions = []
+    if user.groups:
+        for group in user.groups:
+            if group.permissions:
+                for perm in group.permissions:
+                    permissions.append(perm.name)
+    
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "default_building_id": user.default_building_id,
+        "permissions": list(set(permissions))
+    }

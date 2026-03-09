@@ -1,4 +1,9 @@
 import os
+
+# Inject required environment variables before app imports so pydantic-settings doesn't fail
+os.environ["SECRET_KEY"] = "test-secret"
+os.environ["APP_ENVIRONMENT"] = "test"
+
 import time
 import logging
 import pytest

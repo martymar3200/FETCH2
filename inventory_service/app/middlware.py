@@ -36,22 +36,38 @@ class JWTMiddleware(BaseHTTPMiddleware):
 
         process_time = time.time() - start
 
-        # Get token from Authorization header
-        token = None
+        # Get token from cookies first (HttpOnly secure pattern), fallback to Authorization header
+        token = request.cookies.get("fetch_auth_token")
         decoded_token = None
         fetch_user = 'unknown'
-        auth_header = request.headers.get("authorization")
-        if auth_header:
-            token = auth_header.split("Bearer ")[1]
-            decoded_token = jwt.decode(token, get_settings().SECRET_KEY, algorithms=['HS256'])
-            fetch_user = decoded_token.get('email')
+        
+        if not token:
+            auth_header = request.headers.get("authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split("Bearer ")[1]
+
+        if token:
+            try:
+                decoded_token = jwt.decode(token, get_settings().SECRET_KEY, algorithms=['HS256'])
+                fetch_user = decoded_token.get('email', 'unknown')
+            except jwt.ExpiredSignatureError:
+                # Let it pass here, we handle expiration later in the flow vs the database if needed,
+                # or we can reject it right now securely without throwing a 500.
+                if get_settings().APP_ENVIRONMENT not in ["debug", "local", "develop", "test"] and not request.url.path.startswith("/auth") and not request.url.path.startswith("/status"):
+                    return JSONResponse(status_code=401, content={"detail": "Token Expired"})
+                token = None # Invalid token for strict environments
+            except jwt.PyJWTError:
+                # Catch malformed/invalid tokens gracefully (Prevents 500 Error DoS)
+                if get_settings().APP_ENVIRONMENT not in ["debug", "local", "develop", "test"] and not request.url.path.startswith("/auth") and not request.url.path.startswith("/status"):
+                    return JSONResponse(status_code=401, content={"detail": "Invalid Token"})
+                token = None
 
         # Exclude /auth endpoints from token validation
         if request.url.path.startswith("/auth"):
             response = await call_next(request)
         elif request.url.path.startswith("/status"):
             response = await call_next(request)
-        elif not token:
+        elif not token or not decoded_token:
             if get_settings().APP_ENVIRONMENT not in ["debug", "local", "develop", "test"]:
                 response = JSONResponse(status_code=401, content={"detail": "Not Authorized"})
             else:
@@ -93,13 +109,27 @@ class JWTMiddleware(BaseHTTPMiddleware):
             'response_status': response.status_code,
             'process_time': process_time
         }
+        # Sanitize headers to prevent token/cookie logging (NIST AU-9)
+        sensitive_headers = {'authorization', 'cookie', 'set-cookie'}
+        sanitized_headers = {
+            k: "***REDACTED***" if k.lower() in sensitive_headers else v 
+            for k, v in request.headers.items()
+        }
+        
+        # Sanitize query parameters to prevent URL-token logging
+        sensitive_params = {'token', 'code', 'state', 'password'}
+        sanitized_query_params = {
+            k: "***REDACTED***" if k.lower() in sensitive_params else v
+            for k, v in request.query_params.items()
+        }
+
         security_log_dict = {
             'ip': client_ip,
             'user': fetch_user,
             'user-agent': request.headers.get("user-agent", "unknown"),
             'referer': request.headers.get("referer", "unknown"),
-            'headers': dict(request.headers),
-            'query-params': dict(request.query_params),
+            'headers': sanitized_headers,
+            'query-params': sanitized_query_params,
             'url': request.url.path,
             'method': request.method,
             'response_status': response.status_code,

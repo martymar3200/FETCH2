@@ -59,7 +59,6 @@
 
 <script setup>
 import inventoryServiceApi from '@/http/InventoryService.js'
-import { jwtDecode } from 'jwt-decode'
 import { ref, computed, onMounted } from 'vue'
 import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
@@ -91,34 +90,24 @@ const loginForm = ref({
 
 
 onMounted(async () => {
-  // when a user is using sso login they will get redirected back to the app in a logged out state with a token in the route
-  // there might also be a preserve_route query, this occurs when user is timeout via a 401 and we preserve the users location to come back to on reauthentication
-  if (route.query.token && route.query.preserve_route) {
-    // decode the token and pass and store that info in localstorage
+  // when a user is using sso login they will get redirected back to the app in a logged out state.
+  // The backend will have set an HttpOnly secure cookie containing the authentication JWT.
+  if (route.query.preserve_route) {
     appActionIsLoadingData.value = true
-    const payload = {
-      token: route.query.token,
-      ...jwtDecode(route.query.token)
+    try {
+      // 1. Trigger the store to fetch the profile using the cookie
+      await patchLogin({}, 'Sso')
+      // 2. send the user to the preserved route
+      router.push(route.query.preserve_route)
+    } catch (e) {
+      console.error('SSO Cookie Authentication failed', e)
+    } finally {
+      appActionIsLoadingData.value = false
     }
-    await patchLogin(payload, 'Sso')
-
-    // send the user to the preserved route
-    router.push(route.query.preserve_route)
-
-    appActionIsLoadingData.value = false
-  } else if (route.query.token) {
-    // decode the token and pass and store that info in localstorage
-    appActionIsLoadingData.value = true
-    const payload = {
-      token: route.query.token,
-      ...jwtDecode(route.query.token)
-    }
-    await patchLogin(payload, 'Sso')
-
-    // clear token from the route since we are now logged in
-    router.replace(route.path)
-
-    appActionIsLoadingData.value = false
+  } else {
+    // If there's no specific route to preserve, check if we just logged in via SSO
+    // and arrived at the root page. Let the global navigation guards or app mount
+    // handle the profile fetch if needed. We no longer parse route tokens here.
   }
 })
 
@@ -134,6 +123,9 @@ const internalLogin = async () => {
       email: loginForm.value.user
     }
     await patchLogin(payload, 'Internal')
+
+    // Refresh to allow the app to boot with the new cookie
+    window.location.reload()
   } catch (error) {
     Notify.create({
       type: 'negative',

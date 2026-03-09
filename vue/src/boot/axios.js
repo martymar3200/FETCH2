@@ -36,15 +36,12 @@ export default boot(({ app }) => {
   //       so you can easily perform requests against your app's API
 
 
-  // axios interceptor to handle token/security authorization being added to our requests
+  // Set withCredentials to true to ensure cookies are sent with cross-origin requests
+  api.defaults.withCredentials = true
+
+  // axios interceptor (reduced since browser handles cookies automatically)
   api.interceptors.request.use((config) => {
-    // check if we have a user in localstorage and if that user has an auth based token in session storage
-    const userAuth = JSON.parse(localStorage.getItem('user'))
-    const userToken = JSON.parse(sessionStorage.getItem('token'))
-    if (userAuth && userToken) {
-    // if there is an access token we attach that to our requests
-      config.headers.Authorization = 'Bearer ' + userToken
-    }
+    // We no longer manually map a token from sessionStorage to Authorization header
     return config
   })
 

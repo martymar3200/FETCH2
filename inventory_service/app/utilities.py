@@ -1435,7 +1435,10 @@ async def start_session_with_user_id(audit_info: dict, session: Session):
     stmt = text("select set_config('audit.user_name', :user_name, true)")
     # NOTE: session.execute(stmt, ...) is V2 compatible
     session.execute(stmt, {"user_name": audit_info["name"]})
-    session.execute(text(f"select set_config('audit.user_id', '{audit_info['id']}', true)"))
+    
+    # CRITICAL FIX: Parameterized query to prevent SQL Injection
+    stmt_id = text("select set_config('audit.user_id', :user_id, true)")
+    session.execute(stmt_id, {"user_id": str(audit_info["id"])})
 
 
 def start_session_with_audit_info(audit_info: dict, session: Session):
@@ -1444,7 +1447,10 @@ def start_session_with_audit_info(audit_info: dict, session: Session):
     stmt = text("select set_config('audit.user_name', :user_name, true)")
     # NOTE: session.execute(stmt, ...) is V2 compatible
     session.execute(stmt, {"user_name": audit_info["name"]})
-    session.execute(text(f"select set_config('audit.user_id', '{audit_info['id']}', true)"))
+    
+    # CRITICAL FIX: Parameterized query to prevent SQL Injection
+    stmt_id = text("select set_config('audit.user_id', :user_id, true)")
+    session.execute(stmt_id, {"user_id": str(audit_info["id"])})
 
 
 async def set_session_to_request(

@@ -70,6 +70,8 @@ services:
             context: ../inventory_service
             dockerfile: images/api.local.Containerfile
         container_name: fetch-inventory-api
+        environment:
+            - SECRET_KEY=local-dev-secret-key
         volumes:
             - /var/log/fetch:/code/app/logs:rw
             - ./.certs:/code/certs:ro

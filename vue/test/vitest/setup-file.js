@@ -2,13 +2,25 @@
 import indexeddb from 'fake-indexeddb'
 import { createTestingPinia } from '@pinia/testing'
 import { vi } from 'vitest'
+import { config } from '@vue/test-utils'
 
-// globally mocks pinia store
-// eslint-disable-next-line no-undef
-globalThis.pinia = {
-  global: { plugins: [createTestingPinia({ createSpy: vi.fn() })] },
-  props: {}
-}
+// Register Pinia testing environment globally for all test-utils mounts
+config.global.plugins = [
+  createTestingPinia({
+    createSpy: vi.fn,
+    initialState: {
+      'user-store': {
+        userData: {
+          user_id: 1,
+          username: 'testuser',
+          first_name: 'Test',
+          last_name: 'User',
+          permissions: []
+        }
+      }
+    }
+  })
+]
 
 // eslint-disable-next-line no-undef
 globalThis.indexedDB = indexeddb
