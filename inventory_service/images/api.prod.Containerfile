@@ -7,7 +7,8 @@ RUN pip install poetry==1.6.1
 
 COPY pyproject.toml ../poetry.lock* /tmp/
 
-COPY .env /tmp/
+# SECURITY: .env is NOT copied into the image. Secrets must be injected at runtime
+# via Kubernetes Secrets, docker-compose environment, or a vault provider.
 
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
@@ -46,7 +47,7 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # Copy your application code
 COPY app /code/app
-COPY --from=requirements-stage /tmp/.env /code/app/config/.env
+# SECURITY: .env removed — secrets injected at runtime (see compose.yml or K8s Secrets)
 COPY migrations /code/migrations
 COPY alembic.ini /code/alembic.ini
 

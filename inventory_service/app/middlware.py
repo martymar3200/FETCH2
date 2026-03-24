@@ -94,15 +94,33 @@ class JWTMiddleware(BaseHTTPMiddleware):
                         response = await call_next(request)
                 else:
                     # Everything's good
-                    # refresh exp and pass through
-                    user_object.fetch_auth_expiration = datetime.now(timezone.utc) + timedelta(minutes=15)
+                    # refresh exp and pass through (sliding window)
+                    new_exp = datetime.now(timezone.utc) + timedelta(minutes=15)
+                    user_object.fetch_auth_expiration = new_exp
                     session.add(user_object)
-                    # session.commit(user_object)
                     session.commit()
                     session.refresh(user_object)
                     request = await set_session_to_request(request, session, audit_info)
-                    # request = set_session_to_request(request, fetch_user)
                     response = await call_next(request)
+                    
+                    # Re-issue JWT with refreshed exp claim (sliding window)
+                    refreshed_payload = {
+                        "user_id": user_object.id,
+                        "first_name": user_object.first_name,
+                        "last_name": user_object.last_name,
+                        "email": user_object.email,
+                        "exp": new_exp
+                    }
+                    refreshed_token = jwt.encode(refreshed_payload, get_settings().SECRET_KEY, algorithm='HS256')
+                    is_secure = get_settings().APP_ENVIRONMENT not in ["debug", "local"]
+                    response.set_cookie(
+                        key="fetch_auth_token",
+                        value=refreshed_token,
+                        httponly=True,
+                        secure=is_secure,
+                        samesite="lax",
+                        max_age=900
+                    )
         request_log_dict = {
             'url': request.url.path,
             'method': request.method,

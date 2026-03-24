@@ -45,7 +45,7 @@
             color="positive"
             label="Complete Job"
             class="btn-modern"
-            :disabled="!allItemsVerified || accessionJob.status === 'Paused'"
+            :disabled="!allItemsVerified || accessionJob.status === 'Paused' || isItemQueueProcessing || isTrayQueueProcessing"
             @click="
               showConfirmation = {
                 type: 'completeJob',
@@ -74,7 +74,7 @@
                   outlined
                   dense
                   placeholder="Scan tray barcode to begin"
-                  @keyup.enter="triggerTrayScan(scanBarcodeInput)"
+                  @keyup.enter="handleTrayScanInput"
                   autofocus
                 >
                   <template #append>
@@ -100,7 +100,7 @@
                   outlined
                   dense
                   placeholder="Scan or type item barcode and press Enter"
-                  @keyup.enter="triggerItemScan(scanBarcodeInput)"
+                  @keyup.enter="handleItemScanInput"
                   autofocus
                 >
                   <template #append>
@@ -295,7 +295,7 @@
       button-two-label="Complete"
       :button-two-outline="false"
       :button-two-disabled="
-        !allItemsVerified || accessionJob.status == 'Paused' || accessionJob.status == 'Completed' && verificationJobGenerated
+        !allItemsVerified || accessionJob.status == 'Paused' || accessionJob.status == 'Completed' && verificationJobGenerated || isItemQueueProcessing || isTrayQueueProcessing
       "
       :button-two-loading="appActionIsLoadingData"
       @button-two-click="
@@ -641,6 +641,7 @@ import { useVerificationStore } from '@/stores/verification-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
+import { useScanQueue } from '@/composables/useScanQueue.js'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import AccessionNonTrayInfo from '@/components/Accession/AccessionNonTrayInfo.vue'
@@ -656,6 +657,10 @@ const route = useRoute()
 
 // Composables
 const { compiledBarCode } = useBarcodeScanHandler({ waitForEnterKey: true })
+
+// Scan queues for sequential processing of rapid scans
+const { enqueue: enqueueItemScan, isProcessing: isItemQueueProcessing } = useScanQueue(processItemScan)
+const { enqueue: enqueueTrayScan, isProcessing: isTrayQueueProcessing } = useScanQueue(processTrayScan)
 const { currentScreenSize } = useCurrentScreenSize()
 const { checkUserPermission } = usePermissionHandler()
 
@@ -705,7 +710,7 @@ const showAuditTrailModal = ref(null)
 const showEditJobModal = ref(false)
 const selectedMediaType = ref(null)
 const verificationJobGenerated = ref(false)
-const isProcessingItemScan = ref(false) // Guard against double item scans
+// isProcessingItemScan removed — the scan queue handles sequential processing
 const renderIsEditMode = computed(() => {
   return false
 })
@@ -827,21 +832,29 @@ watch(compiledBarCode, (barcode) => {
     accessionJob.value.trayed &&
     accessionContainer.value.id
   ) {
-    triggerItemScan(barcode)
+    enqueueItemScan(barcode)
   } else if (accessionJob.value.trayed == false) {
-    triggerItemScan(barcode)
+    enqueueItemScan(barcode)
   }
 })
 
-// Handle tray barcode scan
-const triggerTrayScan = async (barcode_value) => {
-  if (!barcode_value || barcode_value.trim() === '') {
-    return
-  }
+// Instant-clear input handlers for q-input @keyup.enter
+const handleTrayScanInput = () => {
+  const value = scanBarcodeInput.value
+  scanBarcodeInput.value = ''
+  enqueueTrayScan(value)
+}
 
+const handleItemScanInput = () => {
+  const value = scanBarcodeInput.value
+  scanBarcodeInput.value = ''
+  enqueueItemScan(value)
+}
+
+// Queue processor for tray scans
+const processTrayScan = async (barcode_value) => {
   try {
     appIsLoadingData.value = true
-    scanBarcodeInput.value = ''
 
     // Stop the scan if no size class matches the scanned tray
     await getOptions('sizeClass', { short_name: barcode_value.slice(0, 2) })
@@ -898,26 +911,11 @@ const triggerTrayScan = async (barcode_value) => {
   }
 }
 
-const triggerItemScan = async (barcode_value) => {
-  if (!barcode_value || barcode_value.trim() === '') {
-    return
-  }
-
-  // Prevent double submissions
-  if (isProcessingItemScan.value) {
-    console.log('[DEBUG] triggerItemScan blocked - already processing')
-    return
-  }
-  isProcessingItemScan.value = true
-
-  // Clear the input immediately to prevent double scans
-  scanBarcodeInput.value = ''
-
+// Queue processor for item scans
+const processItemScan = async (barcode_value) => {
   try {
     appActionIsLoadingData.value = true
-    console.log('[DEBUG] triggerItemScan called with:', barcode_value)
     const res = await verifyBarcode(barcode_value.trim(), 'Item', true)
-    console.log('[DEBUG] verifyBarcode returned:', res)
     if (res == 'barcode_exists' && barcodeDetails.value.withdrawn) {
       showConfirmation.value = {
         type: 'confirmReaccession',
@@ -969,11 +967,15 @@ const triggerItemScan = async (barcode_value) => {
     })
   } finally {
     appActionIsLoadingData.value = false
-    isProcessingItemScan.value = false
     if (showBarcodeEdit.value && barcodeEditModal.value) {
       barcodeEditModal.value.hideModal()
     }
   }
+}
+
+// Keep triggerItemScan as an alias for the non-tray child component's @scan emit
+const triggerItemScan = (barcode_value) => {
+  enqueueItemScan(barcode_value)
 }
 const resetBarcodeEdit = () => {
   showBarcodeEdit.value = false

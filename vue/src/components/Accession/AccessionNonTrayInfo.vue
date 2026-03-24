@@ -361,7 +361,7 @@ const showCompleteConfirmation = ref(false)
 const showAuditTrailModal = ref(false)
 const selectedSizeClass = ref(null)
 const selectedMediaType = ref(null)
-const isProcessingScan = ref(false) // Guard against double scans
+// isProcessingScan removed — the parent's scan queue handles sequential processing
 
 // Logic
 
@@ -504,17 +504,10 @@ const saveItemEdits = async (hideModal) => {
 
 const triggerItemScan = async () => {
   const barcode = scanBarcodeInput.value.trim()
+  scanBarcodeInput.value = '' // Instant clear to prevent concatenation
   if (!barcode) {
     return
   }
-
-  // Prevent double submissions
-  if (isProcessingScan.value) {
-    return
-  }
-  isProcessingScan.value = true
-
-  scanBarcodeInput.value = ''
 
   // Check if item already exists in job
   const existingItem = accessionJob.value.non_tray_items?.find(item => item.barcode?.value === barcode)
@@ -539,17 +532,11 @@ const triggerItemScan = async () => {
         type: 'negative',
         message: error?.message || error?.toString() || 'An error occurred'
       })
-    } finally {
-      isProcessingScan.value = false
     }
   } else {
     // Emit scan event to parent for proper barcode verification flow
-    // Parent handles all loading state and error handling
+    // Parent handles all loading state and error handling via scan queue
     emit('scan', barcode)
-    // Reset flag after a short delay to allow parent to process
-    setTimeout(() => {
-      isProcessingScan.value = false
-    }, 500)
   }
 }
 

@@ -106,8 +106,8 @@ def generate_token(user_object, session: Session):
         "user_id": user_object.id,
         "first_name": user_object.first_name,
         "last_name": user_object.last_name,
-        "email": user_object.email
-        # 'exp': datetime.now(timezone.utc) + timedelta(minutes=15)  # Token expires in 15 minutes
+        "email": user_object.email,
+        'exp': datetime.now(timezone.utc) + timedelta(minutes=15)  # NIST IA-11: Cryptographic session expiration
     }
     token = jwt.encode(payload, get_settings().SECRET_KEY, algorithm="HS256")
 
@@ -263,7 +263,7 @@ if get_settings().APP_ENVIRONMENT in ['debug', 'local', 'develop', 'test']:
 
         token = generate_token(user, session)
         
-        response = JSONResponse({"detail": f"{token}"}, status_code=200)
+        response = JSONResponse({"detail": "Login successful"}, status_code=200)
         
         is_secure = get_settings().APP_ENVIRONMENT not in ["debug", "local"]
         response.set_cookie(

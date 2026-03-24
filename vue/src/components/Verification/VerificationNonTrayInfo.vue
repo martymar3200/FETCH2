@@ -439,7 +439,7 @@ const scanBarcodeInput = ref('')
 const editMode = ref(false)
 const showAuditTrailModal = ref(false)
 const showConfirmationModal = ref(null)
-const isProcessingScan = ref(false)
+// isProcessingScan removed — input clears instantly to prevent concatenation
 const editJob = ref(false)
 const actionLoading = ref(false)
 
@@ -593,6 +593,7 @@ const isAssignedToOtherUser = computed(() => {
 
 const triggerItemScan = async () => {
   const barcode = scanBarcodeInput.value.trim()
+  scanBarcodeInput.value = '' // Instant clear to prevent concatenation
   if (!barcode) {
     return
   }
@@ -603,15 +604,8 @@ const triggerItemScan = async () => {
       type: 'negative',
       message: 'This job is assigned to another user. You cannot verify items.'
     })
-    scanBarcodeInput.value = ''
     return
   }
-
-  if (isProcessingScan.value) {
-    return
-  }
-  isProcessingScan.value = true
-  scanBarcodeInput.value = ''
 
   try {
     appActionIsLoadingData.value = true
@@ -655,7 +649,6 @@ const triggerItemScan = async () => {
       ]
     })
   } finally {
-    isProcessingScan.value = false
     appActionIsLoadingData.value = false
   }
 }
