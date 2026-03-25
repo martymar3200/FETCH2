@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
-import { useGlobalStore } from './global-store'
-const globalStore = useGlobalStore()
-
+import { useOfflineSync } from '@/composables/useOfflineSync.js'
+import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 export const useShelvingStore = defineStore('shelving-store', {
   state: () => ({
     shelvingJobListTotal: 0,
@@ -231,20 +230,30 @@ export const useShelvingStore = defineStore('shelving-store', {
       }
     },
     async patchShelvingJob (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user is pausing/resuming when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.shelvingJobs}${payload.id}` })
+        const res = await offlineAwareRequest({
+          method: 'PATCH',
+          url: `${inventoryServiceApi.shelvingJobs}${payload.id}`,
+          payload,
+          optimisticUpdate: () => {
+            if (this.shelvingJob && payload.status) {
+              this.shelvingJob.status = payload.status
+              this.originalShelvingJob.status = payload.status
+            }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(this.shelvingJob)))
+            await addDataToIndexDb('shelvingStore', 'originalShelvingJob', JSON.parse(JSON.stringify(this.originalShelvingJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.shelvingJob = res.data
+          this.originalShelvingJob = { ...res.data }
         }
-        const res = await this.$api.patch(`${inventoryServiceApi.shelvingJobs}${payload.id}`, payload)
-        this.shelvingJob = res.data
-        this.originalShelvingJob = { ...res.data }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
 
@@ -269,95 +278,106 @@ export const useShelvingStore = defineStore('shelving-store', {
       this.shelvingJobContainer = this.shelvingJobContainers.find(container => container.barcode.value == barcode_value)
     },
     async postShelvingJobContainer (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-container-location` })
-        }
-        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-container-location`, payload)
-        this.shelvingJobContainer.shelf_position_id = res.data.shelf_position_id
-        if (payload.shelf_position_number && this.shelvingJobContainer.shelf_position?.shelf_position_number) {
-          this.shelvingJobContainer.shelf_position.shelf_position_number.number = payload.shelf_position_number
-        }
-        this.shelvingJobContainer = {
-          ...this.shelvingJobContainer,
-          ...res.data
-        }
+        const res = await offlineAwareRequest({
+          method: 'POST',
+          url: `${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-container-location`,
+          payload,
+          optimisticUpdate: () => {
+            this.shelvingJobContainer.shelf_position_id = payload.shelf_position_id
+            if (payload.shelf_position_number && this.shelvingJobContainer.shelf_position?.shelf_position_number) {
+              this.shelvingJobContainer.shelf_position.shelf_position_number.number = payload.shelf_position_number
+            }
 
-        // Update next available position from response (from direct job logic)
-        if (res.data.next_available_position !== undefined) {
-          this.shelvingJob.nextAvailablePosition = res.data.next_available_position
-        }
+            // Helper to update or add container
+            const updateOrAddContainer = (listName) => {
+              if (this.shelvingJob[listName]) {
+                const index = this.shelvingJob[listName].findIndex(container => container.id == payload.container_id)
+                if (index !== -1) {
+                  // Update existing
+                  const item = this.shelvingJob[listName][index] = this.shelvingJobContainer
+                  // move to bottom
+                  this.shelvingJob[listName].splice(index, 1)
+                  this.shelvingJob[listName].push(item)
+                } else {
+                  // Add new (Direct workflow)
+                  this.shelvingJob[listName] = [
+                    ...this.shelvingJob[listName],
+                    this.shelvingJobContainer
+                  ]
+                }
+              } else {
+                this.shelvingJob[listName] = [this.shelvingJobContainer]
+              }
+            }
 
-        // Helper to update or add container
-        const updateOrAddContainer = (listName) => {
-          const index = this.shelvingJob[listName].findIndex(container => container.id == payload.container_id)
-          if (index !== -1) {
-            // Update existing
-            const item = this.shelvingJob[listName][index] = this.shelvingJobContainer
-            // move to bottom
-            this.shelvingJob[listName].splice(index, 1)
-            this.shelvingJob[listName].push(item)
-          } else {
-            // Add new (Direct workflow)
-            this.shelvingJob[listName] = [
-              ...this.shelvingJob[listName],
-              this.shelvingJobContainer
-            ]
+            // update the container at the shelving job level as well
+            if (payload.trayed || this.shelvingJobContainer.container_type?.type == 'Tray') {
+              updateOrAddContainer('trays')
+            } else {
+              updateOrAddContainer('non_tray_items')
+            }
+            this.originalShelvingJob = { ...this.shelvingJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(this.shelvingJob)))
+            await addDataToIndexDb('shelvingStore', 'originalShelvingJob', JSON.parse(JSON.stringify(this.originalShelvingJob)))
+          }
+        })
+
+        if (res.fromServer) {
+          this.shelvingJobContainer = {
+            ...this.shelvingJobContainer,
+            ...res.data
+          }
+          if (res.data.next_available_position !== undefined) {
+            this.shelvingJob.nextAvailablePosition = res.data.next_available_position
           }
         }
-
-        // update the container at the shelving job level as well
-        if (payload.trayed || this.shelvingJobContainer.container_type?.type == 'Tray') {
-          updateOrAddContainer('trays')
-        } else {
-          updateOrAddContainer('non_tray_items')
-        }
-        this.originalShelvingJob = { ...this.shelvingJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
 
     async postShelvingJobContainerProposedLocation (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-proposed-location` })
+        const res = await offlineAwareRequest({
+          method: 'POST',
+          url: `${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-proposed-location`,
+          payload,
+          optimisticUpdate: () => {
+            this.shelvingJobContainer.shelf_position_id = payload.shelf_position_id
+            this.shelvingJobContainer.shelf_position.shelf_position_number.number = payload.shelf_position_number
+            if (payload.trayed) {
+              const trayItemIndex = this.shelvingJob.trays.findIndex(container => container.id == payload.container_id)
+              const trayItemByIndex = this.shelvingJob.trays[trayItemIndex] = this.shelvingJobContainer
+              this.shelvingJob.trays.splice(trayItemIndex, 1)
+              this.shelvingJob.trays.push(trayItemByIndex)
+            } else {
+              const nonTrayItemIndex = this.shelvingJob.non_tray_items.findIndex(container => container.id == payload.container_id)
+              const nonTrayItemByIndex = this.shelvingJob.non_tray_items[nonTrayItemIndex] = this.shelvingJobContainer
+              this.shelvingJob.non_tray_items.splice(nonTrayItemIndex, 1)
+              this.shelvingJob.non_tray_items.push(nonTrayItemByIndex)
+            }
+            this.originalShelvingJob = { ...this.shelvingJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(this.shelvingJob)))
+            await addDataToIndexDb('shelvingStore', 'originalShelvingJob', JSON.parse(JSON.stringify(this.originalShelvingJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.shelvingJobContainer = {
+            ...this.shelvingJobContainer,
+            ...res.data
+          }
         }
-        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${payload.job_id}/reassign-proposed-location`, payload)
-        this.shelvingJobContainer.shelf_position_id = res.data.shelf_position_id
-        this.shelvingJobContainer.shelf_position.shelf_position_number.number = payload.shelf_position_number
-        this.shelvingJobContainer = {
-          ...this.shelvingJobContainer,
-          ...res.data
-        }
-
-        // update the container at the shelving job level as well
-        if (payload.trayed) {
-          const trayItemIndex = this.shelvingJob.trays.findIndex(container => container.id == payload.container_id)
-          const trayItemByIndex = this.shelvingJob.trays[trayItemIndex] = this.shelvingJobContainer
-
-          // move the item to bottom of the list
-          this.shelvingJob.trays.splice(trayItemIndex, 1)
-          this.shelvingJob.trays.push(trayItemByIndex)
-        } else {
-          const nonTrayItemIndex = this.shelvingJob.non_tray_items.findIndex(container => container.id == payload.container_id)
-          const nonTrayItemByIndex = this.shelvingJob.non_tray_items[nonTrayItemIndex] = this.shelvingJobContainer
-
-          // move the item to bottom of the list
-          this.shelvingJob.non_tray_items.splice(nonTrayItemIndex, 1)
-          this.shelvingJob.non_tray_items.push(nonTrayItemByIndex)
-        }
-        this.originalShelvingJob = { ...this.shelvingJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async getShelvingTrayContainerDetails (barcode_value) {
@@ -501,24 +521,25 @@ export const useShelvingStore = defineStore('shelving-store', {
      * Confirm a container has been shelved (supports offline sync)
      */
     async confirmContainerShelved (jobId, confirmation) {
+      const { offlineAwareRequest } = useOfflineSync()
       try {
-        if (globalStore.appIsOffline) {
-          navigator.serviceWorker.controller.postMessage({
-            queueIncomingApiCall: `${inventoryServiceApi.shelvingJobs}${jobId}/confirm-shelve`
-          })
-        }
-        const res = await this.$api.post(`${inventoryServiceApi.shelvingJobs}${jobId}/confirm-shelve`, confirmation)
-        return res.data
-      } catch (error) {
-        if (globalStore.appIsOffline) {
-          // Queue for later sync
+        const res = await offlineAwareRequest({
+          method: 'POST',
+          url: `${inventoryServiceApi.shelvingJobs}${jobId}/confirm-shelve`,
+          payload: confirmation,
+          optimisticUpdate: () => {
+            // Leave snapshot and logic to component as it currently does.
+          }
+        })
+        if (!res.fromServer) {
           return {
             status: 'queued_offline',
             ...confirmation
           }
-        } else {
-          throw error
         }
+        return res.data
+      } catch (error) {
+        throw error
       }
     }
   }

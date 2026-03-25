@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
-import { useGlobalStore } from './global-store'
-const globalStore = useGlobalStore()
-
+import { useOfflineSync } from '@/composables/useOfflineSync.js'
+import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 export const usePicklistStore = defineStore('picklist-store', {
   state: () => ({
     picklistJobListTotal: 0,
@@ -85,20 +84,30 @@ export const usePicklistStore = defineStore('picklist-store', {
       }
     },
     async patchPicklistJob (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user is pausing/resuming when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.picklists}${payload.id}` })
+        const res = await offlineAwareRequest({
+          method: 'PATCH',
+          url: `${inventoryServiceApi.picklists}${payload.id}`,
+          payload,
+          optimisticUpdate: () => {
+            if (this.picklistJob && payload.status) {
+              this.picklistJob.status = payload.status
+              this.originalPicklistJob.status = payload.status
+            }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(this.picklistJob)))
+            await addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(this.originalPicklistJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.picklistJob = res.data
+          this.originalPicklistJob = { ...this.picklistJob }
         }
-        const res = await this.$api.patch(`${inventoryServiceApi.picklists}${payload.id}`, payload)
-        this.picklistJob = res.data
-        this.originalPicklistJob = { ...this.picklistJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async deletePicklistJob (jobId) {
@@ -132,38 +141,66 @@ export const usePicklistStore = defineStore('picklist-store', {
       }
     },
     async patchPicklistJobItemScanned (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user is scanning when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.picklists}${payload.id}/update_request/${payload.request_id}` })
+        const res = await offlineAwareRequest({
+          method: 'PATCH',
+          url: `${inventoryServiceApi.picklists}${payload.id}/update_request/${payload.request_id}`,
+          payload,
+          optimisticUpdate: () => {
+            const index = this.picklistJob.requests.findIndex(request => request.id == payload.request_id)
+            if (index !== -1) {
+              const requestObj = this.picklistJob.requests[index]
+              if (requestObj.item) {
+                requestObj.item.status = payload.status
+              } else if (requestObj.non_tray_item) {
+                requestObj.non_tray_item.status = payload.status
+              }
+              // Move the item to the bottom of the list
+              this.picklistJob.requests.splice(index, 1)
+              this.picklistJob.requests.push(requestObj)
+            }
+            this.originalPicklistJob = { ...this.picklistJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(this.picklistJob)))
+            await addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(this.originalPicklistJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.picklistJob = res.data
+          this.originalPicklistJob = { ...this.picklistJob }
         }
-        // updates a request item and marks it as retrieved
-        const res = await this.$api.patch(`${inventoryServiceApi.picklists}${payload.id}/update_request/${payload.request_id}`, payload)
-        this.picklistJob = res.data
-        this.originalPicklistJob = { ...this.picklistJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async deletePicklistJobItem (itemId) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user reverts to queue when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.picklists}${this.picklistJob.id}/remove_request/${itemId}` })
+        const res = await offlineAwareRequest({
+          method: 'DELETE',
+          url: `${inventoryServiceApi.picklists}${this.picklistJob.id}/remove_request/${itemId}`,
+          optimisticUpdate: () => {
+            const index = this.picklistJob.requests.findIndex(request => request.id == itemId)
+            if (index !== -1) {
+              this.picklistJob.requests.splice(index, 1)
+            }
+            this.originalPicklistJob = { ...this.picklistJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(this.picklistJob)))
+            await addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(this.originalPicklistJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.picklistJob = res.data
+          this.originalPicklistJob = { ...this.picklistJob }
         }
-        const res = await this.$api.delete(`${inventoryServiceApi.picklists}${this.picklistJob.id}/remove_request/${itemId}`)
-        this.picklistJob = res.data
-        this.originalPicklistJob = { ...this.picklistJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     }
   }

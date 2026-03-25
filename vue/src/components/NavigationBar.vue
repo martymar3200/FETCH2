@@ -188,7 +188,7 @@ import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
 import { useUserStore } from '@/stores/user-store'
-import { useBackgroundSyncHandler } from '@/composables/useBackgroundSyncHandler.js'
+import { useOfflineSync } from '@/composables/useOfflineSync.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import EssentialLink from '@/components/EssentialLink.vue'
 import SearchBar from '@/components/Search/SearchBar.vue'
@@ -202,11 +202,10 @@ const router = useRouter()
 
 // Composables
 const {
-  bgSyncData,
-  syncInProgress,
-  triggerBackgroundSync,
-  deleteDataInBackgroundSyncDb
-} = useBackgroundSyncHandler()
+  pendingOpsCount,
+  syncPendingOps
+} = useOfflineSync()
+const syncInProgress = ref('')
 const { checkUserPermission } = usePermissionHandler()
 
 // Store Data
@@ -300,7 +299,6 @@ const adminLink = ref({
 // REMOVED: No longer needed, as we now use the global state
 // const leftDrawerOpen = ref(false)
 const showOfflineBanner = ref(false)
-const refreshWhenOnline = ref(false)
 
 // Logic
 
@@ -322,68 +320,21 @@ onMounted(() => {
     appIsOffline.value = false
   })
 
-  if ('serviceWorker' in navigator) {
-    // listen for messages from the serviceworker scripts
-    navigator.serviceWorker.addEventListener('message', async (event) => {
-      if (event.data.message == 'pending sync') {
-        // show online banner only if we have requests pending in queue
-        appPendingSync.value = true
-      } else if (event.data.message == 'refreshWhenOnline') {
-        // refresh the app state incase indexDb fails to detect stored queue calls when user comes back online
-        refreshWhenOnline.value = true
-      } else if (event.data.message == 'sync complete') {
-        // when user triggers an offline sync, we need to wait for the syncComplete message from the serviceworker queue
-        syncInProgress.value = 'Complete'
-
-        // handle any non breaking errors passed back from bgSync
-        if (event.data.error && event.data.error.length > 0) {
-          event.data.error.forEach(err => {
-            Notify.create({
-              type: 'negative',
-              message: err
-            })
-          })
-
-          await new Promise(resolve => setTimeout(() => {
-            appPendingSync.value = false
-            syncInProgress.value = ''
-            resolve()
-          }, 5200))
-          window.location.reload()
-        } else {
-          setTimeout(() => {
-            appPendingSync.value = false
-            syncInProgress.value = ''
-            window.location.reload()
-          }, 2500)
-        }
-      } else if (event.data.message == 'sync error') {
-        syncInProgress.value = ''
-        syncInProgress.value = ''
-        Notify.create({
-          type: 'negative',
-          message: event.data.error
-        })
-      }
-    })
-  }
-
   // display a route guard alert if the user tries to directly navigate to a page
   if (appRouteGuard.value) {
     displayRouteGuardAlert(appRouteGuard.value.name)
   }
 })
 
-// when coming back online sometimes indexDb doesnt catch queue requests, so when our background sync service worker stores api calls it sends a message to frontend to refresh the app
 watch(appIsOffline, () => {
-  if (appIsOffline.value == false && refreshWhenOnline.value == true) {
-    window.location.reload(true)
+  if (!appIsOffline.value && pendingOpsCount.value > 0) {
+    appPendingSync.value = true
   }
 })
 
-// watch the bgSyncData and if we detect any requests that are still pending display the online banner with requests pending action
-watch(bgSyncData, () => {
-  if (bgSyncData.value.length > 0 && navigator.onLine) {
+// watch the pendingOpsCount and if we detect any requests that are still pending display the online banner with requests pending action
+watch(pendingOpsCount, () => {
+  if (pendingOpsCount.value > 0 && !appIsOffline.value) {
     appPendingSync.value = true
   } else {
     appPendingSync.value = false
@@ -408,14 +359,36 @@ const isActiveLink = (linkObj) => {
     return false
   }
 }
-const handleRouteSyncGuard = async (pathName) => {
-  // delete all requests from background queue and reset app sync status, guard and banner
-  await deleteDataInBackgroundSyncDb()
-  appPendingSync.value = false
+const handleRouteSyncGuard = (pathName) => {
+  // we do not delete pending operations anymore, the user just leaves the page and the ops remain in IDB
   appSyncGuard.value = null
   router.push({
     name: pathName
   })
+}
+
+const triggerBackgroundSync = async () => {
+  syncInProgress.value = 'In Progress'
+  try {
+    await syncPendingOps()
+    syncInProgress.value = 'Complete'
+    // after 2.5 seconds we refresh the page so the app can fetch the latest server state unconditionally
+    setTimeout(() => {
+      syncInProgress.value = ''
+      appPendingSync.value = false
+      window.location.reload()
+    }, 2500)
+  } catch (error) {
+    syncInProgress.value = ''
+    if (error.message === 'AUTH_EXPIRED') {
+      // User has been logged out and redirected by store handler, nothing to do here
+      return
+    }
+    Notify.create({
+      type: 'negative',
+      message: error.message || 'Sync failed due to an error. Remaining queue saved.'
+    })
+  }
 }
 const displayRouteGuardAlert = (pathName) => {
   Notify.create({

@@ -544,7 +544,6 @@ const revertSelectedItemsToQueue = async () => {
       barcode_values: selectedItems.value.map(item => item.barcode?.value)
     }
     await refileStore.deleteRefileJobItems(payload)
-    saveState()
     Notify.create({
       type: 'info',
       message: 'Items reverted to queue'
@@ -570,7 +569,6 @@ const updateRefileJob = async () => {
       run_timestamp: currentIsoDate()
     }
     await refileStore.patchRefileJob(payload)
-    saveState()
     Notify.create({
       type: 'positive',
       message: 'The job has been updated.'
@@ -687,8 +685,6 @@ const completeItemRefile = async (item) => {
       payload.non_tray_item_id = item.id
       await refileStore.patchRefileJobNonTrayItemScanned(payload)
     }
-
-    saveState()
     Notify.create({
       type: 'positive',
       message: 'Item refiled',
@@ -715,7 +711,6 @@ const startJob = async () => {
       run_timestamp: currentIsoDate()
     }
     await refileStore.patchRefileJob(payload)
-    saveState()
   } catch (error) {
     Notify.create({
       type: 'negative',
@@ -734,7 +729,6 @@ const pauseJob = async () => {
       status: 'Paused',
       run_timestamp: currentIsoDate()
     })
-    saveState()
   } catch (error) {
     Notify.create({
       type: 'negative',
@@ -753,7 +747,6 @@ const resumeJob = async () => {
       status: 'Running',
       run_timestamp: currentIsoDate()
     })
-    saveState()
   } catch (error) {
     Notify.create({
       type: 'negative',
@@ -800,7 +793,6 @@ const revertItem = async () => {
       barcode_values: [pendingRevertItem.value.barcode.value]
     }
     await refileStore.deleteRefileJobItems(payload)
-    saveState()
     Notify.create({
       type: 'info',
       message: 'Item reverted to queue'

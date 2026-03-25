@@ -508,7 +508,6 @@ const startJob = async () => {
       type: 'positive',
       message: 'Job started!'
     })
-    addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(shelvingJob.value)))
   } catch (error) {
     Notify.create({
       type: 'negative',
@@ -638,8 +637,6 @@ const shelveContainer = async () => {
       scanned_for_shelving: true
     }
     await postShelvingJobContainer(payload)
-
-    addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(shelvingJob.value)))
 
     Notify.create({
       type: 'positive',

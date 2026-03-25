@@ -2,6 +2,7 @@ import { boot } from 'quasar/wrappers'
 import axios from 'axios'
 
 import { useUserStore } from '@/stores/user-store'
+import { useGlobalStore } from '@/stores/global-store'
 
 const api = axios.create({
   baseURL: process.env.VITE_INV_SERVCE_API,
@@ -50,6 +51,8 @@ export default boot(({ app }) => {
   api.interceptors.response.use((response) => {
     return response
   }, (error) => {
+    const globalStore = useGlobalStore()
+
     if (!error.response) {
       error.response = {
         data: {
@@ -58,7 +61,10 @@ export default boot(({ app }) => {
       }
     } else if (error.response.status == 401 && userStore.userData.user_id) {
       // if we get a 401 error then user needs to be logged out and reauthenticated
-      userStore.patchLogout(true)
+      // Suppress logouts during offline sync to prevent interrupting the queue presentation
+      if (!globalStore.appPendingSync) {
+        userStore.patchLogout(true)
+      }
     }
     return Promise.reject(error)
   })

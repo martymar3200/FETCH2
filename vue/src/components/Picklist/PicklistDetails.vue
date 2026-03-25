@@ -536,10 +536,6 @@ const executePicklistJob = async () => {
     }
     await patchPicklistJob(payload)
 
-    // store the current picklist job data in indexdb for reference offline whenever job is executed
-    addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
-    addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
-
     Notify.create({
       type: 'positive',
       message: 'Pick List Job Successfully Started'
@@ -586,16 +582,6 @@ const updatePicklistJobStatus = async (status) => {
       run_timestamp: currentIsoDate()
     }
     await patchPicklistJob(payload)
-
-    if (appIsOffline.value) {
-      // when offline we update the status directly
-      picklistJob.value.status = payload.status
-      originalPicklistJob.value.status = payload.status
-    }
-
-    // store the current picklist job data in indexdb for reference offline whenever job is executed
-    addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
-    addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
 
     Notify.create({
       type: 'positive',
@@ -678,16 +664,6 @@ const removePicklistItem = async (itemId) => {
     appIsLoadingData.value = true
     await deletePicklistJobItem(itemId)
 
-    if (appIsOffline.value) {
-      // when offline we remove the picklistItem directly
-      picklistJob.value.requests = picklistJob.value.requests.filter(r => r.id !== itemId)
-      originalPicklistJob.value.requests = originalPicklistJob.value.requests.filter(r => r.id !== itemId)
-    }
-
-    // store the current picklist job data in indexdb for reference offline whenever job is executed
-    addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
-    addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
-
     Notify.create({
       type: 'positive',
       message: `${itemId} has been sent back to the request queue.`
@@ -714,21 +690,7 @@ const updatePicklistItem = async (barcode_value) => {
     }
     await patchPicklistJobItemScanned(payload)
 
-    // update the item directly in the picklist job and set it to retrieved
-    pickListItemToUpdate.item ? pickListItemToUpdate.item.status = 'Out' : pickListItemToUpdate.non_tray_item.status = 'Out'
-
-    // move the item to bottom of the list if in offline mode
-    if (appIsOffline.value) {
-      picklistJob.value.requests.splice(pickListItemToUpdateIndex, 1)
-      picklistJob.value.requests.push(pickListItemToUpdate)
-    }
-
-    // update our original picklist job state
-    originalPicklistJob.value = { ...toRaw(picklistJob.value) }
-
-    // store the current picklist job data in indexdb for reference offline whenever job is executed
-    addDataToIndexDb('picklistStore', 'picklistJob', JSON.parse(JSON.stringify(picklistJob.value)))
-    addDataToIndexDb('picklistStore', 'originalPicklistJob', JSON.parse(JSON.stringify(originalPicklistJob.value)))
+    // Note: The store's optimisticUpdate handles moving the item to the bottom of the list and syncing IndexDb.
   } catch (error) {
     Notify.create({
       type: 'negative',

@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
-import { useGlobalStore } from './global-store'
-const globalStore = useGlobalStore()
-
+import { useOfflineSync } from '@/composables/useOfflineSync.js'
+import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 export const useRefileStore = defineStore('refile-store', {
   state: () => ({
     refileJobListTotal: 0,
@@ -96,20 +95,30 @@ export const useRefileStore = defineStore('refile-store', {
       }
     },
     async patchRefileJob (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user is pausing/resuming when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.refileJobs}${payload.id}` })
+        const res = await offlineAwareRequest({
+          method: 'PATCH',
+          url: `${inventoryServiceApi.refileJobs}${payload.id}`,
+          payload,
+          optimisticUpdate: () => {
+            if (this.refileJob && payload.status) {
+              this.refileJob.status = payload.status
+              this.originalRefileJob.status = payload.status
+            }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('refileStore', 'refileJob', JSON.parse(JSON.stringify(this.refileJob)))
+            await addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(this.originalRefileJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.refileJob = res.data
+          this.originalRefileJob = { ...this.refileJob }
         }
-        const res = await this.$api.patch(`${inventoryServiceApi.refileJobs}${payload.id}`, payload)
-        this.refileJob = res.data
-        this.originalRefileJob = { ...this.refileJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async deleteRefileJob (jobId) {
@@ -135,56 +144,93 @@ export const useRefileStore = defineStore('refile-store', {
       }
     },
     async deleteRefileJobItems (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user reverts to queue when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.refileJobs}${this.refileJob.id}/remove_items` })
+        const res = await offlineAwareRequest({
+          method: 'DELETE',
+          url: `${inventoryServiceApi.refileJobs}${this.refileJob.id}/remove_items`,
+          payload,
+          optimisticUpdate: () => {
+            if (payload.barcode_values) {
+              this.refileJob.refile_job_items = this.refileJob.refile_job_items.filter(itm => !payload.barcode_values.includes(itm.barcode?.value))
+            }
+            this.originalRefileJob = { ...this.refileJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('refileStore', 'refileJob', JSON.parse(JSON.stringify(this.refileJob)))
+            await addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(this.originalRefileJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.refileJob = res.data
+          this.originalRefileJob = { ...this.refileJob }
         }
-        const res = await this.$api.delete(`${inventoryServiceApi.refileJobs}${this.refileJob.id}/remove_items`, { data: payload })
-        this.refileJob = res.data
-        this.originalRefileJob = { ...this.refileJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async patchRefileJobTrayItemScanned (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user is scanning when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.refileJobs}${payload.job_id}/update_item/${payload.item_id}` })
+        const res = await offlineAwareRequest({
+          method: 'PATCH',
+          url: `${inventoryServiceApi.refileJobs}${payload.job_id}/update_item/${payload.item_id}`,
+          payload,
+          optimisticUpdate: () => {
+            const index = this.refileJob.refile_job_items.findIndex(itm => itm.item_id == payload.item_id || itm.id == payload.item_id)
+            if (index !== -1) {
+              const item = this.refileJob.refile_job_items[index]
+              item.status = 'In'
+              // Optional: move it to the bottom of the list for visual consistency
+              this.refileJob.refile_job_items.splice(index, 1)
+              this.refileJob.refile_job_items.push(item)
+            }
+            this.originalRefileJob = { ...this.refileJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('refileStore', 'refileJob', JSON.parse(JSON.stringify(this.refileJob)))
+            await addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(this.originalRefileJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.refileJob = res.data
+          this.originalRefileJob = { ...this.refileJob }
         }
-        // updates a refile job item and marks it as refiled
-        const res = await this.$api.patch(`${inventoryServiceApi.refileJobs}${payload.job_id}/update_item/${payload.item_id}`, payload)
-        this.refileJob = res.data
-        this.originalRefileJob = { ...this.refileJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async patchRefileJobNonTrayItemScanned (payload) {
+      const { offlineAwareRequest } = useOfflineSync()
+      const { addDataToIndexDb } = useIndexDbHandler()
       try {
-        if (globalStore.appIsOffline) {
-          // this will only occur when user is scanning when offline
-          navigator.serviceWorker.controller.postMessage({ queueIncomingApiCall: `${inventoryServiceApi.refileJobs}${payload.job_id}/update_non_tray_items/${payload.non_tray_item_id}` })
+        const res = await offlineAwareRequest({
+          method: 'PATCH',
+          url: `${inventoryServiceApi.refileJobs}${payload.job_id}/update_non_tray_items/${payload.non_tray_item_id}`,
+          payload,
+          optimisticUpdate: () => {
+            const index = this.refileJob.refile_job_items.findIndex(itm => itm.non_tray_item_id == payload.non_tray_item_id || itm.id == payload.non_tray_item_id)
+            if (index !== -1) {
+              const item = this.refileJob.refile_job_items[index]
+              item.status = 'In'
+              this.refileJob.refile_job_items.splice(index, 1)
+              this.refileJob.refile_job_items.push(item)
+            }
+            this.originalRefileJob = { ...this.refileJob }
+          },
+          updateSnapshot: async () => {
+            await addDataToIndexDb('refileStore', 'refileJob', JSON.parse(JSON.stringify(this.refileJob)))
+            await addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(this.originalRefileJob)))
+          }
+        })
+        if (res.fromServer) {
+          this.refileJob = res.data
+          this.originalRefileJob = { ...this.refileJob }
         }
-        // updates a refile job non tray item and marks it as refiled
-        const res = await this.$api.patch(`${inventoryServiceApi.refileJobs}${payload.job_id}/update_non_tray_items/${payload.non_tray_item_id}`, payload)
-        this.refileJob = res.data
-        this.originalRefileJob = { ...this.refileJob }
       } catch (error) {
-        if (globalStore.appIsOffline) {
-          return
-        } else {
-          throw error
-        }
+        throw error
       }
     },
     async postRefileQueueItem (payload) {
