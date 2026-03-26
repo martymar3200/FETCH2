@@ -852,7 +852,7 @@ const handleItemScanInput = () => {
 }
 
 // Queue processor for tray scans
-const processTrayScan = async (barcode_value) => {
+async function processTrayScan (barcode_value) {
   try {
     appIsLoadingData.value = true
 
@@ -912,7 +912,7 @@ const processTrayScan = async (barcode_value) => {
 }
 
 // Queue processor for item scans
-const processItemScan = async (barcode_value) => {
+async function processItemScan (barcode_value) {
   try {
     appActionIsLoadingData.value = true
     const res = await verifyBarcode(barcode_value.trim(), 'Item', true)

@@ -25,7 +25,9 @@ export function useOfflineSync () {
   }
 
   // Pre-load current ops count immediately on composable load
-  initOpsStore()
+  initOpsStore().catch(err => {
+    console.error('Failed to initialize offline operations store:', err)
+  })
 
   /**
    * Generates a unique ID for the offline operation.

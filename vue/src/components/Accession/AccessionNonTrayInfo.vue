@@ -287,13 +287,30 @@
         <q-btn
           no-caps
           unelevated
-          color="positive"
-          label="Complete Job"
-          class="text-body1 full-width btn-modern"
+          color="accent"
+          label="Complete"
+          class="text-body1 full-width"
           :loading="appActionIsLoadingData"
-          @click="completeAccessionJob(hideModal)"
+          @click="completeAccessionJob(hideModal, false)"
         />
+
         <q-space class="q-mx-xs" />
+
+        <q-btn
+          no-caps
+          unelevated
+          color="accent"
+          label="Complete & Print"
+          class="btn-no-wrap text-body1 full-width"
+          :loading="appActionIsLoadingData"
+          @click="completeAccessionJob(hideModal, true)"
+        />
+
+        <q-space
+          v-if="currentScreenSize !== 'xs'"
+          class="q-mx-lg"
+        />
+
         <q-btn
           outline
           no-caps
@@ -601,7 +618,7 @@ const cancelAccessionJob = async () => {
   }
 }
 
-const completeAccessionJob = async (hideModal) => {
+const completeAccessionJob = async (hideModal, shouldPrint = false) => {
   try {
     appActionIsLoadingData.value = true
     await patchAccessionJob({
@@ -613,6 +630,10 @@ const completeAccessionJob = async (hideModal) => {
       type: 'positive',
       message: 'The Accession Job has been completed.'
     })
+
+    if (shouldPrint) {
+      emit('print')
+    }
 
     hideModal()
     showCompleteConfirmation.value = false

@@ -951,7 +951,7 @@ const handleItemScanInput = () => {
 }
 
 // Queue processor for tray scans
-const processTrayScan = async (barcode_value) => {
+async function processTrayScan (barcode_value) {
   // Prevent scan if assigned to another user
   if (isAssignedToOtherUser.value) {
     Notify.create({
@@ -1005,7 +1005,7 @@ const processTrayScan = async (barcode_value) => {
 }
 
 // Queue processor for item scans
-const processItemScan = async (barcode_value) => {
+async function processItemScan (barcode_value) {
   // Prevent scan if assigned to another user
   if (isAssignedToOtherUser.value) {
     Notify.create({

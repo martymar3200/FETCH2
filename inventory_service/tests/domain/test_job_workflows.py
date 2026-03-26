@@ -337,6 +337,7 @@ def test_accession_completion_creates_verification_job(
     )
 
     assert vj is not None, "VerificationJob was not auto-created"
+    assert vj.assigned_user_id is None, f"VerificationJob should be unassigned, but is assigned to user {vj.assigned_user_id}"
     assert tray.scanned_for_accession is True
     assert item.scanned_for_accession is True
     assert tray.verification_job_id == vj.id

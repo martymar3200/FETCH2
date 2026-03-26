@@ -6,7 +6,7 @@ export function useIndexDbHandler () {
 
   async function registerIndexDb () {
     return new Promise((resolve, reject) => {
-      let request = window.indexedDB.open('global-data')
+      let request = window.indexedDB.open('global-data', 3)
 
       request.onupgradeneeded = () => {
         const db = request.result
@@ -15,6 +15,7 @@ export function useIndexDbHandler () {
         db.createObjectStore('shelvingStore', { keyPath: 'id' })
         db.createObjectStore('picklistStore', { keyPath: 'id' })
         db.createObjectStore('refileStore', { keyPath: 'id' })
+        db.createObjectStore('offline-operations', { keyPath: 'id' })
 
         // takes the stores name and key term path (can have multiple key terms) and if its unique (can have duplicates or just one)
         // store.createIndex('owner', ['name'], { unique: false })

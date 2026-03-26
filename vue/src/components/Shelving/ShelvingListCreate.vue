@@ -509,7 +509,7 @@ const loadVerificationJobs = async () => {
     })
     verificationJobOptions.value = verificationStore.verificationJobList.map(vj => ({
       id: vj.id,
-      label: `VJ #${vj.id} - ${vj.trayed ? 'Trayed' : 'Non-Trayed'}`
+      label: `VJ #${vj.workflow_id} - ${vj.trayed ? 'Trayed' : 'Non-Trayed'}`
     }))
   } catch (error) {
     console.error('Failed to load verification jobs:', error)
