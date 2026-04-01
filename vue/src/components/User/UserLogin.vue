@@ -1,5 +1,5 @@
 <template>
-  <q-btn
+  <BaseButton
     no-caps
     flat
     dense
@@ -31,7 +31,7 @@
           </q-item-section>
         </q-item>
         <q-item role="menuitem">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             class="text-body1"
@@ -42,7 +42,7 @@
             :loading="appActionIsLoadingData"
             @click="internalLogin"
           />
-          <q-btn
+          <BaseButton
             no-caps
             flat
             class="q-ml-auto text-body2"
@@ -54,10 +54,11 @@
         </q-item>
       </q-list>
     </q-menu>
-  </q-btn>
+  </BaseButton>
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import inventoryServiceApi from '@/http/InventoryService.js'
 import { ref, computed, onMounted } from 'vue'
 import { Notify } from 'quasar'

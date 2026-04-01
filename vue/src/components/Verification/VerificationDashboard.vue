@@ -32,7 +32,7 @@
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 no-caps
@@ -42,7 +42,7 @@
                 class="q-mr-sm"
                 @click="showFilterRow = !showFilterRow"
               />
-              <q-btn
+              <BaseButton
                 v-if="showFilterRow"
                 flat
                 dense
@@ -168,6 +168,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount, computed } from 'vue'
 import { Notify } from 'quasar'
 import { storeToRefs } from 'pinia'

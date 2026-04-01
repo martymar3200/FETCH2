@@ -11,7 +11,7 @@
           View History
         </h2>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -57,7 +57,7 @@
     </template>
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Close"
@@ -70,6 +70,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 
 // Imports
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'

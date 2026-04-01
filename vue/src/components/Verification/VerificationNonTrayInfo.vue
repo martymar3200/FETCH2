@@ -30,16 +30,16 @@
           v-if="editJob"
           class="row q-gutter-x-sm"
         >
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
             label="Save Edits"
-            class="btn-modern"
+
             :loading="actionLoading"
             @click="updateUserAssignment"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             outline
@@ -55,23 +55,23 @@
           class="row q-gutter-x-sm"
         >
           <!-- Resume button (only when paused) -->
-          <q-btn
+          <BaseButton
             v-if="verificationJob.status === 'Paused'"
             no-caps
             unelevated
             color="accent"
             label="Resume"
-            class="btn-modern"
+
             @click="updateVerificationJobStatus('Running')"
           />
           <!-- Complete Job button -->
-          <q-btn
+          <BaseButton
             v-if="verificationJob.status !== 'Completed'"
             no-caps
             unelevated
             color="positive"
             label="Complete Job"
-            class="btn-modern"
+
             :disabled="!canComplete || verificationJob.status === 'Paused'"
             :loading="appActionIsLoadingData"
             @click="showConfirmationModal = { type: 'complete', text: 'Are you sure you want to complete the job?' }"
@@ -147,7 +147,7 @@
             v-if="verificationContainer.id"
             class="col-auto"
           >
-            <q-btn
+            <BaseButton
               flat
               dense
               icon="edit"
@@ -155,7 +155,7 @@
               @click="openEditModal"
             >
               <q-tooltip>Edit Item Details</q-tooltip>
-            </q-btn>
+            </BaseButton>
           </div>
         </div>
         <div class="text-h5 text-weight-medium text-center">
@@ -279,7 +279,7 @@
       </template>
       <template #footer-content>
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
@@ -289,7 +289,7 @@
             @click="updateNonTrayItem()"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -318,7 +318,7 @@
         v-if="showConfirmationModal.type === 'complete'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -328,7 +328,7 @@
           @click="handleConfirmationAction('completePrint')"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -338,7 +338,7 @@
           @click="handleConfirmationAction('complete')"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -350,7 +350,7 @@
         v-else
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           :color="showConfirmationModal.type === 'cancel' ? 'negative' : 'positive'"
@@ -360,7 +360,7 @@
           @click="handleConfirmationAction"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -381,6 +381,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, inject, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'
@@ -832,9 +833,7 @@ defineExpose({ editMode })
   padding: 16px 8px;
 }
 
-.btn-modern {
-    font-weight: 500;
-}
+
 
 .bg-accent-1 {
     background-color: #e3f2fd; // Light blue highlight for active item

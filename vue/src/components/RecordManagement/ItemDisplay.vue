@@ -106,7 +106,7 @@
             >
               History
             </h2>
-            <q-btn
+            <BaseButton
               flat
               dense
               color="primary"
@@ -269,6 +269,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { inject, onMounted, ref, watch, computed } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'

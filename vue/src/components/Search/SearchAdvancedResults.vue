@@ -43,7 +43,7 @@
               class="col-xs-12 col-sm-12 col-md-auto flex"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : 'order-1'"
             >
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, watch } from 'vue'
 import { Notify } from 'quasar'
 import { useRoute, useRouter  } from 'vue-router'

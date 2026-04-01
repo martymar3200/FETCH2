@@ -11,7 +11,7 @@
           {{ actionType == 'Add' ? 'Add New' : 'Edit' }} {{ titleCaseListType }}
         </h2>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -127,7 +127,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -140,7 +140,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -153,6 +153,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onBeforeMount, toRaw } from 'vue'
 import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'

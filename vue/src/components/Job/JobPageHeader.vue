@@ -3,7 +3,7 @@
     <div class="col">
       <div class="row items-center">
         <!-- Three-dot menu -->
-        <q-btn
+        <BaseButton
           v-if="menuOptions.length > 0"
           flat
           round
@@ -36,7 +36,7 @@
               </q-item>
             </q-list>
           </q-menu>
-        </q-btn>
+        </BaseButton>
 
         <!-- Title + Badge -->
         <h1 class="text-h4 text-bold q-mb-none">
@@ -66,6 +66,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 /**
  * JobPageHeader - Reusable header component for all job pages
  *
@@ -79,7 +80,7 @@
  *   :menu-options="[{ label: 'Cancel', icon: 'cancel', color: 'negative', action: cancelJob }]"
  * >
  *   <template #actions>
- *     <q-btn label="Start" color="accent" @click="startJob" />
+ *     <BaseButton label="Start" color="accent" @click="startJob" />
  *   </template>
  * </JobPageHeader>
  */

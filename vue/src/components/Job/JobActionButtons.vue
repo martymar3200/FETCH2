@@ -1,19 +1,19 @@
 <template>
   <div class="row q-gutter-sm">
     <!-- Start button -->
-    <q-btn
+    <BaseButton
       v-if="showStart"
       no-caps
       unelevated
       color="accent"
       label="Start Job"
-      class="btn-modern"
+
       :loading="loading"
       @click="$emit('start')"
     />
 
     <!-- Pause button -->
-    <q-btn
+    <BaseButton
       v-if="showPause"
       no-caps
       flat
@@ -24,25 +24,25 @@
     />
 
     <!-- Resume button -->
-    <q-btn
+    <BaseButton
       v-if="showResume"
       no-caps
       unelevated
       color="accent"
       label="Resume"
-      class="btn-modern"
+
       :loading="loading"
       @click="$emit('resume')"
     />
 
     <!-- Complete button -->
-    <q-btn
+    <BaseButton
       v-if="showComplete"
       no-caps
       unelevated
       color="positive"
       label="Complete Job"
-      class="btn-modern"
+
       :loading="loading"
       @click="$emit('complete')"
     />
@@ -53,6 +53,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 /**
  * JobActionButtons - Standard action buttons for job lifecycle
  *

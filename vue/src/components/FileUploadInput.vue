@@ -50,7 +50,7 @@
         class="text-body1"
       >
         <span>{{ file.name }}</span>
-        <q-btn
+        <BaseButton
           icon="cancel"
           color="negative"
           flat
@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch } from 'vue'
 import { Notify } from 'quasar'
 

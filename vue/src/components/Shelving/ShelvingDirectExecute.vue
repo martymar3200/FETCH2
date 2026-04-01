@@ -39,7 +39,7 @@
           Assign User
         </div>
         <q-space />
-        <q-btn
+        <BaseButton
           flat
           round
           dense
@@ -61,12 +61,12 @@
           />
         </div>
         <div class="col-auto">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
             label="Save Assignment"
-            class="btn-modern"
+
             :loading="actionLoading"
             @click="updateUserAssignment"
           />
@@ -150,7 +150,7 @@
                 </div>
               </div>
               <div class="col-auto">
-                <q-btn
+                <BaseButton
                   flat
                   no-caps
                   color="grey-7"
@@ -199,12 +199,12 @@
             />
           </div>
           <div class="col-12 col-md-3">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
               label="Shelve"
-              class="btn-modern full-width"
+              class="full-width"
               :loading="scanning"
               :disable="!containerBarcodeInput || !positionNumber"
               @click="shelveContainer"
@@ -306,6 +306,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
@@ -722,38 +723,4 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped lang="scss">
-.shelving-direct-execute {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
 
-.form-group-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: #555;
-}
-
-.essential-table {
-  :deep(.q-table__container) {
-    border-radius: 8px;
-  }
-}
-
-.bg-accent-1 {
-  background: linear-gradient(135deg, rgba(var(--q-accent), 0.1) 0%, rgba(var(--q-accent), 0.05) 100%);
-}
-
-.user-assign-card {
-  border-radius: 12px;
-  background: white;
-}
-
-.btn-modern {
-  border-radius: 8px;
-  padding: 8px 24px;
-  font-weight: 600;
-}
-</style>

@@ -12,9 +12,8 @@
         class="col-auto"
         :class="headingFilterClass !== '' ? headingFilterClass : ''"
       >
-        <q-btn
-          flat
-          no-caps
+        <BaseButton
+          variant="ghost"
           :icon="currentScreenSize == 'xs' ? 'none' : 'mdi-filter'"
           :label="currentScreenSize == 'xs' ? 'Filter' : ''"
           class="table-component-filter"
@@ -88,7 +87,7 @@
               </q-item>
             </q-list>
           </q-menu>
-        </q-btn>
+        </BaseButton>
       </div>
 
       <div
@@ -293,6 +292,7 @@
 <script setup>
 import { ref, onMounted, watch, toRaw } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
+import BaseButton from '@/components/Base/BaseButton.vue'
 
 // Props
 const mainProps = defineProps({

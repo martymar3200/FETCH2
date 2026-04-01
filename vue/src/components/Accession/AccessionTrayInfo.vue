@@ -86,7 +86,7 @@
           <q-space class="divider q-my-sm" />
 
           <div class="col-6 q-pr-xs-xs">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
@@ -98,7 +98,7 @@
             />
           </div>
           <div class="col-6 q-pl-xs-xs">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               outline
@@ -152,7 +152,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -165,7 +165,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -188,7 +188,7 @@
   >
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           v-if="showConfirmationModal == 'CancelJob'"
           no-caps
           unelevated
@@ -198,7 +198,7 @@
           :loading="appActionIsLoadingData"
           @click="cancelAccessionJob()"
         />
-        <q-btn
+        <BaseButton
           v-else
           no-caps
           unelevated
@@ -209,7 +209,7 @@
           @click="removeTrayContainer()"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -231,6 +231,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch, toRaw, inject, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify } from 'quasar'

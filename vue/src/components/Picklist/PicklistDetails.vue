@@ -10,7 +10,7 @@
     >
       <template #actions>
         <div v-if="picklistJob.status !== 'Completed'">
-          <q-btn
+          <BaseButton
             v-if="picklistJob.status !== 'Created'"
             no-caps
             unelevated
@@ -22,7 +22,7 @@
             :disabled="appPendingSync || !checkUserPermission('can_edit_picklist_job')"
             @click="picklistJob.status == 'Paused' ? updatePicklistJobStatus('Running') : updatePicklistJobStatus('Paused')"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="positive"
@@ -47,7 +47,7 @@
           Assign User
         </div>
         <q-space />
-        <q-btn
+        <BaseButton
           flat
           round
           dense
@@ -77,12 +77,12 @@
           </SelectInput>
         </div>
         <div class="col-auto">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
             label="Save Assignment"
-            class="btn-modern"
+
             :loading="appActionIsLoadingData"
             @click="updatePicklistJob"
           />
@@ -120,7 +120,7 @@
 
         <template #table-td="{ colName, props: cellProps, value }">
           <span v-if="colName == 'actions'">
-            <q-btn
+            <BaseButton
               v-if="cellProps.row.status === 'PickList' && picklistJob.status !== 'Paused' && picklistJob.status !== 'Completed' && checkUserPermission('can_edit_picklist_job')"
               flat
               round
@@ -131,7 +131,7 @@
               @click="handleOptionMenu({text: 'Revert Item to Queue'}, cellProps.row)"
             >
               <q-tooltip>Revert Item to Queue</q-tooltip>
-            </q-btn>
+            </BaseButton>
           </span>
           <span
             v-else-if="colName == 'status'"
@@ -164,7 +164,7 @@
       <template #footer-content="{ hideModal }">
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
           <template v-if="showConfirmationModal == 'CompleteJob'">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
@@ -174,7 +174,7 @@
               @click="completePicklistJob(true)"
             />
             <q-space class="q-mx-xs" />
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
@@ -184,7 +184,7 @@
               @click="completePicklistJob(false)"
             />
           </template>
-          <q-btn
+          <BaseButton
             v-else
             no-caps
             unelevated
@@ -198,7 +198,7 @@
             v-if="currentScreenSize !== 'xs'"
             class="q-mx-xs"
           />
-          <q-btn
+          <BaseButton
             v-if="currentScreenSize !== 'xs'"
             outline
             no-caps
@@ -235,6 +235,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, onMounted, ref, computed, inject, toRaw, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'
@@ -734,9 +735,4 @@ const loadPicklistItem = (barcode_value) => {
   margin-bottom: 4px;
 }
 
-.btn-modern {
-  border-radius: 8px;
-  padding: 8px 24px;
-  font-weight: 600;
-}
 </style>

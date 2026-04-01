@@ -38,7 +38,7 @@
       </div>
 
       <div class="col-xs-12 col-sm-4 col-md-3 q-pa-xs-xs q-pa-lg-sm q-pa-xl-md">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           outline
@@ -76,7 +76,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -89,7 +89,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -122,7 +122,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -135,7 +135,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -187,7 +187,7 @@
                 class="col-xs-6 col-sm-4 col-md-3"
               >
                 <div class="admin-groups-users-chip q-pa-xs">
-                  <q-btn
+                  <BaseButton
                     dense
                     outline
                     no-caps
@@ -206,7 +206,7 @@
                       class="q-ml-auto"
                       aria-label="removeUserIcon"
                     />
-                  </q-btn>
+                  </BaseButton>
                 </div>
               </div>
             </div>
@@ -217,7 +217,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -230,7 +230,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -256,7 +256,7 @@
         v-if="showConfirmationModal.type == 'deleteUser'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -268,7 +268,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -280,7 +280,7 @@
         v-else-if="showConfirmationModal.type == 'deleteGroup'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -292,7 +292,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -305,6 +305,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'

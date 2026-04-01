@@ -15,7 +15,7 @@
           </div>
         </div>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -105,7 +105,7 @@
 
     <template #footer-content>
       <q-card-section class="row no-wrap justify-end items-center q-pt-none">
-        <q-btn
+        <BaseButton
           flat
           no-caps
           label="Cancel"
@@ -119,6 +119,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import PopupModal from '@/components/PopupModal.vue'

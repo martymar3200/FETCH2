@@ -1,5 +1,5 @@
 <template>
-  <q-btn
+  <BaseButton
     flat
     icon="more_vert"
     class="more-menu"
@@ -31,10 +31,11 @@
         </q-item>
       </q-list>
     </q-menu>
-  </q-btn>
+  </BaseButton>
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref } from 'vue'
 
 defineProps({

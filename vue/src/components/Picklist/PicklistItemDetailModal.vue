@@ -10,7 +10,7 @@
         >
           Item Details
         </h2>
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -123,7 +123,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="column items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           outline
@@ -138,6 +138,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { inject, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePicklistStore } from '@/stores/picklist-store'

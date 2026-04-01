@@ -26,23 +26,23 @@
       </div>
       <div class="col-auto">
         <!-- Resume button (only when paused) -->
-        <q-btn
+        <BaseButton
           v-if="accessionJob.status === 'Paused'"
           no-caps
           unelevated
           color="accent"
           label="Resume"
-          class="btn-modern q-mr-sm"
+          class="q-mr-sm"
           @click="updateAccessionJobStatus('Running')"
         />
         <!-- Complete Job button -->
-        <q-btn
+        <BaseButton
           v-if="accessionJob.status !== 'Completed'"
           no-caps
           unelevated
           color="positive"
           label="Complete Job"
-          class="btn-modern"
+
           :disabled="!canComplete || accessionJob.status === 'Paused'"
           :loading="appActionIsLoadingData"
           @click="showCompleteConfirmation = true"
@@ -89,7 +89,7 @@
             v-if="accessionContainer.id"
             class="col-auto"
           >
-            <q-btn
+            <BaseButton
               flat
               dense
               icon="edit"
@@ -97,7 +97,7 @@
               @click="openEditModal"
             >
               <q-tooltip>Edit Item Details</q-tooltip>
-            </q-btn>
+            </BaseButton>
           </div>
         </div>
         <div class="text-h5 text-weight-medium text-center">
@@ -218,7 +218,7 @@
     </template>
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -228,7 +228,7 @@
           @click="saveItemEdits(hideModal)"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -251,7 +251,7 @@
   >
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -261,7 +261,7 @@
           @click="cancelAccessionJob()"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -284,7 +284,7 @@
   >
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -296,7 +296,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -311,7 +311,7 @@
           class="q-mx-lg"
         />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -333,6 +333,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'

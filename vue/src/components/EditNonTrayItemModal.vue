@@ -13,7 +13,7 @@
         <h2 class="text-h6 text-bold">
           Edit Non-Tray Item
         </h2>
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -91,19 +91,16 @@
     <!-- Footer (Action Buttons) -->
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
-          no-caps
-          unelevated
-          color="accent"
+        <BaseButton
+          variant="primary"
           label="Save Changes"
           class="text-body1 full-width"
           :loading="isLoading"
           @click="submitEdit"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
-          outline
-          no-caps
+        <BaseButton
+          variant="outline"
           label="Cancel"
           class="text-body1 full-width"
           @click="hideModal"
@@ -120,6 +117,7 @@ import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
 import PopupModal from '@/components/PopupModal.vue'
 import SelectInput from '@/components/SelectInput.vue'
+import BaseButton from '@/components/Base/BaseButton.vue'
 
 const props = defineProps({
   itemData: {

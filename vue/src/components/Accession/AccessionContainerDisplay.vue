@@ -28,23 +28,23 @@
         </div>
         <div class="col-auto">
           <!-- Resume button (only when paused) -->
-          <q-btn
+          <BaseButton
             v-if="accessionJob.status === 'Paused'"
             no-caps
             unelevated
             color="accent"
             label="Resume"
-            class="btn-modern q-mr-sm"
+            class="q-mr-sm"
             @click="updateAccessionJobStatus('Running')"
           />
           <!-- Complete Job button - always visible when running, disabled if not ready -->
-          <q-btn
+          <BaseButton
             v-if="accessionJob.status !== 'Completed'"
             no-caps
             unelevated
             color="positive"
             label="Complete Job"
-            class="btn-modern"
+
             :disabled="!allItemsVerified || accessionJob.status === 'Paused' || isItemQueueProcessing || isTrayQueueProcessing"
             @click="
               showConfirmation = {
@@ -110,13 +110,13 @@
               </div>
               <q-space />
               <div class="col-auto">
-                <q-btn
+                <BaseButton
                   no-caps
                   unelevated
                   icon="add"
                   color="accent"
                   label="Next Tray"
-                  class="btn-modern"
+
                   :disabled="
                     !accessionContainer.id ||
                       !allItemsVerified ||
@@ -126,7 +126,7 @@
                   @click="addNewTray"
                 >
                   <q-tooltip>Add a new tray to this job (Shortcut: T)</q-tooltip>
-                </q-btn>
+                </BaseButton>
               </div>
             </template>
           </div>
@@ -146,7 +146,7 @@
               v-if="accessionContainer.id"
               class="col-auto"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 icon="edit"
@@ -154,7 +154,7 @@
                 @click="handleOptionMenu({ text: 'Edit Tray Barcode' })"
               >
                 <q-tooltip>Edit Tray Barcode</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </div>
           </div>
           <div class="text-h5 text-weight-medium text-center">
@@ -194,7 +194,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 round
@@ -204,7 +204,7 @@
                 @click="deleteItemConfirm(item)"
               >
                 <q-tooltip>Remove Item</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </q-item-section>
           </q-item>
           <q-item v-if="!accessionContainer.items || accessionContainer.items.length === 0">
@@ -334,7 +334,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -351,7 +351,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -377,7 +377,7 @@
         v-if="showConfirmation.type == 'completeJob'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -391,7 +391,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -408,7 +408,7 @@
           class="q-mx-lg"
         />
 
-        <q-btn
+        <BaseButton
           v-if="currentScreenSize !== 'xs'"
           outline
           no-caps
@@ -421,7 +421,7 @@
         v-else-if="showConfirmation.type == 'deleteItem'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -435,7 +435,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -447,7 +447,7 @@
         v-else-if="showConfirmation.type == 'confirmReaccession'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -461,7 +461,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -497,7 +497,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -510,7 +510,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -533,7 +533,7 @@
   >
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           v-if="showTrayConfirmation == 'CancelJob'"
           no-caps
           unelevated
@@ -543,7 +543,7 @@
           :loading="appActionIsLoadingData"
           @click="cancelAccessionJob()"
         />
-        <q-btn
+        <BaseButton
           v-else
           no-caps
           unelevated
@@ -554,7 +554,7 @@
           @click="removeTrayContainer()"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -592,7 +592,7 @@
     </template>
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -602,7 +602,7 @@
           @click="updateJobMediaType(hideModal)"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -630,6 +630,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch, computed, inject, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'

@@ -8,7 +8,7 @@
         <h2 class="text-h6 text-bold">
           Item Lookup
         </h2>
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -32,8 +32,8 @@
 
       <q-card-section class="row q-pb-none">
         <div class="col-12">
-          <div class="container-details">
-            <label class="text-body1 text-bold full-width">
+          <div class="row full-width q-pb-sm">
+            <label class="text-body1 text-bold full-width q-mr-sm">
               Full Location:
             </label>
             <p class="text-h4 text-accent text-bold">
@@ -42,8 +42,8 @@
           </div>
         </div>
         <div class="col-6">
-          <div class="container-details">
-            <label class="text-body1 text-bold full-width">
+          <div class="row full-width q-pb-sm">
+            <label class="text-body1 text-bold full-width q-mr-sm">
               Owner:
             </label>
             <p class="text-body1">
@@ -52,8 +52,8 @@
           </div>
         </div>
         <div class="col-6">
-          <div class="container-details">
-            <label class="text-body1 text-bold full-width">
+          <div class="row full-width q-pb-sm">
+            <label class="text-body1 text-bold full-width q-mr-sm">
               Media Type:
             </label>
             <p class="text-body1">
@@ -62,8 +62,8 @@
           </div>
         </div>
         <div class="col-6">
-          <div class="container-details">
-            <label class="text-body1 text-bold full-width">
+          <div class="row full-width q-pb-sm">
+            <label class="text-body1 text-bold full-width q-mr-sm">
               Status:
             </label>
             <p
@@ -84,10 +84,8 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
-          no-caps
-          unelevated
-          color="accent"
+        <BaseButton
+          variant="primary"
           label="Done"
           class="text-body1 full-width"
           @click="hideModal"
@@ -107,6 +105,7 @@ import { useBarcodeStore } from '@/stores/barcode-store' // Import the barcode s
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import PopupModal from '@/components/PopupModal.vue'
 import BarcodeBox from '@/components/BarcodeBox.vue'
+import BaseButton from '@/components/Base/BaseButton.vue'
 
 // Emits
 const emit = defineEmits(['hide'])
@@ -189,16 +188,3 @@ const fetchItemLocation = async (barcodeValue) => {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-/* Your styles are unchanged */
-.container-details {
-  display: flex;
-  flex-flow: row wrap;
-  width: 100%;
-  padding-bottom: 8px;
-  label {
-    margin-right: .5rem;
-  }
-}
-</style>

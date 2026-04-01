@@ -11,7 +11,7 @@
         </p>
       </div>
       <div class="col-auto">
-        <q-btn
+        <BaseButton
           flat
           no-caps
           color="grey-7"
@@ -146,12 +146,12 @@
               />
             </div>
             <div class="col-12 col-md-4">
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
                 label="Add from Jobs"
-                class="btn-modern full-width"
+                class="full-width"
                 :disable="selectedVerificationJobs.length === 0"
                 :loading="addingFromJobs"
                 @click="addFromVerificationJobs"
@@ -182,12 +182,12 @@
               </q-input>
             </div>
             <div class="col-12 col-md-4">
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
                 label="Add Container"
-                class="btn-modern full-width"
+                class="full-width"
                 :disable="!manualBarcode"
                 :loading="addingContainer"
                 @click="addManualContainer"
@@ -248,7 +248,7 @@
               :props="props"
               class="text-right"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 round
@@ -259,7 +259,7 @@
                 @click="removeContainer(props.row.id)"
               >
                 <q-tooltip>Remove from list</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </q-td>
           </template>
           <template #no-data>
@@ -281,45 +281,45 @@
 
     <!-- Action Buttons -->
     <div class="row q-gutter-md justify-end">
-      <q-btn
+      <BaseButton
         v-if="!jobCreated"
         no-caps
         unelevated
         color="accent"
         label="Create Job"
-        class="btn-modern"
+
         :disable="!canCreateJob"
         :loading="creatingJob"
         @click="createJob('Manual')"
       />
-      <q-btn
+      <BaseButton
         v-if="!jobCreated && jobConfig.mode === 'PreAssigned'"
         no-caps
         unelevated
         color="primary"
         label="Create & Pre-Assign"
-        class="btn-modern"
+
         :disable="!canCreateJob"
         :loading="creatingJob"
         @click="createJob('PreAssigned')"
       />
-      <q-btn
+      <BaseButton
         v-if="jobCreated && jobConfig.mode === 'PreAssigned' && !preAssignmentRun"
         no-caps
         unelevated
         color="primary"
         label="Run Pre-Assignment"
-        class="btn-modern"
+
         :loading="runningPreAssign"
         @click="runPreAssignment"
       />
-      <q-btn
+      <BaseButton
         v-if="jobCreated"
         no-caps
         unelevated
         color="accent"
         label="Start Shelving"
-        class="btn-modern"
+
         @click="startShelving"
       />
     </div>
@@ -367,13 +367,13 @@
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn
+          <BaseButton
             flat
             label="Close"
             color="primary"
             v-close-popup
           />
-          <q-btn
+          <BaseButton
             unelevated
             label="Start Shelving"
             color="accent"
@@ -387,6 +387,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
@@ -702,27 +703,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="scss">
-.shelving-list-create {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
 
-.form-group {
-  margin-bottom: 0;
-}
-
-.form-group-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: #555;
-}
-
-.essential-table {
-  :deep(.q-table__container) {
-    border-radius: 8px;
-  }
-}
-</style>

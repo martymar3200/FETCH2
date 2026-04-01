@@ -15,7 +15,7 @@
           </div>
         </div>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -147,7 +147,7 @@
 
     <template #footer-content>
       <q-card-section class="row no-wrap justify-end items-center q-pt-none">
-        <q-btn
+        <BaseButton
           flat
           no-caps
           label="Cancel"
@@ -155,12 +155,12 @@
           class="btn-modern-flat q-mr-sm"
           @click="handleClose"
         />
-        <q-btn
+        <BaseButton
           unelevated
           no-caps
           label="Done"
           color="accent"
-          class="btn-modern"
+
           style="min-width: 120px;"
           @click="handleClose"
         />
@@ -170,6 +170,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
@@ -377,9 +378,4 @@ const addItemToQueue = async (barcode_value) => {
   font-weight: 600;
 }
 
-.btn-modern {
-  border-radius: 10px;
-  padding: 8px 24px;
-  font-weight: 700;
-}
 </style>

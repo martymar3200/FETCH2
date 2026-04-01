@@ -31,7 +31,7 @@
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
@@ -45,7 +45,7 @@
 
           <template #table-td="{ colName, value, props }">
             <span v-if="colName == 'actions'">
-              <q-btn
+              <BaseButton
                 flat
                 round
                 dense
@@ -54,7 +54,7 @@
                 @click.stop="confirmDeleteUser(props.row)"
               >
                 <q-tooltip>Delete User</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </span>
             <span v-else>
               {{ value }}
@@ -102,7 +102,7 @@
 
       <template #footer-content>
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
@@ -112,7 +112,7 @@
             @click="submitUserForm"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -133,7 +133,7 @@
     >
       <template #footer-content>
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="negative"
@@ -143,7 +143,7 @@
             @click="executeDeleteUser"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -157,6 +157,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'

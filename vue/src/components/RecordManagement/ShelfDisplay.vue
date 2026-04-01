@@ -103,7 +103,7 @@
             class="section-content column flex-center"
             style="height: calc(100% - 60px);"
           >
-            <q-btn
+            <BaseButton
               outline
               color="primary"
               label="View Full History"
@@ -157,6 +157,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { inject, onMounted, ref, watch } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'

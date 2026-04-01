@@ -25,7 +25,7 @@
         v-if="completeJobMode"
         class="row justify-evenly q-gutter-sm q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -35,7 +35,7 @@
           :disable="loading"
           @click="$emit('confirm', false)"
         />
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -45,7 +45,7 @@
           :disable="loading"
           @click="$emit('confirm', true)"
         />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           :label="cancelLabel"
@@ -57,13 +57,13 @@
         v-else
         align="right"
       >
-        <q-btn
+        <BaseButton
           flat
           :label="cancelLabel"
           color="grey"
           v-close-popup
         />
-        <q-btn
+        <BaseButton
           unelevated
           :label="confirmLabel"
           :color="confirmColor"
@@ -77,6 +77,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 /**
  * JobConfirmDialog - Reusable confirmation dialog for job actions
  *

@@ -159,7 +159,7 @@
   >
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -169,7 +169,7 @@
           @click="deleteRequest()"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -182,6 +182,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'

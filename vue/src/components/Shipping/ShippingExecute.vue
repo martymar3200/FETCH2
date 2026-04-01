@@ -10,13 +10,13 @@
       :menu-options="menuOptions"
     >
       <template #actions>
-        <q-btn
+        <BaseButton
           v-if="!isCompleted"
           no-caps
           unelevated
           color="accent"
           label="Complete Job"
-          class="btn-modern"
+
           :disable="!canComplete"
           @click="confirmComplete"
         />
@@ -60,7 +60,7 @@
                   dense
                   size="sm"
                 />
-                <q-btn
+                <BaseButton
                   v-if="isBinLocked"
                   flat
                   dense
@@ -191,7 +191,7 @@
                       {{ item.barcode?.value }}
                     </q-item-section>
                     <q-item-section side>
-                      <q-btn
+                      <BaseButton
                         v-if="!isCompleted"
                         flat
                         round
@@ -227,6 +227,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'

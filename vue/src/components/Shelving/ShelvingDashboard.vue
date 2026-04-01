@@ -32,7 +32,7 @@
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 no-caps
@@ -42,7 +42,7 @@
                 class="q-mr-sm"
                 @click="showFilterRow = !showFilterRow"
               />
-              <q-btn
+              <BaseButton
                 v-if="showFilterRow"
                 flat
                 dense
@@ -53,7 +53,7 @@
                 class="q-mr-md"
                 @click="clearColumnFilters"
               />
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 icon-right="arrow_drop_down"
@@ -133,7 +133,7 @@
                     </q-item>
                   </q-list>
                 </q-menu>
-              </q-btn>
+              </BaseButton>
             </div>
           </template>
 
@@ -257,7 +257,7 @@
             {{ showShelvingJobModal == 'Direct' ? 'Create Direct Shelving Job' : 'Create Shelving Job' }}
           </h2>
 
-          <q-btn
+          <BaseButton
             icon="close"
             flat
             round
@@ -496,7 +496,7 @@
         <q-card-section
           class="row no-wrap justify-between items-center q-pt-sm"
         >
-          <q-btn
+          <BaseButton
             v-if="showShelvingJobModal == 'Direct'"
             no-caps
             unelevated
@@ -506,7 +506,7 @@
             :disabled="!isCreateShelvingJobFormValid"
             @click="submitDirectToShelfJob(); hideModal();"
           />
-          <q-btn
+          <BaseButton
             v-else
             no-caps
             unelevated
@@ -519,7 +519,7 @@
 
           <q-space class="q-mx-xs" />
 
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -533,6 +533,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'

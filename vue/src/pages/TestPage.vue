@@ -34,7 +34,7 @@
       </div>
 
       <div class="col-12 q-mt-md">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           class="text-body1 q-mr-sm"
@@ -43,7 +43,7 @@
           @click="showOwnerTierCreation = !showOwnerTierCreation"
         />
 
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           class="text-body1"
@@ -126,7 +126,7 @@
           </h1>
 
           <div class="row no-wrap items-center q-mt-md">
-            <q-btn
+            <BaseButton
               no-caps
               outline
               color="negative"
@@ -135,7 +135,7 @@
               @click="generateTestAlert(1)"
             />
 
-            <q-btn
+            <BaseButton
               unelevated
               no-caps
               color="negative"
@@ -168,7 +168,7 @@
         </div>
 
         <div class="col-12">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="primary"
@@ -177,7 +177,7 @@
             @click="selectTextFile()"
           />
 
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="primary"
@@ -187,7 +187,7 @@
             @click="saveChangesToText"
           />
 
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="primary"
@@ -197,7 +197,7 @@
             @click="saveTextFileToDevice"
           />
 
-          <q-btn
+          <BaseButton
             unelevated
             no-caps
             color="negative"
@@ -229,7 +229,7 @@
 
         <template #footer-content="{ hideModal }">
           <q-card-section class="row no-wrap justify-between items-center">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
@@ -240,7 +240,7 @@
 
             <q-space class="q-mx-xs" />
 
-            <q-btn
+            <BaseButton
               outline
               no-caps
               label="Cancel"
@@ -255,6 +255,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { storeToRefs } from 'pinia'
 import { useOptionStore } from '@/stores/option-store'
 import { useGlobalStore } from '@/stores/global-store'

@@ -18,7 +18,7 @@
           {{ refileItem.tray ? 'Place Tray Item' : 'Place Non-Tray Item' }}
         </h2>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -137,7 +137,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="column items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           outline
@@ -153,6 +153,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { inject, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'

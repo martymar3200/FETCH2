@@ -3,7 +3,7 @@
   <div class="shipping-manifest">
     <div class="row items-center q-mb-md print-hide">
       <div class="col-auto">
-        <q-btn
+        <BaseButton
           flat
           round
           icon="arrow_back"
@@ -17,8 +17,8 @@
       </div>
       <div class="col-auto">
         <div class="row q-gutter-x-sm">
-          <q-btn
-            class="btn-modern"
+          <BaseButton
+
             unelevated
             no-caps
             :color="scope === 'full' ? 'primary' : 'grey-3'"
@@ -26,8 +26,8 @@
             label="Full Job"
             @click="updateScope('full')"
           />
-          <q-btn
-            class="btn-modern"
+          <BaseButton
+
             unelevated
             no-caps
             :color="scope === 'location' ? 'primary' : 'grey-3'"
@@ -35,8 +35,8 @@
             label="By Location"
             @click="updateScope('location')"
           />
-          <q-btn
-            class="btn-modern"
+          <BaseButton
+
             unelevated
             no-caps
             :color="scope === 'bin' ? 'primary' : 'grey-3'"
@@ -44,8 +44,8 @@
             label="By Bin"
             @click="updateScope('bin')"
           />
-          <q-btn
-            class="btn-modern q-ml-md"
+          <BaseButton
+            class="q-ml-md"
             unelevated
             no-caps
             color="accent"
@@ -171,6 +171,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onMounted, computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { useShippingStore } from '@/stores/shipping-store'

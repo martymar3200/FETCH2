@@ -101,7 +101,7 @@
       <!-- Report Controls Bar -->
       <div class="row q-mb-md items-center">
         <div class="col-auto">
-          <q-btn
+          <BaseButton
             flat
             no-caps
             icon="arrow_back"
@@ -117,7 +117,7 @@
         <!-- All action buttons on one line -->
         <div class="col-auto flex items-center q-gutter-sm">
           <!-- Show/Hide Filters -->
-          <q-btn
+          <BaseButton
             flat
             dense
             no-caps
@@ -128,7 +128,7 @@
             @click="toggleFilterRow"
           />
           <!-- Clear Filters -->
-          <q-btn
+          <BaseButton
             v-if="showFilterRow"
             flat
             dense
@@ -140,7 +140,7 @@
             @click="clearColumnFilters"
           />
           <!-- Rearrange Columns -->
-          <q-btn
+          <BaseButton
             flat
             dense
             no-caps
@@ -180,9 +180,9 @@
                 </q-item>
               </q-list>
             </q-menu>
-          </q-btn>
+          </BaseButton>
           <!-- Redo Report -->
-          <q-btn
+          <BaseButton
             v-if="reportType && reportType !== 'Item Lookup'"
             flat
             dense
@@ -194,7 +194,7 @@
             @click="showReportModal = true"
           />
           <!-- Export Report -->
-          <q-btn
+          <BaseButton
             flat
             dense
             no-caps
@@ -240,7 +240,7 @@
                 </q-item>
               </q-list>
             </q-menu>
-          </q-btn>
+          </BaseButton>
         </div>
       </div>
 
@@ -349,6 +349,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, onBeforeMount, computed, watch } from 'vue'
 import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'

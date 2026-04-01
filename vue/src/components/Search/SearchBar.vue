@@ -1,9 +1,10 @@
 <template>
   <div class="search-bar">
-    <q-btn
+    <BaseButton
       dense
       no-caps
-      unelevated
+      flat
+      color="secondary"
       icon-right="arrow_drop_down"
       :label="searchType"
       aria-label="searchBarMenu"
@@ -35,7 +36,7 @@
           </q-item>
         </q-list>
       </q-menu>
-    </q-btn>
+    </BaseButton>
 
     <div class="row full-width">
       <q-input
@@ -123,7 +124,7 @@
     </div>
 
     <template v-if="currentScreenSize !== 'xs'">
-      <q-btn
+      <BaseButton
         dense
         no-caps
         flat
@@ -133,7 +134,7 @@
         @click="executeExactSearch()"
         aria-label="exactSearchButton"
       />
-      <q-btn
+      <BaseButton
         dense
         no-caps
         flat
@@ -145,7 +146,7 @@
         aria-label="advancedSearchButton"
       />
     </template>
-    <q-btn
+    <BaseButton
       v-else
       dense
       no-caps
@@ -182,6 +183,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onMounted, ref, watch, inject, computed } from 'vue'
 import { Notify } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'

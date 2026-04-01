@@ -6,7 +6,7 @@
     >
       <q-toolbar class="justify-between q-py-xs">
         <!-- MODIFIED: This button now calls the global store action -->
-        <q-btn
+        <BaseButton
           v-if="userData.user_id"
           color="primary"
           flat
@@ -41,11 +41,8 @@
         />
         <span class="text-weight-medium">Barcode scanning is disabled.</span>
         <template #action>
-          <q-btn
-            dense
-            no-caps
-            unelevated
-            color="negative"
+          <BaseButton
+            variant="danger"
             label="Enable Scan"
             class="text-body2"
             @click="barcodeScanAllowed = true"
@@ -84,12 +81,9 @@
         />
         <span class="text-weight-medium">You are back online! There are pending requests.</span>
         <template #action>
-          <q-btn
-            dense
-            no-caps
-            unelevated
+          <BaseButton
             :loading="syncInProgress == 'In Progress'"
-            color="positive"
+            variant="primary"
             :label="syncInProgress == 'Complete' ? 'Sync Completed' : 'Send Requests'"
             class="text-body2"
             @click="triggerBackgroundSync"
@@ -134,7 +128,7 @@
           v-bind="link"
           :icon-size="'28px'"
           class="nav-list-link text-white"
-          :class="isActiveLink(link) ? 'nav-active' : ''"
+          :class="isActiveLink(link) ? 'bg-accent' : ''"
         />
 
         <!-- admin level link -->
@@ -143,7 +137,7 @@
           v-bind="adminLink"
           :icon-size="'28px'"
           class="nav-list-link-admin text-white"
-          :class="isActiveLink(adminLink) ? 'nav-active' : ''"
+          :class="isActiveLink(adminLink) ? 'bg-accent' : ''"
         />
       </q-list>
     </q-drawer>
@@ -158,7 +152,7 @@
     >
       <template #footer-content="{ hideModal }">
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="negative"
@@ -167,7 +161,7 @@
             @click="handleRouteSyncGuard(appSyncGuard.name); hideModal();"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -195,6 +189,7 @@ import SearchBar from '@/components/Search/SearchBar.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import UserLogin from '@/components/User/UserLogin.vue'
 import UserMenu from '@/components/User/UserMenu.vue'
+import BaseButton from '@/components/Base/BaseButton.vue'
 
 const mainLogo = '/assets/FETCH-Logo.svg'
 const route = useRoute()
@@ -413,10 +408,6 @@ const displayRouteGuardAlert = (pathName) => {
 
   &-top {
     z-index: 6000;
-  }
-
-  &-active {
-    background-color: $accent;
   }
 
   &-search {

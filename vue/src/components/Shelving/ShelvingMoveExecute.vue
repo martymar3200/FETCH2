@@ -105,7 +105,7 @@
                 </div>
               </div>
               <div class="col-auto">
-                <q-btn
+                <BaseButton
                   flat
                   no-caps
                   color="grey-7"
@@ -159,12 +159,12 @@
             />
           </div>
           <div class="col-12 col-md-3">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
               label="Move"
-              class="btn-modern full-width"
+              class="full-width"
               :loading="scanning"
               :disable="!containerBarcodeInput || (moveType !== 'tray-item' && !positionNumber)"
               @click="moveContainer"
@@ -224,7 +224,7 @@
           </template>
           <template #body-cell-actions="props">
             <q-td :props="props">
-              <q-btn
+              <BaseButton
                 v-if="!props.row.scanned_for_transfer"
                 flat
                 round
@@ -286,6 +286,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
@@ -844,27 +845,4 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped lang="scss">
-.shelving-move-execute {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
 
-.form-group-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: #555;
-}
-
-.essential-table {
-  :deep(.q-table__container) {
-    border-radius: 8px;
-  }
-}
-
-.bg-accent-1 {
-  background: linear-gradient(135deg, rgba(var(--q-accent), 0.1) 0%, rgba(var(--q-accent), 0.05) 100%);
-}
-</style>

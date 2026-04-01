@@ -32,16 +32,16 @@
             v-if="editJob"
             class="row q-gutter-x-sm"
           >
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
               label="Save Edits"
-              class="btn-modern"
+
               :loading="actionLoading"
               @click="updateUserAssignment"
             />
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               outline
@@ -57,23 +57,23 @@
             class="row q-gutter-x-sm"
           >
             <!-- Resume button (only when paused) -->
-            <q-btn
+            <BaseButton
               v-if="verificationJob.status === 'Paused'"
               no-caps
               unelevated
               color="accent"
               label="Resume"
-              class="btn-modern"
+
               @click="updateVerificationJobStatus('Running')"
             />
             <!-- Complete Job button - always visible when running, disabled if not ready -->
-            <q-btn
+            <BaseButton
               v-if="verificationJob.status !== 'Completed'"
               no-caps
               unelevated
               color="positive"
               label="Complete Job"
-              class="btn-modern"
+
               :disabled="!allItemsVerified || !allTraysCompleted || verificationJob.status === 'Paused' || isItemQueueProcessing || isTrayQueueProcessing"
               @click="
                 showConfirmation = {
@@ -166,13 +166,13 @@
               </div>
               <q-space />
               <div class="col-auto">
-                <q-btn
+                <BaseButton
                   no-caps
                   unelevated
                   icon="skip_next"
                   color="accent"
                   label="Next Tray"
-                  class="btn-modern"
+
                   :disabled="
                     !verificationContainer.id ||
                       !allItemsVerified ||
@@ -183,7 +183,7 @@
                   @click="setNextVerificationTray"
                 >
                   <q-tooltip>Proceed to next tray (Shortcut: T)</q-tooltip>
-                </q-btn>
+                </BaseButton>
               </div>
             </template>
           </div>
@@ -203,7 +203,7 @@
               v-if="verificationContainer.id"
               class="col-auto"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 icon="edit"
@@ -211,7 +211,7 @@
                 @click="showEditTrayModal = true"
               >
                 <q-tooltip>Edit Tray Barcode</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </div>
           </div>
           <div class="text-h5 text-weight-medium text-center">
@@ -262,7 +262,7 @@
               >
                 <q-tooltip>Verified</q-tooltip>
               </q-icon>
-              <q-btn
+              <BaseButton
                 v-else
                 flat
                 dense
@@ -273,7 +273,7 @@
                 @click="deleteItemConfirm(item)"
               >
                 <q-tooltip>Remove Item</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </q-item-section>
           </q-item>
           <q-item v-if="!verificationContainer.items || verificationContainer.items.length === 0">
@@ -410,7 +410,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -427,7 +427,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -453,7 +453,7 @@
         v-if="showConfirmation.type == 'completeJob'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -467,7 +467,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -484,7 +484,7 @@
           class="q-mx-lg"
         />
 
-        <q-btn
+        <BaseButton
           v-if="currentScreenSize !== 'xs'"
           outline
           no-caps
@@ -497,7 +497,7 @@
         v-else-if="showConfirmation.type == 'delete'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -511,7 +511,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -523,7 +523,7 @@
         v-else-if="showConfirmation.type == 'addItem'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -537,7 +537,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -549,7 +549,7 @@
         v-else-if="showConfirmation.type == 'deleteItem'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -561,7 +561,7 @@
           "
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -573,7 +573,7 @@
         v-else-if="showConfirmation.type == 'cancel'"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -585,7 +585,7 @@
           "
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Back"
@@ -623,7 +623,7 @@
     </template>
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -633,7 +633,7 @@
           @click="updateJobMediaType(hideModal)"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -666,7 +666,7 @@
     </template>
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -677,7 +677,7 @@
           @click="updateTrayBarcode"
         />
         <q-space class="q-mx-xs" />
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -703,25 +703,11 @@
     :job-id="verificationJob.id"
   />
 
-  <style
-    lang="scss"
-    scoped
-  >
-    .verification-container {
-    width: 80%;
-    margin: 0 auto;
-    padding: 16px 8px;
-    }
-    .form-group-label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: #555;
-    }
-  </style>
+
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch, inject, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'
@@ -1513,31 +1499,3 @@ const updateTrayBarcode = async () => {
 // Ensure legacy function references that might be called from template are handled
 // We removed 'updateVerificationJobStatus' duplication.
 </script>
-
-<style lang="scss" scoped>
-.verification-container {
-  width: 80%;
-  margin: 0 auto;
-  padding: 16px 8px;
-}
-
-.form-group-label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: #555;
-  }
-
-.verification-next-tray-item {
-    border: 1px solid $secondary;
-    border-radius: 3px;
-}
-
-.tray-completed {
-  background-color: #e8f5e9;
-}
-
-.btn-modern {
-    font-weight: 500;
-}
-</style>

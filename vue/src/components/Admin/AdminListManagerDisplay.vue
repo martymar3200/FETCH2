@@ -30,7 +30,7 @@
               class="col-xs-5 col-sm-auto flex justify-end"
               :class="'order-1'"
             >
-              <q-btn
+              <BaseButton
                 v-if="renderTableAction"
                 no-caps
                 unelevated
@@ -83,7 +83,7 @@
       <q-card-section
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="negative"
@@ -95,7 +95,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -108,6 +108,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed } from 'vue'
 import { Notify } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'

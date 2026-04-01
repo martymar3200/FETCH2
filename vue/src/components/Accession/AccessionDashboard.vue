@@ -32,7 +32,7 @@
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 no-caps
@@ -42,7 +42,7 @@
                 class="q-mr-sm"
                 @click="showFilterRow = !showFilterRow"
               />
-              <q-btn
+              <BaseButton
                 v-if="showFilterRow"
                 flat
                 dense
@@ -53,7 +53,7 @@
                 class="q-mr-md"
                 @click="clearColumnFilters"
               />
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
@@ -192,7 +192,7 @@
         >
           Start New Accession
         </h2>
-        <q-btn
+        <BaseButton
           v-else
           icon="chevron_left"
           name="back"
@@ -204,7 +204,7 @@
           @click="accessionJob.trayed = null"
         />
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -221,7 +221,7 @@
         v-if="accessionJob.trayed == null"
         class="column no-wrap items-center"
       >
-        <q-btn
+        <BaseButton
           outline
           no-caps
           padding="14px md"
@@ -230,7 +230,7 @@
           @click="accessionJob.trayed = false"
         />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           padding="14px md"
@@ -299,7 +299,7 @@
         v-if="accessionJob.trayed !== null"
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -312,7 +312,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -325,6 +325,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'

@@ -13,7 +13,7 @@
               Location Navigator
             </h2>
             <q-space />
-            <q-btn
+            <BaseButton
               flat
               round
               dense
@@ -22,7 +22,7 @@
               aria-label="collapseNavigator"
             >
               <q-tooltip>Collapse Navigator</q-tooltip>
-            </q-btn>
+            </BaseButton>
           </q-card-section>
 
           <q-card-section class="q-pt-md">
@@ -166,7 +166,7 @@
               class="col-xs-12 col-lg-auto q-mr-auto q-pb-xs-sm q-pb-lg-none flex items-center"
               :class="currentScreenSize == 'xs' ? '' : 'self-center'"
             >
-              <q-btn
+              <BaseButton
                 v-if="isNavigatorCollapsed"
                 flat
                 round
@@ -177,7 +177,7 @@
                 aria-label="expandNavigator"
               >
                 <q-tooltip>Expand Navigator</q-tooltip>
-              </q-btn>
+              </BaseButton>
               <h1 class="text-h4 text-bold q-mb-none">
                 {{ tableTitle }}
               </h1>
@@ -188,22 +188,22 @@
               :class="'order-1'"
             >
 
-              <q-btn
+              <BaseButton
                 v-if="currentViewLevel === 'Shelves'"
                 no-caps
                 outline
                 icon="playlist_add"
                 label="Insert & Shift"
-                class="btn-no-wrap text-body1 btn-modern q-ml-sm"
+                class="btn-no-wrap text-body1 q-ml-sm"
                 @click="openInsertModal"
               />
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 icon="add"
                 color="accent"
                 :label="`Add ${singularLevel}`"
-                class="btn-no-wrap text-body1 btn-modern q-ml-sm"
+                class="btn-no-wrap text-body1 q-ml-sm"
                 @click="openAddModal"
               />
             </div>
@@ -241,6 +241,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed, inject } from 'vue'
 import { Notify, useQuasar } from 'quasar'
 import { useGlobalStore } from '@/stores/global-store'

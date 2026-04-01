@@ -13,16 +13,16 @@
           v-if="editJob"
           class="row q-gutter-x-sm"
         >
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
             label="Save Edits"
-            class="btn-modern"
+
             :loading="actionLoading"
             @click="updateUserAssignment"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             outline
@@ -33,16 +33,16 @@
           />
         </div>
         <div v-else-if="job?.status !== 'Completed'">
-          <q-btn
+          <BaseButton
             v-if="job?.status === 'Created' || job?.status === 'Assigned'"
             no-caps
             unelevated
             color="accent"
             label="Start Job"
-            class="btn-modern q-mr-sm"
+            class="q-mr-sm"
             @click="startJob"
           />
-          <q-btn
+          <BaseButton
             v-if="job?.status === 'Running'"
             no-caps
             flat
@@ -51,22 +51,22 @@
             class="q-mr-sm"
             @click="pauseJob"
           />
-          <q-btn
+          <BaseButton
             v-if="job?.status === 'Paused'"
             no-caps
             unelevated
             color="accent"
             label="Resume"
-            class="btn-modern q-mr-sm"
+            class="q-mr-sm"
             @click="resumeJob"
           />
-          <q-btn
+          <BaseButton
             v-if="allShelved && job?.status === 'Running'"
             no-caps
             unelevated
             color="positive"
             label="Complete Job"
-            class="btn-modern"
+
             @click="completeJob"
           />
         </div>
@@ -165,12 +165,12 @@
           </div>
 
           <div class="col-12 col-md-2">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
               :label="job?.mode === 'Manual' ? 'Shelve' : 'Scan'"
-              class="btn-modern full-width"
+              class="full-width"
               :loading="scanning"
               @click="scanAndShelve"
             />
@@ -237,7 +237,7 @@
                 </q-input>
               </div>
               <div class="col-12 col-md-4">
-                <q-btn
+                <BaseButton
                   no-caps
                   flat
                   color="grey-7"
@@ -315,7 +315,7 @@
               :props="props"
               class="text-right"
             >
-              <q-btn
+              <BaseButton
                 v-if="props.row.status !== 'Shelved'"
                 flat
                 dense
@@ -326,7 +326,7 @@
                 @click="openOverride(props.row)"
               >
                 <q-tooltip>Override location</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </q-td>
           </template>
         </q-table>
@@ -375,13 +375,13 @@
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn
+          <BaseButton
             flat
             label="Cancel"
             color="grey"
             v-close-popup
           />
-          <q-btn
+          <BaseButton
             unelevated
             label="Confirm Override"
             color="accent"
@@ -407,13 +407,13 @@
           </p>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn
+          <BaseButton
             flat
             label="No, Keep Job"
             color="grey"
             v-close-popup
           />
-          <q-btn
+          <BaseButton
             unelevated
             label="Yes, Cancel Job"
             color="negative"
@@ -444,6 +444,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
@@ -922,27 +923,4 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped lang="scss">
-.shelving-list-execute {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
 
-.form-group-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: #555;
-}
-
-.essential-table {
-  :deep(.q-table__container) {
-    border-radius: 8px;
-  }
-}
-
-.bg-accent-1 {
-  background: linear-gradient(135deg, rgba(var(--q-accent), 0.1) 0%, rgba(var(--q-accent), 0.05) 100%);
-}
-</style>

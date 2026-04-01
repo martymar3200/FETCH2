@@ -12,7 +12,7 @@
         v-if="currentScreenSize !== 'xs'"
         class="row items-center justify-end q-pb-none"
       >
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -143,7 +143,7 @@
       </q-card-section>
 
       <q-card-section class="row items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           outline
           class="full-width"
           color="accent"
@@ -300,7 +300,7 @@
         v-if="currentScreenSize == 'xs'"
         class="row items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           class="full-width"
           color="primary"
           label="Close"
@@ -312,6 +312,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import BarcodeBox from '@/components/BarcodeBox.vue'

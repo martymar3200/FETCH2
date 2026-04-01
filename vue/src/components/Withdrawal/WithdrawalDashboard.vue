@@ -33,7 +33,7 @@
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 no-caps
@@ -43,7 +43,7 @@
                 class="q-mr-sm"
                 @click="showFilterRow = !showFilterRow"
               />
-              <q-btn
+              <BaseButton
                 v-if="showFilterRow"
                 flat
                 dense
@@ -54,7 +54,7 @@
                 class="q-mr-md"
                 @click="clearColumnFilters"
               />
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
@@ -168,6 +168,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'
@@ -469,18 +470,6 @@ const createWithdrawJob = async () => {
 
 </script>
 <style lang="scss" scoped>
-.btn-modern {
-  border-radius: 8px;
-  font-weight: 500;
-  padding: 8px 16px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-}
-
 :deep(.filter-row) {
   background: rgba(0, 0, 0, 0.02);
 

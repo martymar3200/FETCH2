@@ -1,5 +1,5 @@
 <template>
-  <q-btn
+  <BaseButton
     no-caps
     flat
     dense
@@ -98,10 +98,11 @@
         </q-item>
       </q-list>
     </q-menu>
-  </q-btn>
+  </BaseButton>
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'

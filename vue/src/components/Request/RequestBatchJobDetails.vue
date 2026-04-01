@@ -42,14 +42,14 @@
               class="col-xs-grow col-sm-7 col-md-auto flex"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : 'order-1'"
             >
-              <q-btn
+              <BaseButton
                 no-caps
                 rounded
                 unelevated
                 icon-right="arrow_drop_down"
                 color="accent"
                 label="Create"
-                class="text-body1 btn-modern q-ml-xs-none q-ml-sm-sm"
+                class="text-body1 q-ml-xs-none q-ml-sm-sm"
                 :disabled="showCreatePickList || showAddPickList"
                 aria-label="createRequestJobMenu"
                 aria-haspopup="menu"
@@ -93,7 +93,7 @@
                     </q-item>
                   </q-list>
                 </q-menu>
-              </q-btn>
+              </BaseButton>
             </div>
 
             <div
@@ -101,7 +101,7 @@
               class="col-12 order-2 flex"
             >
               <div class="request-dashboard-actions q-ml-auto q-mt-md">
-                <q-btn
+                <BaseButton
                   no-caps
                   unelevated
                   :color="showCreatePickList ? 'accent' : 'positive'"
@@ -111,7 +111,7 @@
                   :loading="appActionIsLoadingData"
                   @click="showCreatePickList ? createPickListJob() : updatePickListJob()"
                 />
-                <q-btn
+                <BaseButton
                   no-caps
                   outline
                   label="Cancel"
@@ -365,7 +365,7 @@
           {{ 'Select Pick List Job' }}
         </h2>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -404,7 +404,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -417,7 +417,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -430,6 +430,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify, useQuasar } from 'quasar'

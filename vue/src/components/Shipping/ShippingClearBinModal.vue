@@ -12,7 +12,7 @@
         <h2 class="text-h6 text-bold">
           Clear Shipping Bin
         </h2>
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -59,7 +59,7 @@
 
     <template #footer-content>
       <q-card-section class="row justify-end q-pt-none">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -75,6 +75,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, nextTick } from 'vue'
 import { Notify } from 'quasar'
 import { useShippingStore } from '@/stores/shipping-store'

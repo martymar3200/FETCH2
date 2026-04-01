@@ -91,7 +91,7 @@
             >
               History
             </h2>
-            <q-btn
+            <BaseButton
               flat
               dense
               color="primary"
@@ -203,6 +203,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'

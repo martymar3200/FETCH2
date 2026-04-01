@@ -14,16 +14,16 @@
           v-if="editJob"
           class="row q-gutter-x-sm"
         >
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
             label="Save Edits"
-            class="btn-modern"
+
             :loading="actionLoading"
             @click="updateUserAssignment"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             outline
@@ -102,12 +102,12 @@
             </q-input>
           </div>
           <div class="col-auto">
-            <q-btn
+            <BaseButton
               no-caps
               unelevated
               color="accent"
               label="Retrieve"
-              class="btn-modern"
+
               :loading="scanning"
               @click="handleManualScan"
             />
@@ -185,7 +185,7 @@
               :props="props"
               class="text-right"
             >
-              <q-btn
+              <BaseButton
                 v-if="props.row.status === 'PickList' && job?.status !== 'Completed'"
                 flat
                 round
@@ -196,7 +196,7 @@
                 @click="revertItem(props.row)"
               >
                 <q-tooltip>Revert Item to Queue</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </q-td>
           </template>
         </q-table>
@@ -246,6 +246,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePicklistStore } from '@/stores/picklist-store'

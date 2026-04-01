@@ -14,16 +14,16 @@
           v-if="editJob"
           class="row q-gutter-x-sm"
         >
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="accent"
             label="Save Edits"
-            class="btn-modern"
+
             :loading="appActionIsLoadingData"
             @click="updateWithdrawJob"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             outline
@@ -37,22 +37,22 @@
           v-else-if="withdrawJob.status !== 'Completed'"
           class="row q-gutter-x-sm"
         >
-          <q-btn
+          <BaseButton
             v-if="withdrawJobItems.some(itm => itm.status !== 'Out')"
             no-caps
             unelevated
             color="accent"
             :label="withdrawJob.pick_list_id ? 'Add To Pick List Job' : 'Create Pick List Job'"
-            class="btn-modern"
+
             :disabled="withdrawJob.pick_list_id && !withdrawJobItems.some(itm => itm.status == 'In')"
             @click="withdrawJob.pick_list_id ? addToPicklistJob() : createPicklistJob()"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="positive"
             label="Withdraw Items"
-            class="btn-modern"
+
             :disabled="withdrawJobItems.length == 0 || withdrawJobItems.some(itm => itm.status !== 'Out')"
             :loading="appActionIsLoadingData"
             @click="showConfirmationModal = 'CompleteJob'"
@@ -123,7 +123,7 @@
 
           <template #table-td="{ colName, props }">
             <span v-if="colName == 'actions'">
-              <q-btn
+              <BaseButton
                 flat
                 round
                 dense
@@ -133,7 +133,7 @@
                 @click="handleRemoveItem(props.row)"
               >
                 <q-tooltip>Remove</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </span>
           </template>
         </EssentialTable>
@@ -167,7 +167,7 @@
               </h2>
             </div>
             <div class="col-auto flex items-center">
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 no-caps
@@ -177,7 +177,7 @@
                 class="q-mr-sm"
                 @click="showFilterRow = !showFilterRow"
               />
-              <q-btn
+              <BaseButton
                 v-if="showFilterRow"
                 flat
                 dense
@@ -206,7 +206,7 @@
                   />
                 </template>
               </q-input>
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 icon="upload_file"
@@ -288,7 +288,7 @@
 
           <template #table-td="{ colName, props, value }">
             <span v-if="colName == 'actions'">
-              <q-btn
+              <BaseButton
                 flat
                 round
                 dense
@@ -298,7 +298,7 @@
                 @click="handleRemoveItem(props.row)"
               >
                 <q-tooltip>Remove</q-tooltip>
-              </q-btn>
+              </BaseButton>
             </span>
             <span
               v-else-if="colName == 'status'"
@@ -329,39 +329,39 @@
     >
       <template #footer-content="{ hideModal }">
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-          <q-btn
+          <BaseButton
             v-if="showConfirmationModal == 'CompleteJob'"
             no-caps
             unelevated
             color="accent"
             label="Withdraw & Print"
-            class="btn-modern full-width"
+            class="full-width"
             :loading="appActionIsLoadingData"
             @click="completeWithdrawJob('withdrawAndPrint'); hideModal();"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             v-if="showConfirmationModal == 'CompleteJob'"
             no-caps
             unelevated
             color="accent"
             label="Withdraw Items"
-            class="btn-modern full-width"
+            class="full-width"
             :loading="appActionIsLoadingData"
             @click="completeWithdrawJob('withdraw'); hideModal();"
           />
-          <q-btn
+          <BaseButton
             v-else
             no-caps
             unelevated
             color="negative"
             label="Delete Job"
-            class="btn-modern full-width"
+            class="full-width"
             :loading="appActionIsLoadingData"
             @click="cancelWithdrawJob(); hideModal();"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -397,6 +397,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed, inject, toRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'

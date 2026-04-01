@@ -10,7 +10,7 @@
           {{ entryType == 'Scan' ? 'Scan Item' : entryType == 'Bulk' ? 'Bulk Upload Items' : 'Manual Barcode Entry' }}
         </h2>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -95,7 +95,7 @@
       <q-card-section
         class="row no-wrap justify-between items-center q-pt-sm"
       >
-        <q-btn
+        <BaseButton
           v-if="entryType == 'Scan'"
           no-caps
           unelevated
@@ -104,7 +104,7 @@
           class="text-body1 full-width"
           @click="hideModal()"
         />
-        <q-btn
+        <BaseButton
           v-else-if="entryType == 'Bulk'"
           no-caps
           unelevated
@@ -115,7 +115,7 @@
           :disabled="withdrawFile.length == 0"
           @click="bulkAddItemToWithdrawJob()"
         />
-        <q-btn
+        <BaseButton
           v-else
           no-caps
           unelevated
@@ -129,7 +129,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -142,6 +142,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'

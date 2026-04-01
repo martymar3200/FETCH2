@@ -28,7 +28,7 @@
               class="col-auto flex items-center"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? 'justify-end q-mb-md' : ''"
             >
-              <q-btn
+              <BaseButton
                 flat
                 dense
                 no-caps
@@ -38,7 +38,7 @@
                 class="q-mr-sm"
                 @click="showFilterRow = !showFilterRow"
               />
-              <q-btn
+              <BaseButton
                 v-if="showFilterRow"
                 flat
                 dense
@@ -50,7 +50,7 @@
                 @click="clearColumnFilters"
               />
 
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 outline
@@ -61,7 +61,7 @@
                 @click="showClearBinModal = true"
               />
 
-              <q-btn
+              <BaseButton
                 no-caps
                 unelevated
                 color="accent"
@@ -181,7 +181,7 @@
             </span>
 
             <div v-else-if="colName == 'actions'">
-              <q-btn
+              <BaseButton
                 flat
                 round
                 dense
@@ -200,7 +200,7 @@
                     </q-item>
                   </q-list>
                 </q-menu>
-              </q-btn>
+              </BaseButton>
             </div>
             <span v-else-if="colName == 'last_transition'">
               {{ formatDate(value) }}
@@ -220,6 +220,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'

@@ -14,17 +14,17 @@
           v-if="editJobInfo || editItems"
           class="row q-gutter-x-sm"
         >
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             :color="editJobInfo ? 'accent' : 'negative'"
             :label="editJobInfo ? 'Save Edits' : 'Revert Items to Queue'"
             :disable="editItems && !selectedItems.length"
-            class="btn-modern"
+
             :loading="actionLoading"
             @click="editJobInfo ? updateRefileJob() : revertSelectedItemsToQueue()"
           />
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             outline
@@ -210,7 +210,7 @@
                 :props="cellProps"
                 class="text-right"
               >
-                <q-btn
+                <BaseButton
                   v-if="cellProps.row.status === 'Out'"
                   flat
                   round
@@ -220,7 +220,7 @@
                   @click="confirmRevert(cellProps.row)"
                 >
                   <q-tooltip>Revert to Queue</q-tooltip>
-                </q-btn>
+                </BaseButton>
               </q-td>
             </template>
           </q-table>
@@ -251,13 +251,13 @@
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn
+          <BaseButton
             flat
             label="Cancel"
             color="primary"
             v-close-popup
           />
-          <q-btn
+          <BaseButton
             unelevated
             label="Revert"
             color="negative"
@@ -278,7 +278,7 @@
     >
       <template #footer-content="{ hideModal }">
         <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-          <q-btn
+          <BaseButton
             no-caps
             unelevated
             color="negative"
@@ -288,7 +288,7 @@
             @click="cancelRefileJob(); hideModal();"
           />
           <q-space class="q-mx-xs" />
-          <q-btn
+          <BaseButton
             outline
             no-caps
             label="Cancel"
@@ -325,6 +325,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onMounted, watch, nextTick, inject, toRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRefileStore } from '@/stores/refile-store'
@@ -858,11 +859,6 @@ const revertItem = async () => {
   flex-direction: column;
 }
 
-.btn-modern {
-  border-radius: 8px;
-  padding: 8px 24px;
-  font-weight: 600;
-}
 
 .btn-modern-outline {
   border-radius: 8px;

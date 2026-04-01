@@ -17,7 +17,7 @@
         Oops. Nothing here...
       </div>
 
-      <q-btn
+      <BaseButton
         class="text-body1 q-mt-xl"
         color="white"
         text-color="blue"
@@ -31,4 +31,5 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 </script>

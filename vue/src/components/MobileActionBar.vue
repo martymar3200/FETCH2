@@ -1,6 +1,6 @@
 <template>
   <div class="mobile-actions">
-    <q-btn
+    <BaseButton
       no-caps
       unelevated
       :icon="buttonOneIcon"
@@ -16,7 +16,7 @@
 
     <q-space class="q-mx-xs" />
 
-    <q-btn
+    <BaseButton
       no-caps
       unelevated
       :icon="buttonTwoIcon"
@@ -33,6 +33,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 //Props
 defineProps({
   buttonOneIcon: {

@@ -27,21 +27,21 @@
     >
       Would you like to install the FETCH app?
       <template #action>
-        <q-btn
+        <BaseButton
           flat
           color="white"
           label="Yes"
           class="text-body1"
           @click="installApp"
         />
-        <q-btn
+        <BaseButton
           flat
           color="white"
           label="Later"
           class="text-body1"
           @click="showAppInstallBanner = !showAppInstallBanner"
         />
-        <q-btn
+        <BaseButton
           flat
           color="white"
           label="Never"
@@ -54,6 +54,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { onMounted, ref, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { LocalStorage } from 'quasar'

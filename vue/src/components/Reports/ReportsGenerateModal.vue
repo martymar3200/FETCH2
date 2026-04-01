@@ -11,7 +11,7 @@
           {{ reportType }}
         </h2>
 
-        <q-btn
+        <BaseButton
           flat
           no-caps
           dense
@@ -22,7 +22,7 @@
           aria-label="clearFilters"
         />
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -312,12 +312,12 @@
                           @update:model-value="updateDateRange"
                         >
                           <div class="row items-center justify-end q-gutter-sm">
-                            <q-btn
+                            <BaseButton
                               label="Clear"
                               flat
                               @click="clearDateRange"
                             />
-                            <q-btn
+                            <BaseButton
                               v-close-popup
                               label="Done"
                               color="primary"
@@ -456,7 +456,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -469,7 +469,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -482,6 +482,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount, computed } from 'vue'
 import { Notify } from 'quasar'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'

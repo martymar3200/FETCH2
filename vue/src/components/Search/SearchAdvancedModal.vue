@@ -11,7 +11,7 @@
           Advanced {{ searchType }} Search
         </h2>
 
-        <q-btn
+        <BaseButton
           icon="close"
           flat
           round
@@ -240,7 +240,7 @@
                           mask="MM/DD/YYYY"
                         >
                           <div class="row items-center justify-end">
-                            <q-btn
+                            <BaseButton
                               v-close-popup
                               label="Close"
                               color="primary"
@@ -299,7 +299,7 @@
 
     <template #footer-content="{ hideModal }">
       <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
-        <q-btn
+        <BaseButton
           no-caps
           unelevated
           color="accent"
@@ -312,7 +312,7 @@
 
         <q-space class="q-mx-xs" />
 
-        <q-btn
+        <BaseButton
           outline
           no-caps
           label="Cancel"
@@ -325,6 +325,7 @@
 </template>
 
 <script setup>
+import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount, watch } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
