@@ -57,6 +57,11 @@ class ItemStatus(str, Enum):
     Verified = "Verified"
     Retrieved = "Retrieved"
 
+class ILSSyncState(str, Enum):
+    IN_SYNC = "IN_SYNC"
+    PENDING_SYNC = "PENDING_SYNC"
+    SYNC_ERROR = "SYNC_ERROR"
+
 
 class Item(Base): 
     """
@@ -77,6 +82,12 @@ class Item(Base):
     status: Mapped[Optional[str]] = mapped_column(
         SQLEnum(ItemStatus, name="item_status", nullable=False, create_type=False),
         default=ItemStatus.In,
+    )
+    
+    # ILS Sync State (Enum)
+    ils_sync_state: Mapped[Optional[str]] = mapped_column(
+        SQLEnum(ILSSyncState, name="ils_sync_state_enum", nullable=True, create_type=False),
+        nullable=True,
     )
     
     # Barcode ID (UUID Foreign Key)

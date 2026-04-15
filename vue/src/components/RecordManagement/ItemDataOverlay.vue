@@ -142,7 +142,61 @@
         </div>
       </q-card-section>
 
-      <q-card-section class="row items-center q-pt-sm">
+      <q-card-section
+        class="column q-pt-none"
+        v-if="jitMetadata"
+      >
+        <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
+          Live External Metadata
+        </h1>
+
+        <div
+          class="item-details"
+          v-if="jitMetadata?.title"
+        >
+          <label class="item-details-label">
+            Title:
+          </label>
+          <p class="item-details-text outline">
+            {{ jitMetadata.title }}
+          </p>
+        </div>
+        <div
+          class="item-details"
+          v-if="jitMetadata?.author"
+        >
+          <label class="item-details-label">
+            Author:
+          </label>
+          <p class="item-details-text">
+            {{ jitMetadata.author }}
+          </p>
+        </div>
+        <div
+          class="item-details"
+          v-if="jitMetadata?.call_number"
+        >
+          <label class="item-details-label">
+            Call Number:
+          </label>
+          <p class="item-details-text outline text-highlight">
+            {{ jitMetadata.call_number }}
+          </p>
+        </div>
+        <div
+          class="item-details"
+          v-if="jitMetadata?.bib_record_id"
+        >
+          <label class="item-details-label">
+            Bib Logic Source:
+          </label>
+          <p class="item-details-text ellipsis">
+            {{ jitMetadata.metadata_source }} ({{ jitMetadata.bib_record_id }})
+          </p>
+        </div>
+      </q-card-section>
+
+      <q-card-section class="row items-center q-pt-sm q-gutter-y-sm">
         <BaseButton
           outline
           class="full-width"
@@ -150,6 +204,14 @@
           label="Show Item Request History"
           @click="emit('update')"
           v-close-popup
+        />
+        <BaseButton
+          outline
+          class="full-width"
+          color="secondary"
+          label="Fetch Live Bibliographic Data"
+          :loading="loadingMetadata"
+          @click="fetchJitMetadata"
         />
       </q-card-section>
 
@@ -316,6 +378,8 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import BarcodeBox from '@/components/BarcodeBox.vue'
+import API from '@/http/InventoryService'
+import { Notify } from 'quasar'
 
 // Props
 const mainProps = defineProps({
@@ -336,6 +400,29 @@ const { currentScreenSize } = useCurrentScreenSize()
 
 // Local Data
 const showItemOverlay = ref(true)
+const jitMetadata = ref(null)
+const loadingMetadata = ref(false)
+
+const fetchJitMetadata = async () => {
+  loadingMetadata.value = true
+  try {
+    const barcode = renderItemBarcode()
+    const { data } = await API.get(API.getItemMetadata.replace('/metadata/', `/${barcode}/metadata`))
+    jitMetadata.value = data
+    Notify.create({
+      type: 'positive',
+      message: 'Live metadata loaded successfully'
+    })
+  } catch (err) {
+    console.error(err)
+    Notify.create({
+      type: 'negative',
+      message: err?.response?.data?.detail || 'Failed to fetch live metadata'
+    })
+  } finally {
+    loadingMetadata.value = false
+  }
+}
 
 // Logic
 const formatDateTime = inject('format-date-time')

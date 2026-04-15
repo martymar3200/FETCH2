@@ -49,6 +49,11 @@ class NonTrayItemStatus(str, Enum):
     Accessioned = "Accessioned"
     Verified = "Verified"
 
+class ILSSyncState(str, Enum):
+    IN_SYNC = "IN_SYNC"
+    PENDING_SYNC = "PENDING_SYNC"
+    SYNC_ERROR = "SYNC_ERROR"
+
 
 class NonTrayItem(Base): 
     """
@@ -70,6 +75,12 @@ class NonTrayItem(Base):
     status: Mapped[Optional[str]] = mapped_column(
         SQLEnum(NonTrayItemStatus, name="non_tray_item_status", nullable=False),
         default=NonTrayItemStatus.In,
+    )
+
+    # ILS Sync State (Enum)
+    ils_sync_state: Mapped[Optional[str]] = mapped_column(
+        SQLEnum(ILSSyncState, name="ils_sync_state_enum", nullable=True, create_type=False),
+        nullable=True,
     )
 
     # Barcode ID (UUID Foreign Key) - String literals are safe here

@@ -49,6 +49,10 @@ from app.config.exceptions import (
 )
 from app.sorting import ItemSorter
 from app.tasks import process_tray_item_move
+from app.ils.tasks import validate_accessioned_item_async
+from app.ils.interfaces import ILSItemMetadata
+from app.models.ils_configurations import ILSConfiguration
+from app.ils.factory import get_ils_adapter
 
 from app.auth.dependencies import RequiresPermission
 from app.services.audit_service import log_audit_event, AuditEventType
@@ -219,8 +223,51 @@ def get_item_by_barcode_value(value: str, session: Session = Depends(get_session
     return item
 
 
+@router.get("/barcode/{value}/metadata", response_model=ILSItemMetadata)
+def get_item_metadata_by_barcode(value: str, session: Session = Depends(get_session)):
+    """
+    [JIT METADATA LOOKUP]
+    Retrieve temporary, read-only bibliographic details from the ILS.
+    """
+    if not value:
+        raise ValidationException(detail="Item barcode value is required")
+        
+    barcode_obj = session.execute(
+        select(Barcode).where(Barcode.value == value)
+    ).scalars().first()
+    
+    if not barcode_obj:
+        raise NotFound(detail=f"Barcode value {value} not found")
+        
+    item = session.execute(select(Item).filter(Item.barcode_id == barcode_obj.id)).scalars().first()
+    non_tray_item = session.execute(select(NonTrayItem).filter(NonTrayItem.barcode_id == barcode_obj.id)).scalars().first()
+    
+    target = item or non_tray_item
+    if not target or not target.owner_id:
+        raise NotFound(detail="Cannot determine owner for item metadata lookup.")
+        
+    owner = session.get(Owner, target.owner_id)
+    if not owner or not owner.resolved_ils_configuration_id:
+        raise ValidationException(detail="No active ILS integration configured for this item's owner (or it is disabled).")
+        
+    config = session.get(ILSConfiguration, owner.resolved_ils_configuration_id)
+    if not config or not config.is_active or not config.enable_jit_metadata_hook:
+        raise ValidationException(detail="JIT Metadata lookups are disabled or inactive for this item's ILS configuration.")
+        
+    try:
+        adapter = get_ils_adapter(config)
+        return adapter.fetch_item_metadata(value)
+    except Exception as e:
+        inventory_logger.error(f"Failed to fetch JIT metadata for {value}: {e}")
+        raise InternalServerError(detail="ILS Synchronization currently unreachable or mapping failed.")
+
+
 @router.post("/", response_model=ItemDetailWriteOutput, status_code=201)
-def create_item(item_input: ItemInput, session: Session = Depends(get_session)):
+def create_item(
+    item_input: ItemInput, 
+    session: Session = Depends(get_session),
+    background_tasks: BackgroundTasks = None
+):
     """
     Create a new item in the database.
     """
@@ -325,6 +372,14 @@ def create_item(item_input: ItemInput, session: Session = Depends(get_session)):
         job_id=item_job_id,
     )
     session.commit()
+    
+    if item_job_id and background_tasks:
+        background_tasks.add_task(
+            validate_accessioned_item_async,
+            barcode_value=item_barcode,
+            owner_id=new_item.owner_id,
+            is_non_tray=False
+        )
 
     return new_item
 
@@ -641,3 +696,44 @@ def move_item(
     )
 
     return item
+
+@router.get("/{barcode_value}/ils-metadata", response_model=ILSItemMetadata, dependencies=[Depends(RequiresPermission("can_access_item_detail"))])
+def get_ils_metadata(barcode_value: str, session: Session = Depends(get_session)):
+    """
+    JIT Metadata Endpoint: Resolves the active ILS configuration for an item's owner and 
+    fetches live metadata directly without persisting it to the local catalog.
+    """
+    item = session.execute(
+        select(Item).join(Barcode, Item.barcode_id == Barcode.id).filter(Barcode.value == barcode_value)
+    ).scalars().first()
+    
+    owner_id = None
+    if item:
+        owner_id = item.owner_id
+    else:
+        non_tray_item = session.execute(
+            select(NonTrayItem).join(Barcode, NonTrayItem.barcode_id == Barcode.id).filter(Barcode.value == barcode_value)
+        ).scalars().first()
+        if non_tray_item:
+            owner_id = non_tray_item.owner_id
+            
+    if not owner_id:
+        raise NotFound(detail=f"Item with barcode {barcode_value} not found")
+        
+    owner = session.get(Owner, owner_id)
+    if not owner or not owner.resolved_ils_configuration_id:
+        raise NotFound(detail="No active ILS configuration found for this item's owner.")
+        
+    config = session.get(ILSConfiguration, owner.resolved_ils_configuration_id)
+    if not config or not config.is_active or not config.enable_jit_metadata_hook:
+        raise BadRequest(detail="JIT Metadata Hook is disabled or configuration inactive for this owner.")
+        
+    try:
+        adapter = get_ils_adapter(config)
+        metadata = adapter.fetch_item_metadata(barcode_value)
+        if not metadata:
+            raise NotFound(detail="Metadata not found in the remote ILS.")
+        return metadata
+    except Exception as e:
+        inventory_logger.error(f"Failed to fetch JIT metadata for {barcode_value}: {e}")
+        raise InternalServerError(detail="Remote ILS connection failed or timed out.")

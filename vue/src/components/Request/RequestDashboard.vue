@@ -151,6 +151,21 @@
                         </q-item-label>
                       </q-item-section>
                     </q-item>
+                    <q-item
+                      v-if="checkUserPermission('can_create_and_submit_batch_requests')"
+                      clickable
+                      v-close-popup
+                      @click="triggerIlsSyncModalOpen"
+                      role="menuitem"
+                    >
+                      <q-item-section>
+                        <q-item-label>
+                          <span class="text-no-wrap">
+                            Sync ILS Requests
+                          </span>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
                   </q-list>
                 </q-menu>
               </BaseButton>
@@ -633,6 +648,87 @@
         </q-card-section>
       </template>
     </PopupModal>
+
+    <!-- ILS Sync Modal -->
+    <PopupModal
+      v-if="showSyncIlsRequestsModal"
+      :show-actions="false"
+      @reset="showSyncIlsRequestsModal = false"
+      aria-label="ilsSyncModal"
+    >
+      <template #header-content="{ hideModal }">
+        <q-card-section class="row items-center justify-between q-pb-none">
+          <h2 class="text-h6">
+            Sync Requests from ILS
+          </h2>
+          <BaseButton
+            icon="close"
+            flat
+            round
+            dense
+            @click="hideModal()"
+          />
+        </q-card-section>
+      </template>
+
+      <template #main-content>
+        <q-card-section class="column no-wrap items-center">
+          <div class="text-body1 q-mb-md">
+            Trigger a background job to pull pending requests from configured Integration Systems.
+          </div>
+          <div class="form-group full-width">
+            <label class="form-group-label">
+              ILS Configurations
+            </label>
+            <q-select
+              v-model="selectedIlsConfigsToSync"
+              :options="ilsConfigurations.filter(c => c.is_active && c.enable_requests_hook)"
+              option-value="id"
+              option-label="name"
+              map-options
+              emit-value
+              multiple
+              outlined
+              dense
+              :loading="loadingIlsConfigs"
+              placeholder="Select Integrations"
+              class="full-width"
+            >
+              <template #no-option>
+                <q-item>
+                  <q-item-section class="text-grey">
+                    No active configurations with request syncing enabled.
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </div>
+        </q-card-section>
+      </template>
+
+      <template #footer-content="{ hideModal }">
+        <q-card-section class="row no-wrap justify-between items-center q-pt-sm">
+          <BaseButton
+            no-caps
+            unelevated
+            color="accent"
+            label="Sync Now"
+            class="text-body1 full-width"
+            :disabled="selectedIlsConfigsToSync.length === 0"
+            :loading="appActionIsLoadingData"
+            @click="submitIlsSyncRequest"
+          />
+          <q-space class="q-mx-xs" />
+          <BaseButton
+            outline
+            no-caps
+            label="Cancel"
+            class="text-body1 full-width"
+            @click="hideModal()"
+          />
+        </q-card-section>
+      </template>
+    </PopupModal>
   </div>
 </template>
 
@@ -646,6 +742,7 @@ import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useRequestStore } from '@/stores/request-store'
 import { usePicklistStore } from '@/stores/picklist-store'
+import { useIlsConfigurationStore } from '@/stores/ils-configuration-store'
 import { storeToRefs } from 'pinia'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
@@ -685,6 +782,48 @@ const {
 const { postPicklistJob, patchPicklistJobItem } = usePicklistStore()
 const { picklistJob } = storeToRefs(usePicklistStore())
 const { userData } = storeToRefs(useUserStore())
+const ilsStore = useIlsConfigurationStore()
+const { ilsConfigurations } = storeToRefs(ilsStore)
+
+// Component State
+const showSyncIlsRequestsModal = ref(false)
+const selectedIlsConfigsToSync = ref([])
+const loadingIlsConfigs = ref(false)
+
+const triggerIlsSyncModalOpen = async () => {
+  showSyncIlsRequestsModal.value = true
+  selectedIlsConfigsToSync.value = []
+  loadingIlsConfigs.value = true
+  try {
+    await ilsStore.getIlsConfigurations()
+  } catch (err) {
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to load ILS Configurations'
+    })
+  } finally {
+    loadingIlsConfigs.value = false
+  }
+}
+
+const submitIlsSyncRequest = async () => {
+  appActionIsLoadingData.value = true
+  try {
+    await ilsStore.syncIlsRequests(selectedIlsConfigsToSync.value)
+    Notify.create({
+      type: 'positive',
+      message: 'ILS Request Sync Triggered Successfully'
+    })
+    showSyncIlsRequestsModal.value = false
+  } catch (err) {
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to trigger ILS Sync'
+    })
+  } finally {
+    appActionIsLoadingData.value = false
+  }
+}
 
 // Filter State
 const showFilterRow = ref(false)

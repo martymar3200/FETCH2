@@ -37,9 +37,25 @@
       <!-- General Section -->
       <div class="col-xs-12 col-md-6">
         <div class="section-card">
-          <h2 class="section-title text-h6 text-bold q-mb-md">
-            General
-          </h2>
+          <div
+            class="row justify-between items-center q-mb-md"
+            style="border-bottom: 1px solid rgba(0, 0, 0, 0.1); padding-bottom: 0.5rem; margin-bottom: 1rem;"
+          >
+            <h2 class="text-h6 text-bold q-ma-none text-primary">
+              General
+            </h2>
+            <BaseButton
+              v-if="!ilsMetadata"
+              outline
+              dense
+              color="primary"
+              label="Look Up Details"
+              no-caps
+              size="sm"
+              :loading="isLoadingILS"
+              @click="fetchILSDetails"
+            />
+          </div>
           <div class="section-content">
             <div class="detail-row">
               <span class="detail-label">Owner</span>
@@ -89,6 +105,48 @@
                 {{ getItemLocation(itemDetails.tray ?? itemDetails) || '—' }}
               </span>
             </div>
+
+            <div
+              v-if="ilsMetadata"
+              class="q-mt-md q-pa-sm bg-grey-2 rounded-borders"
+            >
+              <div class="row justify-between items-center q-mb-sm">
+                <div class="text-subtitle2 text-bold text-primary">
+                  Live ILS Metadata
+                </div>
+                <BaseButton
+                  flat
+                  round
+                  dense
+                  icon="close"
+                  size="sm"
+                  @click="ilsMetadata = null"
+                />
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Title</span>
+                <span
+                  class="detail-value text-wrap"
+                  style="max-width: 70%; text-align: right;"
+                >{{ ilsMetadata.title || '—' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Author</span>
+                <span
+                  class="detail-value text-wrap"
+                  style="max-width: 70%; text-align: right;"
+                >{{ ilsMetadata.author || '—' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Call Number</span>
+                <span class="detail-value">{{ ilsMetadata.call_number || '—' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Material Type</span>
+                <span class="detail-value">{{ ilsMetadata.material_type || '—' }}</span>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -288,7 +346,8 @@ const router = useRouter()
 const { currentScreenSize } = useCurrentScreenSize()
 
 // Store Data
-const { getItemRequestHistory } = useRecordManagementStore()
+const recordManagementStore = useRecordManagementStore()
+const { getItemRequestHistory } = recordManagementStore
 const {
   itemDetails,
   itemRequestHistory,
@@ -301,6 +360,24 @@ const { canEditNonTrayItem } = storeToRefs(userStore)
 // Edit & History Modal Logic
 const isEditModalVisible = ref(false)
 const showAuditTrailModal = ref(false)
+
+// JIT ILS Metadata Logic
+const isLoadingILS = ref(false)
+const ilsMetadata = ref(null)
+
+const fetchILSDetails = async () => {
+  try {
+    isLoadingILS.value = true
+    ilsMetadata.value = await recordManagementStore.getIlsItemMetadata(itemDetails.value.barcode.value)
+  } catch (err) {
+    Notify.create({
+      type: 'negative',
+      message: err.response?.data?.detail || 'Failed to fetch ILS details'
+    })
+  } finally {
+    isLoadingILS.value = false
+  }
+}
 
 const isEditHidden = computed(() => {
   if (!itemDetails.value?.id) {
@@ -369,6 +446,7 @@ onMounted(() => {
 })
 watch(() => itemDetails.value.barcode, () => {
   loadRequestHistory()
+  ilsMetadata.value = null // reset JIT data on route change
 })
 
 // Helper Methods

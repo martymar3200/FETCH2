@@ -27,6 +27,7 @@ from app.database.session import commit_record, session_manager
 from app.schemas.verification_jobs import VerificationJobInput
 from app.utilities import start_session_with_audit_info
 from app.services.audit_service import log_audit_event, AuditEventType
+from app.ils.tasks import check_in_shelved_item_async
 
 
 def complete_accession_job(accession_job_id: int, original_status: str, audit_info: dict):
@@ -652,6 +653,7 @@ def manage_verification_job_change_action(verification_job: VerificationJob, upd
 
 def complete_shelving_job(shelving_job_id: int, audit_info: dict):
     try:
+        items_to_sync = []
         with session_manager() as session:
             start_session_with_audit_info(audit_info, session)
             
@@ -670,11 +672,15 @@ def complete_shelving_job(shelving_job_id: int, audit_info: dict):
                     for item in tray.items:
                         item.status = ItemStatus.In
                         session.add(item)
+                        if getattr(item, 'barcode', None):
+                            items_to_sync.append((item.barcode.value, item.owner_id, False))
             
             if shelving_job.non_tray_items:
                 for non_tray_item in shelving_job.non_tray_items:
                     non_tray_item.status = NonTrayItemStatus.In
                     session.add(non_tray_item)
+                    if getattr(non_tray_item, 'barcode', None):
+                        items_to_sync.append((non_tray_item.barcode.value, non_tray_item.owner_id, True))
 
             log_audit_event(
                 session,
@@ -685,5 +691,15 @@ def complete_shelving_job(shelving_job_id: int, audit_info: dict):
             )
 
             session.commit()
+            
+        # Fire off ILS check-ins after the commit is successful
+        for barcode_value, owner_id, is_non_tray in items_to_sync:
+            check_in_shelved_item_async(
+                barcode_value=barcode_value,
+                owner_id=owner_id,
+                is_non_tray=is_non_tray,
+                shelving_job_id=shelving_job_id
+            )
+
     except Exception as e:
         inventory_logger.error(f"Error in complete_shelving_job: {e}")

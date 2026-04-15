@@ -11,6 +11,7 @@ class OwnerInput(BaseModel):
     name: str
     owner_tier_id: int
     parent_owner_id: Optional[int] = None
+    ils_configuration_id: Optional[uuid.UUID] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -27,6 +28,7 @@ class OwnerUpdateInput(BaseModel):
     name: Optional[str] = None
     owner_tier_id: Optional[int] = None
     parent_owner_id: Optional[int] = None
+    ils_configuration_id: Optional[uuid.UUID] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -44,6 +46,7 @@ class OwnerBaseOutput(BaseModel):
     name: str
     owner_tier_id: int
     parent_owner_id: Optional[int] = None
+    ils_configuration_id: Optional[uuid.UUID] = None
 
 
 class NestedOwnerTierDetailOutput(BaseModel):

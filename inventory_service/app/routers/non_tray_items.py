@@ -45,6 +45,7 @@ from app.schemas.non_tray_items import (
 )
 from app.config.exceptions import NotFound, ValidationException
 from app.sorting import ItemSorter
+from app.ils.tasks import validate_accessioned_item_async
 
 from app.auth.dependencies import RequiresPermission
 from app.services.audit_service import log_audit_event, AuditEventType
@@ -207,7 +208,9 @@ def get_non_tray_by_barcode_value(value: str, session: Session = Depends(get_ses
 
 @router.post("/", response_model=NonTrayItemDetailWriteOutput, status_code=201)
 def create_non_tray_item(
-    item_input: NonTrayItemInput, session: Session = Depends(get_session)
+    item_input: NonTrayItemInput, 
+    session: Session = Depends(get_session),
+    background_tasks: BackgroundTasks = None
 ):
     """
     Create a new non_tray_item record
@@ -321,6 +324,14 @@ def create_non_tray_item(
         job_id=new_non_tray_item.accession_job_id,
     )
     session.commit()
+    
+    if new_non_tray_item.accession_job_id and background_tasks:
+        background_tasks.add_task(
+            validate_accessioned_item_async,
+            barcode_value=nti_barcode,
+            owner_id=new_non_tray_item.owner_id,
+            is_non_tray=True
+        )
 
     return new_non_tray_item
 

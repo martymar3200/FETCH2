@@ -92,6 +92,8 @@ from app.routers import (
     non_tray_item_retrieval_events,
     system_settings,
     shipping_jobs,
+    ils_configurations,
+    ils_sync_errors,
 )
 
 
@@ -288,5 +290,7 @@ app.include_router(item_retrieval_events.router)
 app.include_router(non_tray_item_retrieval_events.router)
 app.include_router(system_settings.router)
 app.include_router(shipping_jobs.router)
+app.include_router(ils_configurations.router)
+app.include_router(ils_sync_errors.router)
 
 add_pagination(app)

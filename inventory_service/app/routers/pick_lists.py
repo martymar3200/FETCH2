@@ -318,6 +318,7 @@ def update_pick_list(
                 original_status
             )
 
+        items_to_sync = []
         if pick_list.status == "Completed":
             request_ids = [
                 request_id
@@ -416,6 +417,8 @@ def update_pick_list(
                                 owner_id=item.owner_id,
                                 pick_list_id=id,
                             ))
+                            if getattr(item, 'barcode', None):
+                                items_to_sync.append((item.barcode.value, item.owner_id, False))
                     if non_tray_item_ids:
                         non_tray_items = (
                             session.execute(select(NonTrayItem).filter(NonTrayItem.id.in_(non_tray_item_ids)))
@@ -428,6 +431,8 @@ def update_pick_list(
                                 owner_id=non_tray_item.owner_id,
                                 pick_list_id=id,
                             ))
+                            if getattr(non_tray_item, 'barcode', None):
+                                items_to_sync.append((non_tray_item.barcode.value, non_tray_item.owner_id, True))
 
         if pick_list.status and pick_list.run_timestamp:
             existing_pick_list = manage_transition(existing_pick_list, pick_list)
@@ -485,6 +490,16 @@ def update_pick_list(
                     job_id=id,
                 )
             session.commit()
+            
+        if pick_list.status == "Completed" and items_to_sync:
+            from app.ils.tasks import check_in_picklist_item_async
+            for barcode_value, owner_id, is_non_tray in items_to_sync:
+                check_in_picklist_item_async(
+                    barcode_value=barcode_value,
+                    owner_id=owner_id,
+                    is_non_tray=is_non_tray,
+                    pick_list_id=id
+                )
 
         return sort_order_priority(
             session, existing_pick_list, existing_pick_list.requests

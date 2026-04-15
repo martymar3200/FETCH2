@@ -1,5 +1,6 @@
 # /code/app/models/owners.py - FINAL CORRECTED V2
 
+import uuid
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 from sqlalchemy import SmallInteger, Integer, String, VARCHAR, ForeignKey
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from app.models.non_tray_item_retrieval_events import NonTrayItemRetrievalEvent
     from app.models.move_discrepancies import MoveDiscrepancy
     from app.models.owner_delivery_locations import OwnerDeliveryLocation
+    from app.models.ils_configurations import ILSConfiguration
 # -----------------------------------------------------
 
 
@@ -41,6 +43,9 @@ class Owner(Base):
 
     # Self-Referential Foreign Key
     parent_owner_id: Mapped[Optional[int]] = mapped_column(ForeignKey("owners.id"), nullable=True)
+
+    # Foreign Key to ILSConfiguration (Hierarchical Inheritance)
+    ils_configuration_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("ils_configurations.id"), nullable=True)
 
     # Name field
     name: Mapped[str] = mapped_column(String(150), nullable=False, index=True, default=None)
@@ -90,3 +95,18 @@ class Owner(Base):
         back_populates="owner",
         cascade="all, delete-orphan"
     )
+
+    # 7. ILS Configuration Relationship
+    ils_configuration: Mapped[Optional["ILSConfiguration"]] = relationship(back_populates="owners")
+
+    @property
+    def resolved_ils_configuration_id(self):
+        """
+        Recursively resolves the ILS Configuration ID by checking this owner,
+        then iterating up the parent hierarchy until one is found or it hits None.
+        """
+        if self.ils_configuration_id is not None:
+            return self.ils_configuration_id
+        if self.parent_owner:
+            return self.parent_owner.resolved_ils_configuration_id
+        return None

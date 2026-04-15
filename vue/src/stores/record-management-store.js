@@ -123,6 +123,16 @@ export const useRecordManagementStore = defineStore('record-management-store', {
         console.error('Failed to update Non-Tray Item:', error)
         throw error
       }
+    },
+
+    async getIlsItemMetadata (barcodeValue) {
+      try {
+        const res = await this.$api.get(`${inventoryServiceApi.itemsIlsMetadata}${barcodeValue}/ils-metadata`)
+        return res.data
+      } catch (error) {
+        console.error('Failed to fetch ILS Item Metadata:', error)
+        throw error
+      }
     }
   }
 })

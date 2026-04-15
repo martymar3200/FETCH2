@@ -201,6 +201,30 @@ const breadcrumbList = computed(() => {
         { text: 'Manage Barcode Types' }
       ]
       break
+    case 'admin-manage-ils':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Admin',
+          to: '/admin'
+        },
+        { text: 'Manage ILS Integrations' }
+      ]
+      break
+    case 'admin-integration-issues':
+      breadCrumbs = [
+        ...breadCrumbs,
+        {
+          text: 'Admin',
+          to: '/admin'
+        },
+        {
+          text: 'Manage ILS Integrations',
+          to: '/admin/manage/ils'
+        },
+        { text: 'Integration Issues' }
+      ]
+      break
     case 'admin-location-explorer':
       breadCrumbs = [
         ...breadCrumbs,

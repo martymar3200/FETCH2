@@ -13,6 +13,8 @@ from app.models.groups import Group
 from app.models.item_retrieval_events import ItemRetrievalEvent
 from app.models.item_withdrawals import ItemWithdrawal
 from app.models.items import Item
+from app.models.ils_configurations import ILSConfiguration
+from app.models.ils_sync_errors import ILSSyncError
 from app.models.ladders import Ladder
 from app.models.link_tables import *
 from app.models.media_types import MediaType

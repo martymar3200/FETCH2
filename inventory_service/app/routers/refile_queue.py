@@ -22,6 +22,9 @@ from app.models.refile_items import RefileItem
 from app.models.refile_jobs import RefileJob
 from app.models.refile_non_tray_items import RefileNonTrayItem
 from app.models.requests import Request
+from app.models.owners import Owner
+from app.models.ils_configurations import ILSConfiguration
+from app.ils.factory import get_ils_adapter
 
 from app.schemas.refile_queue import (
     RefileQueueInput,
@@ -216,8 +219,37 @@ def add_to_refile_queue(
         non_tray_item.scanned_for_refile = False
         non_tray_item.update_dt = update_dt
 
-        session.add(non_tray_item)
+        non_tray_item.update_dt = update_dt
 
+    # -- ILS SYNCHRONOUS REFILE INTERCEPT LAYER --
+    target_entity = item or non_tray_item
+    if target_entity.owner_id:
+        owner = session.get(Owner, target_entity.owner_id)
+        if owner and owner.resolved_ils_configuration_id:
+            config = session.get(ILSConfiguration, owner.resolved_ils_configuration_id)
+            if config and config.is_active and config.enable_refile_hook:
+                adapter = get_ils_adapter(config)
+                
+                try:
+                    check_in_resp = adapter.check_in_item(lookup_barcode_value)
+                    
+                    if not check_in_resp.is_valid:
+                        raise ValidationException(detail=f"ILS Check-In Failed: {check_in_resp.message or 'Verification failed.'}")
+                        
+                    if not check_in_resp.status_matches:
+                        raise ValidationException(detail=f"ILS Refile Block: Item status is '{check_in_resp.current_status}'. Discharge at Circulation Desk first before returning to facility.")
+                        
+                except ValidationException:
+                    raise
+                except Exception as e:
+                    inventory_logger.error(f"Critical ILS adapter fail on Refile for {lookup_barcode_value}: {e}")
+                    raise ValidationException(detail="ILS Synchronization currently unreachable. Cannot verify Refile status.")
+
+    if item:
+        session.add(item)
+    elif non_tray_item:
+        session.add(non_tray_item)
+        
     session.commit()
 
     if item:

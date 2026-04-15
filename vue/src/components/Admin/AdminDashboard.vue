@@ -91,6 +91,10 @@ const adminLinkList = computed(() => {
       title: 'System Configurations',
       sublinks: [
         {
+          title: 'ILS Integrations',
+          hidden: !checkUserPermission('can_manage_system_configurations')
+        },
+        {
           title: 'Barcode Types',
           hidden: !checkUserPermission('can_manage_system_configurations')
         },
@@ -158,6 +162,16 @@ const adminLinkList = computed(() => {
         }
       ],
       hidden: !checkUserPermission('can_manage_locations')
+    },
+    {
+      title: 'System Diagnostics',
+      sublinks: [
+        {
+          title: 'Integration Issues',
+          hidden: !checkUserPermission('can_manage_system_configurations')
+        }
+      ],
+      hidden: !checkUserPermission('can_manage_system_configurations')
     }
   ]
 
@@ -185,6 +199,9 @@ const handleRouting = (link) => {
   switch (link.title) {
     case 'Manage Locations':
       router.push({ name: 'admin-location-explorer' })
+      break
+    case 'ILS Integrations':
+      router.push({ name: 'admin-manage-ils' })
       break
     case 'Barcode Types':
       router.push({ name: 'admin-manage-barcode-type' })
@@ -224,6 +241,9 @@ const handleRouting = (link) => {
       break
     case 'Add/Edit/Remove Request Type':
       router.push({ name: 'admin-manage-request-type' })
+      break
+    case 'Integration Issues':
+      router.push({ name: 'admin-integration-issues' })
       break
     default:
       break

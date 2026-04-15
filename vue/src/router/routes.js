@@ -138,6 +138,24 @@ const routes = [
         }
       },
       {
+        name: 'admin-manage-ils',
+        path: 'admin/manage/ils',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
+        name: 'admin-integration-issues',
+        path: 'admin/manage/ils/issues',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
         name: 'admin-manage-shelf-position-direction',
         path: 'admin/manage/shelf-position-direction',
         component: () => import('@/pages/AdminPage.vue'),

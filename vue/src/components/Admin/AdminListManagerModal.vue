@@ -162,6 +162,7 @@ import { storeToRefs } from 'pinia'
 import SelectInput from '@/components/SelectInput.vue'
 import TextInput from '@/components/TextInput.vue'
 import PopupModal from '@/components/PopupModal.vue'
+import { useIlsConfigurationStore } from '@/stores/ils-configuration-store'
 
 // Props
 const mainProps = defineProps({
@@ -192,6 +193,8 @@ const emit = defineEmits([
 
 // Store Data
 const { appActionIsLoadingData } = storeToRefs(useGlobalStore())
+const ilsStore = useIlsConfigurationStore()
+const { ilsConfigurations } = storeToRefs(ilsStore)
 const {
   sizeClass,
   shelfTypes,
@@ -339,9 +342,17 @@ const generateListModal = async () => {
         }
       }
 
+      // Load ILS Configurations
+      try {
+        await ilsStore.getIlsConfigurations()
+      } catch (err) {
+        console.warn('Could not load ILS Configurations:', err)
+      }
+
       inputForm.value = {
         owner_tier_id: mainProps.listData.owner_tier_id ?? '',
         parent_owner_id: mainProps.listData.parent_owner_id ?? null,
+        ils_configuration_id: mainProps.listData.ils_configuration_id ?? null,
         name: mainProps.listData.name ?? '',
         delivery_location_ids: ownerDeliveryLocationIds
       }
@@ -370,6 +381,13 @@ const generateListModal = async () => {
           field: 'name',
           label: 'Owner Name',
           required: true
+        },
+        {
+          field: 'ils_configuration_id',
+          label: 'ILS Integration Override (Optional)',
+          options: ilsConfigurations,
+          required: false,
+          allowMultiple: false
         },
         {
           field: 'delivery_location_ids',
@@ -643,6 +661,7 @@ const updateListType = async () => {
           id: payload.id,
           owner_tier_id: payload.owner_tier_id,
           parent_owner_id: payload.parent_owner_id,
+          ils_configuration_id: payload.ils_configuration_id,
           name: payload.name
         }
         await patchOwner(ownerPayload)
