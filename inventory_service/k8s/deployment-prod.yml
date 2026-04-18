@@ -5,7 +5,8 @@ metadata:
   name: inventory-service
   namespace: fetch
 spec:
-  # reconsider rss allocation further down if increasing replicas
+  # Adjust replicas based on load. Note: with multiple replicas, Alembic migrations
+  # use an advisory lock to prevent concurrent execution (see main.py).
   replicas: 1
   selector:
     matchLabels:
@@ -17,11 +18,42 @@ spec:
     spec:
       containers:
         - name: inventory-service
-          image: git.example.com:4567/fetch/inventory_service/prod:latest
+          # UPDATE: Replace with your container registry URL
+          image: YOUR_REGISTRY/fetch/inventory-api:latest
           imagePullPolicy: Always
           ports:
           - containerPort: 8001
-          # reconsider rss allocation if increasing replicas
+          # Inject secrets as environment variables
+          envFrom:
+            - secretRef:
+                name: fetch-api-secrets
+          # Startup probe — generous timeout for first-boot Alembic migrations
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          # Liveness probe — restart container if API becomes unresponsive
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Readiness probe — stop routing traffic if API is not ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Adjust resource allocation based on server specifications
           resources:
             requests:
               cpu: "1000m"
@@ -32,4 +64,4 @@ spec:
               memory: "4096Mi"
               ephemeral-storage: "500Mi"
       imagePullSecrets:
-      - name: gitlab-api-2023
+      - name: registry-credentials

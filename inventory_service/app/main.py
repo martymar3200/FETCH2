@@ -116,60 +116,29 @@ def alembic_context():
     
     alembic_cfg = Config("alembic.ini")
     try:
-        # Run migrations
-        print("Migrating...")
-        command.upgrade(alembic_cfg, "head")
-
-        # --- SCHEMASPY LOGIC (Disabled to prevent container crash) ---
-        if get_settings().APP_ENVIRONMENT not in ["debug", "production"]:
-            print("Updating Schema Docs...")
-            try:
-                bat_pos = get_settings().DATABASE_URL.find("@")
-                at_pos = get_settings().DATABASE_URL.find("@") + 1
-                last_colon_pos = get_settings().DATABASE_URL.rfind(":")
-                last_slash_pos = get_settings().DATABASE_URL.find("/") + 1
-                db_host = get_settings().DATABASE_URL[at_pos:last_colon_pos]
-                db_port = get_settings().DATABASE_URL[
-                    last_colon_pos + 1: last_colon_pos + 5
-                ]
-                db_user_password = get_settings().DATABASE_URL[last_slash_pos + 1 : bat_pos]
-                db_user, db_password = db_user_password.split(":")
-                
-                create_schemaspy = [
-                    "java",
-                    "-jar",
-                    "/code/schemaspy.jar",
-                    "-t",
-                    "pgsql11",
-                    "-dp",
-                    "/code/postgresql.jar",
-                    "-o",
-                    "/code/schema-docs",
-                    "-u",
-                    f"{db_user}",
-                    "-p",
-                    f"{db_password}",
-                    "-db",
-                    "inventory_service",
-                    "-s",
-                    "public",
-                    "-host",
-                    f"{db_host}",
-                    "-port",
-                    f"{db_port}",
-                ]
-                
-                # CRITICAL: Commented out to prevent crash if Java is missing
-                # subprocess.run(create_schemaspy, check=True)
-                print("SchemaSpy generation skipped (Java requirement bypassed).")
-                
-            except Exception as e:
-                print(f"SchemaSpy generation failed (Skipping): {e}")
+        # Use a PostgreSQL advisory lock to prevent multiple replicas/workers
+        # from running migrations concurrently. Lock ID 1 is reserved for Alembic.
+        from sqlalchemy import create_engine, text
+        engine = create_engine(get_settings().DATABASE_URL)
+        with engine.connect() as conn:
+            # pg_try_advisory_lock returns True if lock acquired, False if another
+            # process already holds it. This is non-blocking.
+            lock_acquired = conn.execute(text("SELECT pg_try_advisory_lock(1)")).scalar()
+            if lock_acquired:
+                try:
+                    print("Migration lock acquired — running Alembic migrations...")
+                    command.upgrade(alembic_cfg, "head")
+                    print("Migrations complete.")
+                finally:
+                    conn.execute(text("SELECT pg_advisory_unlock(1)"))
+                    conn.commit()
+            else:
+                print("Another instance is running migrations — skipping.")
+        engine.dispose()
 
     except Exception as e:
         print(f"Startup Error: {e}")
-        # We re-raise here because if the DB migration fails, the app IS broken.
-        # But we caught the SchemaSpy error above, so that won't stop us.
+        # Re-raise because if the DB migration fails, the app is broken.
         raise
 
 
@@ -189,15 +158,10 @@ async def lifespan(app: FastAPI):
         print(f"Warning: Permission seeding encountered an error: {e}")
         print("Continuing with application startup...")
     
-    # Mount schema docs if they exist
-    if get_settings().APP_ENVIRONMENT not in ["debug", "production"]:
-        # Only mount if directory exists to avoid errors
-        if os.path.isdir("/code/schema-docs"):
-            app.mount(
-                "/schema",
-                StaticFiles(directory="/code/schema-docs", html=True),
-                name="schema-docs",
-            )
+    # SchemaSpy removed from production image. If re-enabled in a dev environment,
+    # mount schema docs here:
+    # if os.path.isdir("/code/schema-docs"):
+    #     app.mount("/schema", StaticFiles(directory="/code/schema-docs", html=True), name="schema-docs")
             
     yield
     print("Shutting down...")

@@ -16,20 +16,37 @@ spec:
     spec:
       containers:
         - name: vue
-          image: git.example.com:4567/fetch/vue/prod:latest
+          # UPDATE: Replace with your container registry URL
+          image: YOUR_REGISTRY/fetch/web-app:latest
           imagePullPolicy: Always
           ports:
           - containerPort: 80
+          # Liveness probe — restart if NGINX stops responding
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Readiness probe — stop routing traffic if not ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
             requests:
               cpu: "250m"
               memory: "256Mi"
+              ephemeral-storage: "50Mi"
             limits:
               cpu: "500m"
               memory: "512Mi"
-            requests:
-              ephemeral-storage: "50Mi"
-            limits:
               ephemeral-storage: "200Mi"
       imagePullSecrets:
-      - name: gitlab-vue-2023
+      - name: registry-credentials

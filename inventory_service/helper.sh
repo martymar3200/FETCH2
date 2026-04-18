@@ -43,6 +43,18 @@ seed_fake_data()
   docker exec -it fetch-inventory-api python -c "$SEED_FAKE_DATA";
 }
 
+bootstrap-production() {
+    EMAIL=$1
+    FIRST_NAME=${2:-"System"}
+    LAST_NAME=${3:-"Admin"}
+    if [ -z "$EMAIL" ]; then
+        echo "Usage: ./helper.sh bootstrap-production <email> [first_name] [last_name]"
+        echo "Example: ./helper.sh bootstrap-production admin@example.com"
+        exit 1
+    fi
+    podman exec -it fetch-inventory-api python -c "from app.seed.bootstrap_production import bootstrap_admin; bootstrap_admin('$EMAIL', '$FIRST_NAME', '$LAST_NAME')"
+}
+
 run-storage-migration() {
 # do not indent on shell str
 RUN_DATA_MIGRATION="

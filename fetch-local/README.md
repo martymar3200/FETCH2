@@ -1,60 +1,127 @@
-_At this time, LC does not have the resources to offer support for this open source code. While LC will make the code available, the Library does not currently promise to address any issues which are pointed out by the community beyond what is needed for the Library's own usage._
-
 # fetch-local
 
 ## About
 
-This is the starting point for working with FETCH locally as a developer. After following the below steps, you should have all necessary repositories cloned in a pattern that is unified with the rest of the team, and you can easily launch the application with docker.
+This is the starting point for working with FETCH2 locally as a developer. After following the below steps, you should have the application running locally with Docker or Podman.
 
-## Getting started
+## Prerequisites
 
-1. Setup an ssh key in gitlab
-2. Install homebrew: https://brew.sh/
-3. Install a newer version of git: `$ brew install git`
-4. Install docker desktop
-5. Configure docker desktop to allow 8g of memory, and 200g of disk space.
+1. Install [Homebrew](https://brew.sh/)
+2. Install a newer version of git: `$ brew install git`
+3. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Podman Desktop](https://podman-desktop.io/)
+4. Configure your container runtime to allow 8g of memory, and 200g of disk space.
 
-Now run `./scripts/install.sh`
+> **Note:** The `fetch-local` compose file and helper scripts use `docker compose` commands. If you are using Podman, the `podman compose` command is a drop-in replacement — both tools use the same compose file format. The standalone build scripts in `inventory_service/` and `vue/` reference `podman` directly for deployed environment builds.
 
-This will clone each repository under the `~/workspace/fetch`
+## Getting Started
 
-Now you can change directory into the workspace copy of this repository, and delete the first clone you made. From here on out, you should work out of the new workspace.
+### 1. Clone the Repository
 
-```sh
-cd ~/workspace/fetch/fetch-local
+```bash
+git clone <your-repository-url> FETCH2
+cd FETCH2/fetch-local
 ```
 
-## Run
+### 2. Start the Application
 
-For the time being, you will need to drop off the VPN when you first run this, as we've not configured Docker to overcome traffic inspection requring x509 certs with some of the Library's new configuration in loctest. Until this happens, the VPN will block Docker from pulling some of the base images from the docker hub registry.
+```bash
+docker compose up --build
+```
 
-To run the application, run `$ docker compose up` or as detach `$ docker compose up -d or docker-compose up -d`
+Or run detached (in the background):
 
-To rebuild image for the application, run `$ docker compose up --build` or as detach `$ docker compose up -d --build`
+```bash
+docker compose up --build -d
+```
 
-All fetch containers will be served under "fetch-local" in the Docker Desktop interface. You can verify with `$ docker ps`
+On first boot, the Inventory Service container will automatically run Alembic database migrations to create the schema. Watch the `inventory-api` container logs for `"Migrating..."` and `"Application startup complete"` to confirm it's ready.
 
-## Management
+### 3. Seed Test Data
 
-Each app repository in the fetch application is responsible for providing its own image under a `/images` directory (if needed). Each app repository provides a set of helper scripts under `helper.sh` to manage local developer tasks and rebuilding images. These scripts will assume the directory tree set up by the install script.
+The database starts with only the schema — no sample data. To populate the database with test users, locations, shelves, and other sample data:
 
-### Fetch Local
-This repository has a helper script for rebuilding the database service. While you can use it directly, it's better to use the helper scripts either from Inventory Service or the WebApp to do this. The scripts in those repositories will rebuild schema and seed data. `fetch-local` maintains a script for proper context for compose to attach database rebuilds to the docker network. However, this script itself does not rebuild schema or seed data.
+```bash
+./helper.sh build-inventory-api
+```
 
-* `./helper.sh build-inventory-db` - Rebuilds the database container without wiping data.
-* `./helper.sh wipe-inventory-db` - Rebuilds the database container and wipes the data volume.
+This rebuilds the API container and runs the data seeding script, which creates:
+- Location hierarchy (buildings, modules, aisles, sides, ladders, shelves, shelf positions)
+- Three test users: `admin@example.com`, `tester1@example.com`, `tester2@example.com`
+- Groups and permissions
+- Reference data (media types, size classes, barcode types, etc.)
 
-### Inventory Service
+> **Note:** The full seed generates ~2,400 shelves and associated positions. This can take a few minutes on the first run.
 
-* Inventory Service API: 		http://127.0.0.1:8001/
-* Inventory Service API Cache: 	http://127.0.0.1:6379/
+### 4. Open the Application
 
-### Web App
-* Web App:                      http://127.0.0.1:8080/
+Navigate to **https://127.0.0.1:8000** in your browser.
+
+> **⚠️ Self-Signed Certificate Warning:** The local environment serves the web app over HTTPS with a self-signed certificate generated at build time. Your browser will show a security warning — this is expected and safe to bypass:
+> - **Chrome:** Click "Advanced" → "Proceed to 127.0.0.1 (unsafe)"
+> - **Firefox:** Click "Advanced…" → "Accept the Risk and Continue"
+> - **Safari:** Click "Show Details" → "visit this website"
+>
+> On macOS, you can optionally add the generated certificates from `fetch-local/.certs/` to your Keychain to suppress the warning.
+
+### 5. Log In
+
+In local and debug environments, a **legacy login** endpoint is available that does not require an SSO identity provider. Use the login form with one of the seeded user emails:
+
+| Email | Name |
+|---|---|
+| `admin@example.com` | Admin Istrator |
+| `tester1@example.com` | Tester One |
+| `tester2@example.com` | Tester Two |
+
+After logging in, users may need to be assigned to **Groups** (via Admin > Groups) to gain access to specific workflows. Permissions are group-based, not user-based.
+
+## Stopping and Restarting
+
+```bash
+# Stop all containers
+docker compose down
+
+# Start again (without rebuilding)
+docker compose up -d
+
+# Start with a full rebuild (after code changes)
+docker compose up --build -d
+```
+
+## Helper Scripts
+
+Each app repository provides helper scripts under `helper.sh` for common developer tasks. These scripts assume the directory tree created by the install process (all repos side-by-side in the same parent directory).
+
+### fetch-local
+
+| Command | Description |
+|---|---|
+| `./helper.sh build-inventory-api` | Rebuild the API container and re-seed the database |
+| `./helper.sh build-inventory-db` | Rebuild the database container (without wiping data) |
+| `./helper.sh wipe-inventory-db` | Rebuild the database container **and wipe all data** |
+
+### Database Reset
+
+To completely reset the database (wipe data, rebuild schema, and re-seed):
+
+```bash
+./helper.sh wipe-inventory-db
+sleep 5
+./helper.sh build-inventory-api
+```
+
+Or use the `refresh-db` command from the `inventory_service/` or `vue/` helper scripts, which automate this sequence.
+
+## Services
+
+| Service | URL | Notes |
+|---|---|---|
+| Web App | https://127.0.0.1:8000/ | Vue/Quasar PWA served via NGINX |
+| Inventory API | http://127.0.0.1:8001/ | FastAPI backend (OpenAPI docs at `/docs`) |
+| PGAdmin | http://127.0.0.1:5050/ | Database management UI |
+| PostgreSQL | `localhost:5432` | Connect via PGAdmin or `psql` |
 
 ### PGAdmin
-
-* PG Admin:						http://127.0.0.1:5050/
 
 Local login user: `admin@fetch.example.com`
 Local login pass: `admin`
@@ -73,10 +140,3 @@ Leave the port as is, and select option to remember password.
 ### Postgres
 
 The Postgres Engine is served on port 5432. Interact with it either through pgAdmin, or by jumping into PSQL inside the Postgres container.
-
-### Redis Commander
-
-* Redis Commander: 	http://127.0.0.1:8081/
-
-Local login user: `root`
-Local login pass: `toor`

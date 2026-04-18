@@ -1,4 +1,3 @@
-_At this time, LC does not have the resources to offer support for this open source code. While LC will make the code available, the Library does not currently promise to address any issues which are pointed out by the community beyond what is needed for the Library's own usage._
 
 # Fetch App
 
@@ -31,22 +30,22 @@ See [Pinia Docs](https://pinia.vuejs.org/getting-started.html)
 
 ## 1. Installing the application
 
-You can either install the application using the quick install (uses podman and brew) or the manual install guides.
+You can either install the application using the quick install (uses Docker or Podman and brew) or the manual install guides.
 
 ### Quick Installation (Uses a containerized version of the app)
 
-You will need podman and brew installed for this version to work on your pc.
+You will need Docker or Podman and brew installed for this version to work on your pc.
 
-Head to the [fetch-local](https://git.example.com/fetch/fetch-local) repo and follow instructions up to the 'run' step to get a fully working FETCH Application.
+Head to the `fetch-local` directory in the monorepo and follow instructions up to the 'run' step to get a fully working FETCH2 Application.
 
 _This version will run in pwa mode by default if you need spa mode manual installation is recommended._
 
 ### Manual installation Guide
 
-**1. Clone the repository into your local branch using git (make sure you have ssh access beforehand)**
+**1. Clone the FETCH2 monorepo and navigate to the `vue/` directory**
 
 ```bash
-git clone ssh://git@git.example.com:7999/fetch/vue.git
+cd vue
 ```
 
 **2. Install the dependencies**
@@ -214,3 +213,18 @@ See [Quasar PWA With Vite](https://quasar.dev/quasar-cli-vite/developing-pwa/int
 See [Vitest](https://vitest.dev/guide/).
 See [Vue-Html-To-Paper](https://www.npmjs.com/package/vue-html-to-paper).
 See [Vue-Json-Excel3](https://www.npmjs.com/package/vue-json-excel3?activeTab=readme).
+
+
+## 8. Features Added During Development
+
+The following features were added to the FETCH2 frontend beyond the original baseline:
+
+- **Shipping Workflow** — Full shipping job management with manifest generation (`/shipping`)
+- **ILS Integration Admin** — Configuration UI for Integrated Library System connections and sync error monitoring (`/admin/manage/ils`)
+- **User Settings** — User profile and preferences page (`/user/settings`)
+- **Admin User Management** — User administration panel (`/admin/users`)
+- **Location Management** — Bulk location updates and explorer UI (`/admin/locations`)
+- **Offline PWA Sync** — IndexedDB-backed offline operation logging, replacing the previous Service Worker-based request queue
+- **Advanced Search** — Dedicated search results page with multi-entity search (`/search-results`)
+- **Shelving Enhancements** — Direct-to-Shelve, Shelve-by-List, and Move job workflows
+- **CSS Architecture Overhaul** — Centralized design tokens and refactored component styles across 60+ files
