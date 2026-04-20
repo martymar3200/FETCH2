@@ -2,7 +2,7 @@
 
 **FETCH2** is an inventory management system for tracking and managing physical collections in high-density storage facilities. It provides a complete workflow for accessioning, verifying, shelving, retrieving, shipping, refiling, and withdrawing items — with barcode scanning, location tracking, and integration with Integrated Library Systems (ILS) like FOLIO.
 
-> This project was originally forked from the [Library of Congress open source FETCH system](https://github.com/LibraryOfCongress/fetch) and has been significantly extended with new workflows, an ILS integration framework, offline-capable PWA support, a modernized CSS architecture, and a comprehensive backend test suite.
+> This project was originally forked from the [Library of Congress open source FETCH system](https://github.com/LibraryOfCongress?q=FETCH&type=all&language=&sort=) and has been significantly extended with new workflows, an ILS integration framework, offline-capable PWA support, a modernized CSS architecture, and a comprehensive backend test suite.
 
 ---
 
