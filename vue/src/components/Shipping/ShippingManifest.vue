@@ -151,7 +151,7 @@
                 :key="item.id"
                 class="text-caption"
               >
-                {{ item.title }} ({{ item.barcode?.value }})
+                ({{ item.barcode?.value }})
               </div>
             </td>
             <td class="text-right">

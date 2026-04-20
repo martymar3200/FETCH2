@@ -92,36 +92,6 @@
                 >
                   <q-list>
                     <q-item
-                      v-if="checkUserPermission('can_add_to_picklist_job')"
-                      clickable
-                      v-close-popup
-                      @click="handlePickListModalOpen('Add')"
-                      role="menuitem"
-                    >
-                      <q-item-section>
-                        <q-item-label>
-                          <span>
-                            Add to Pick List
-                          </span>
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="checkUserPermission('can_create_picklist_job')"
-                      clickable
-                      v-close-popup
-                      @click="handlePickListModalOpen('Create')"
-                      role="menuitem"
-                    >
-                      <q-item-section>
-                        <q-item-label>
-                          <span>
-                            Create a Pick List
-                          </span>
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item
                       v-if="checkUserPermission('can_create_and_submit_manual_requests')"
                       clickable
                       v-close-popup
@@ -162,6 +132,37 @@
                         <q-item-label>
                           <span class="text-no-wrap">
                             Sync ILS Requests
+                          </span>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-separator v-if="checkUserPermission('can_create_picklist_job') || checkUserPermission('can_add_to_picklist_job')" />
+                    <q-item
+                      v-if="checkUserPermission('can_create_picklist_job')"
+                      clickable
+                      v-close-popup
+                      @click="handlePickListModalOpen('Create')"
+                      role="menuitem"
+                    >
+                      <q-item-section>
+                        <q-item-label>
+                          <span>
+                            Create a Pick List
+                          </span>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="checkUserPermission('can_add_to_picklist_job')"
+                      clickable
+                      v-close-popup
+                      @click="handlePickListModalOpen('Add')"
+                      role="menuitem"
+                    >
+                      <q-item-section>
+                        <q-item-label>
+                          <span>
+                            Add to Pick List
                           </span>
                         </q-item-label>
                       </q-item-section>

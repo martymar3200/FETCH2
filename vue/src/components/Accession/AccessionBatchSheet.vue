@@ -20,8 +20,8 @@
           <p class="text-bold">
             Accession Job User:
             {{
-              accessionJobDetails.user
-                ? accessionJobDetails.user.name
+              accessionJobDetails.assigned_user
+                ? accessionJobDetails.assigned_user.name
                 : "No Assignee"
             }}
           </p>

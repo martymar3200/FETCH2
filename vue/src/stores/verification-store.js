@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
+import { useUserStore } from '@/stores/user-store'
 
 export const useVerificationStore = defineStore('verification-store', {
   state: () => ({
@@ -163,7 +164,7 @@ export const useVerificationStore = defineStore('verification-store', {
         //pass an update to verification job to track which user added a new tray item
         await this.$api.patch(`${inventoryServiceApi.verificationJobs}${payload.verification_job_id}/add`, {
           barcode_value: payload.barcode_value,
-          assigned_user_id: payload.assigned_user_id
+          user_id: payload.user_id
         })
 
         this.verificationContainer.items = [
@@ -200,7 +201,7 @@ export const useVerificationStore = defineStore('verification-store', {
         await Promise.all(barcodeItemList.map(item => {
           return this.$api.patch(`${inventoryServiceApi.verificationJobs}${this.verificationJob.id}/remove`, {
             barcode_value: item.barcode.value,
-            assigned_user_id: item.assigned_user_id
+            user_id: useUserStore().userData.user_id
           })
         }))
 
@@ -238,7 +239,7 @@ export const useVerificationStore = defineStore('verification-store', {
         //pass an update to verification job to track which user added a new tray item
         await this.$api.patch(`${inventoryServiceApi.verificationJobs}${payload.verification_job_id}/add`, {
           barcode_value: payload.barcode_value,
-          assigned_user_id: payload.assigned_user_id
+          user_id: payload.user_id
         })
 
         // set the item as the container since there is no tray container for non tray jobs
@@ -274,7 +275,7 @@ export const useVerificationStore = defineStore('verification-store', {
         await Promise.all(barcodeItemList.map(item => {
           return this.$api.patch(`${inventoryServiceApi.verificationJobs}${this.verificationJob.id}/remove`, {
             barcode_value: item.barcode.value,
-            assigned_user_id: item.assigned_user_id
+            user_id: useUserStore().userData.user_id
           })
         }))
 

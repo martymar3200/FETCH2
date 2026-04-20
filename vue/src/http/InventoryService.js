@@ -22,6 +22,7 @@ export default {
   containerTypes: '/container-types/',
   getItemMetadata: '/items/barcode/metadata/',
   groups: '/groups/',
+  history: '/history/',
   ilsConfigurations: '/ils-configurations/',
   ilsConfigurationsSyncRequests: '/ils-configurations/sync-requests',
   ilsSyncErrors: '/ils-sync-errors/',

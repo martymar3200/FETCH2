@@ -138,6 +138,15 @@ const routes = [
         }
       },
       {
+        name: 'admin-manage-manual-request-settings',
+        path: 'admin/manage/manual-request-settings',
+        component: () => import('@/pages/AdminPage.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresPerm: 'can_manage_system_configurations'
+        }
+      },
+      {
         name: 'admin-manage-ils',
         path: 'admin/manage/ils',
         component: () => import('@/pages/AdminPage.vue'),

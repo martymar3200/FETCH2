@@ -27,6 +27,10 @@
       v-if="route.name == 'admin-manage-child-owner-shelving'"
     />
 
+    <AdminManualRequestSettings
+      v-if="route.name == 'admin-manage-manual-request-settings'"
+    />
+
     <AdminUserManagement
       v-if="route.name == 'admin-users'"
     />
@@ -36,7 +40,7 @@
     />
 
     <AdminListManagerDisplay
-      v-if="route.name.includes('admin-manage') && !['admin-manage-shelf-position-direction', 'admin-manage-child-owner-shelving', 'admin-manage-shipping', 'admin-manage-ils'].includes(route.name)"
+      v-if="route.name.includes('admin-manage') && !['admin-manage-shelf-position-direction', 'admin-manage-child-owner-shelving', 'admin-manage-manual-request-settings', 'admin-manage-shipping', 'admin-manage-ils'].includes(route.name)"
       :list-type="route.name.split('admin-manage-').pop()"
     />
 
@@ -59,6 +63,7 @@ import AdminILSConfiguration from '@/components/Admin/AdminILSConfiguration.vue'
 import AdminIntegrationIssues from '@/components/Admin/AdminIntegrationIssues.vue'
 import AdminShelfPositionDirection from '@/components/Admin/AdminShelfPositionDirection.vue'
 import AdminChildOwnerShelving from '@/components/Admin/AdminChildOwnerShelving.vue'
+import AdminManualRequestSettings from '@/components/Admin/AdminManualRequestSettings.vue'
 import AdminUserManagement from '@/components/Admin/AdminUserManagement.vue'
 import AdminShippingSettings from '@/components/Admin/AdminShippingSettings.vue'
 

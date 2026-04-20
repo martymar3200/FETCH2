@@ -456,7 +456,7 @@
         <BaseButton
           no-caps
           unelevated
-          color="accent"
+          color="positive"
           label="Complete"
           class="text-body1 full-width"
           :loading="appActionIsLoadingData"
@@ -470,7 +470,7 @@
         <BaseButton
           no-caps
           unelevated
-          color="accent"
+          color="positive"
           label="Complete & Print"
           class="btn-no-wrap text-body1 full-width"
           :loading="appActionIsLoadingData"
@@ -1113,7 +1113,6 @@ const addContainerItem = async () => {
         scanned_for_verification: true,
         size_class_id: verificationContainer.value.size_class_id,
         status: 'In',
-        title: 'Unknown Title', // Should ask user?
         tray_id: verificationContainer.value.id,
         verification_job_id: verificationJob.value.id,
         volume: 'I',
@@ -1247,9 +1246,9 @@ const handleConfirmationModal = async (type) => {
     } else if (type === 'deleteItem') {
       const item = showConfirmation.value.item
       if (verificationJob.value.trayed) {
-        await deleteVerificationTrayItem([item.id])
+        await deleteVerificationTrayItem([item])
       } else {
-        await deleteVerificationNonTrayItem([item.id])
+        await deleteVerificationNonTrayItem([item])
       }
       // Also delete barcode?
       // Original code did: await deleteBarcode(item.barcode.id)
@@ -1266,11 +1265,10 @@ const handleConfirmationModal = async (type) => {
       selectedItems.value = []
     } else if (type === 'delete') {
       // Bulk delete logic if needed
-      const itemIds = selectedItems.value.map(i => i.id)
       if (verificationJob.value.trayed) {
-        await deleteVerificationTrayItem(itemIds)
+        await deleteVerificationTrayItem(selectedItems.value)
       } else {
-        await deleteVerificationNonTrayItem(itemIds)
+        await deleteVerificationNonTrayItem(selectedItems.value)
       }
       // Bulk delete barcodes
       await Promise.all(selectedItems.value.map(i => deleteBarcode(i.barcode.id)))

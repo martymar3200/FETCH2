@@ -55,7 +55,10 @@
         <div class="col-12 q-mb-md">
           <div class="form-group">
             <label class="form-group-label">
-              Requestor Name
+              Requestor Name <span
+                v-if="systemSettingsRequiredFields.includes('requestor_name')"
+                class="text-caption text-negative"
+              >(Required)</span>
             </label>
             <TextInput
               v-model="manualRequestForm.requestor_name"
@@ -67,7 +70,10 @@
         <div class="col-12 q-mb-md">
           <div class="form-group">
             <label class="form-group-label">
-              Priority
+              Priority <span
+                v-if="systemSettingsRequiredFields.includes('priority_id')"
+                class="text-caption text-negative"
+              >(Required)</span>
             </label>
             <SelectInput
               v-model="manualRequestForm.priority_id"
@@ -83,7 +89,10 @@
         <div class="col-12 q-mb-md">
           <div class="form-group">
             <label class="form-group-label">
-              Select Request Type
+              Select Request Type <span
+                v-if="systemSettingsRequiredFields.includes('request_type_id')"
+                class="text-caption text-negative"
+              >(Required)</span>
             </label>
             <SelectInput
               v-model="manualRequestForm.request_type_id"
@@ -99,7 +108,10 @@
         <div class="col-12">
           <div class="form-group">
             <label class="form-group-label">
-              Delivery Location
+              Delivery Location <span
+                v-if="systemSettingsRequiredFields.includes('delivery_location_id')"
+                class="text-caption text-negative"
+              >(Required)</span>
             </label>
             <SelectInput
               v-model="manualRequestForm.delivery_location_id"
@@ -231,11 +243,12 @@ const { compiledBarCode } = useBarcodeScanHandler()
 // Store Data
 const { appActionIsLoadingData } = storeToRefs(useGlobalStore())
 const { userData } = storeToRefs(useUserStore())
+const optionStore = useOptionStore()
 const {
   requestsTypes,
   requestsPriorities,
   requestsLocations
-} = storeToRefs(useOptionStore())
+} = storeToRefs(optionStore)
 const {
   postRequestJob,
   patchRequestJob,
@@ -263,6 +276,7 @@ const manualRequestForm = ref({
   delivery_location_id: null,
   priority_id: null
 })
+const systemSettingsRequiredFields = ref([])
 const renderRequestModalTitle = computed(() => {
   if (mainProps.type == 'manual') {
     return 'Create Manual Request'
@@ -275,13 +289,12 @@ const renderRequestModalTitle = computed(() => {
 const isRequestjobFormValid = computed(() => {
   let formIsValid = false
   if (mainProps.type == 'manual' || mainProps.type == 'edit') {
-    // if any value in our form is null or empty form is not valid except for priority since thats optional
     const optionalFields = [
       'requestor_name',
       'priority_id',
       'request_type_id',
       'delivery_location_id'
-    ]
+    ].filter(field => !systemSettingsRequiredFields.value.includes(field))
     formIsValid = Object.keys(manualRequestForm.value).every(key => optionalFields.includes(key) || (manualRequestForm.value[key] !== null && manualRequestForm.value[key] !== ''))
   } else {
     formIsValid = requestFile.value.length == 0 ? false : true
@@ -294,7 +307,7 @@ const allowItemBarcodeScan = ref(false)
 
 const handleCSVDownload = inject('handle-csv-download')
 
-onMounted(() => {
+onMounted(async () => {
   if (mainProps.type == 'edit') {
     //populate or request form with the passed in request data
     manualRequestForm.value = {
@@ -305,6 +318,15 @@ onMounted(() => {
       delivery_location_id: mainProps.requestData.delivery_location_id,
       priority_id: mainProps.requestData.priority_id
     }
+  }
+
+  try {
+    const setting = await optionStore.getSystemSetting('manual_request_required_fields')
+    if (setting && setting.value) {
+      systemSettingsRequiredFields.value = JSON.parse(setting.value)
+    }
+  } catch (error) {
+    // Setting doesn't exist yet, that's completely safely fine.
   }
 })
 

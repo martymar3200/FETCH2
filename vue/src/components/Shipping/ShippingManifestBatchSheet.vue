@@ -62,7 +62,7 @@
                     :key="item.id"
                     class="q-mb-xs"
                   >
-                    {{ item.title }} ({{ item.barcode?.value }})
+                    ({{ item.barcode?.value }})
                   </div>
                 </td>
               </tr>

@@ -28,7 +28,7 @@
         <BaseButton
           no-caps
           unelevated
-          color="accent"
+          color="positive"
           label="Complete"
           class="col-grow text-body1"
           :loading="loading"
@@ -38,7 +38,7 @@
         <BaseButton
           no-caps
           unelevated
-          color="accent"
+          color="positive"
           label="Complete & Print"
           class="col-grow text-body1"
           :loading="loading"
@@ -116,7 +116,7 @@ defineProps({
   },
   confirmColor: {
     type: String,
-    default: 'accent'
+    default: 'positive'
   },
   cancelLabel: {
     type: String,

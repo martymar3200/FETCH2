@@ -380,7 +380,7 @@
         <BaseButton
           no-caps
           unelevated
-          color="accent"
+          color="positive"
           label="Complete"
           class="text-body1 full-width"
           :loading="appActionIsLoadingData"
@@ -394,7 +394,7 @@
         <BaseButton
           no-caps
           unelevated
-          color="accent"
+          color="positive"
           label="Complete & Print"
           class="btn-no-wrap text-body1 full-width"
           :loading="appActionIsLoadingData"

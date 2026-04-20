@@ -301,15 +301,9 @@ export const useShelvingStore = defineStore('shelving-store', {
                   // move to bottom
                   this.shelvingJob[listName].splice(index, 1)
                   this.shelvingJob[listName].push(item)
-                } else {
-                  // Add new (Direct workflow)
-                  this.shelvingJob[listName] = [
-                    ...this.shelvingJob[listName],
-                    this.shelvingJobContainer
-                  ]
                 }
               } else {
-                this.shelvingJob[listName] = [this.shelvingJobContainer]
+                this.shelvingJob[listName] = []
               }
             }
 
@@ -332,6 +326,19 @@ export const useShelvingStore = defineStore('shelving-store', {
             ...this.shelvingJobContainer,
             ...res.data
           }
+
+          const listName = (res.data.container_type?.type === 'Tray' || res.data.items !== undefined) ? 'trays' : 'non_tray_items'
+          if (!this.shelvingJob[listName]) {
+            this.shelvingJob[listName] = []
+          }
+
+          const index = this.shelvingJob[listName].findIndex(c => c.id === res.data.id)
+          if (index !== -1) {
+            this.shelvingJob[listName].splice(index, 1, this.shelvingJobContainer)
+          } else {
+            this.shelvingJob[listName].push(this.shelvingJobContainer)
+          }
+
           if (res.data.next_available_position !== undefined) {
             this.shelvingJob.nextAvailablePosition = res.data.next_available_position
           }

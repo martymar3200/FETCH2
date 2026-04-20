@@ -530,7 +530,7 @@ def add_item_to_verification_job(
                     tray_barcode_value=barcode.value,
                     item_barcode_value=item_barcode.value,
                     change_type="Added",
-                    completed_by_id=verification_job.user_id
+                    completed_by_id=input.user_id
                 ))
         session.bulk_save_objects(new_verification_changes)
         session.commit()
@@ -545,7 +545,7 @@ def add_item_to_verification_job(
             tray_barcode_value=tray_barcode.value,
             item_barcode_value=barcode.value,
             change_type="Added",
-            completed_by_id=verification_job.user_id
+            completed_by_id=input.user_id
         )
         commit_record(session, new_verification_change)
     else:
@@ -558,7 +558,7 @@ def add_item_to_verification_job(
             workflow_id=verification_job.workflow_id,
             item_barcode_value=barcode.value,
             change_type="Added",
-            completed_by_id=verification_job.user_id
+            completed_by_id=input.user_id
         )
         commit_record(session, new_verification_change)
 
@@ -638,7 +638,7 @@ def remove_item_from_verification_job(
                     tray_barcode_value=barcode.value,
                     item_barcode_value=item_barcode.value,
                     change_type="Removed",
-                    completed_by_id=verification_job.user_id
+                    completed_by_id=input.user_id
                 ))
         session.bulk_save_objects(new_verification_changes)
         session.commit()
@@ -653,7 +653,7 @@ def remove_item_from_verification_job(
             tray_barcode_value=tray_barcode.value,
             item_barcode_value=barcode.value,
             change_type="Removed",
-            completed_by_id=verification_job.user_id
+            completed_by_id=input.user_id
         )
         commit_record(session, new_verification_change)
     else:
@@ -664,7 +664,7 @@ def remove_item_from_verification_job(
             workflow_id=verification_job.workflow_id,
             item_barcode_value=barcode.value,
             change_type="Removed",
-            completed_by_id=verification_job.user_id
+            completed_by_id=input.user_id
         )
         commit_record(session, new_verification_change)
 

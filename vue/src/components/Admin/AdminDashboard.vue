@@ -107,6 +107,10 @@ const adminLinkList = computed(() => {
           hidden: !checkUserPermission('can_manage_system_configurations')
         },
         {
+          title: 'Manual Request Settings',
+          hidden: !checkUserPermission('can_manage_system_configurations')
+        },
+        {
           title: 'Shipping Module',
           hidden: !checkUserPermission('can_manage_system_configurations')
         }
@@ -211,6 +215,9 @@ const handleRouting = (link) => {
       break
     case 'Child Owner Shelving':
       router.push({ name: 'admin-manage-child-owner-shelving' })
+      break
+    case 'Manual Request Settings':
+      router.push({ name: 'admin-manage-manual-request-settings' })
       break
     case 'Shipping Module':
       router.push({ name: 'admin-manage-shipping' })

@@ -19,8 +19,8 @@
           <p class="text-bold">
             Verification Job User:
             {{
-              verificationJobDetails.user
-                ? verificationJobDetails.user.name
+              verificationJobDetails.assigned_user
+                ? verificationJobDetails.assigned_user.name
                 : "No Assignee"
             }}
           </p>
