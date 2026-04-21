@@ -46,7 +46,7 @@ DOCKER_CLEANUP_COMMAND = "docker system prune -fa"
 DOCKER_CLEANUP_VOLUME_COMMAND = "docker volume prune -fa"
 
 ALEMBIC_UPGRADE_COMMAND = "alembic upgrade head"
-TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/test_database"
+TEST_DATABASE_URL = "postgresql://user:pass@localhost:5433/test_database"
 
 # Create a new database for testing
 engine = create_engine(TEST_DATABASE_URL)

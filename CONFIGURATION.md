@@ -61,6 +61,9 @@ Configure connections to Integrated Library Systems (e.g., FOLIO, ALMA) for auto
 | **Expected Picklist Status** | The ILS status when items are picked for retrieval (e.g., "In Transit") |
 | **Integration Active** | Master toggle to enable/disable the connection |
 
+> [!CAUTION]
+> **Credential Safety:** `Client Secret` values are sensitive and should **never** be hardcoded in any local configuration files, docker-compose manifests, or plain-text scripts that are committed to version control. Always use a secure secret management solution for production credentials.
+
 **Feature / Hook Toggles:**
 
 | Toggle | Description |

@@ -15,10 +15,10 @@ SECRET_KEY = os.urandom(24)
 
 # Configure the database connection to PostgreSQL
 SQLALCHEMY_DATABASE_URI = (
-    # 'postgresql://postgres:postgres@fetch-postgres:5432/inventory_service'
-    # 'postgresql://postgres:postgres@host.docker.internal:5432/inventory_service'
-    # 'postgresql://postgres:postgres@inventory-database:5432/inventory_service'
-    'postgresql://postgres:postgres@postgres:5432/inventory_service'
+    # 'postgresql://user:pass@fetch-postgres:5432/inventory_service'
+    # 'postgresql://user:pass@host.docker.internal:5432/inventory_service'
+    # 'postgresql://user:pass@inventory-database:5432/inventory_service'
+    'postgresql://user:pass@postgres:5432/inventory_service'
 )
 
 # SQLALCHEMY_DATABASE_URI = 'postgresql://your_postgres_user:your_postgres_password@postgres:5432/your_database_name'

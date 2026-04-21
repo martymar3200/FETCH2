@@ -30,7 +30,48 @@ Each folder has its own `README.md` with detailed documentation. **Start with `f
 - [Homebrew](https://brew.sh/) (macOS)
 - Git
 
-### 1. Clone and Launch
+### 2. Configure Environment Variables
+
+The application requires environment variables to manage secrets and connections. **You must perform these steps before running the system for the first time:**
+
+**Backend (`inventory_service`):**
+```bash
+cd inventory_service
+cp .env.example .env
+```
+
+**Frontend (`vue`):**
+```bash
+cd vue/env
+cp .env.example .env.local
+```
+
+**Local Infrastructure (`fetch-local`):**
+```bash
+cd fetch-local
+cp .env.example .env
+```
+
+> [!IMPORTANT]  
+> **Rebuild Required**: Because the Vue frontend is compiled at build-time, any changes to `.env.local` will NOT take effect until you rebuild the container:
+> ```bash
+> docker-compose build web
+> docker-compose up -d web
+> ```
+
+> [!WARNING]  
+> **Security Notice:** The default credentials in `.env.example` files are for **local development only**. In production, all secrets must be generated uniquely and injected securely (e.g., via K8s Secrets).
+
+### 3. Setup SSL (Optional but Recommended)
+To avoid "Insecure Connection" warnings in your browser, install `mkcert` and generate trusted certificates:
+```bash
+brew install mkcert
+mkcert -install
+cd fetch-local/.certs
+mkcert localhost 127.0.0.1 ::1
+```
+
+### 4. Build and Run
 
 ```bash
 git clone <your-repository-url> FETCH2

@@ -60,7 +60,7 @@ services:
             - fetch
         environment:
             - PGADMIN_DEFAULT_EMAIL=admin@fetch.example.com
-            - PGADMIN_DEFAULT_PASSWORD=admin
+            - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
         ports:
             - "5050:80"
         volumes:
@@ -71,7 +71,9 @@ services:
             dockerfile: images/api.local.Containerfile
         container_name: fetch-inventory-api
         environment:
-            - SECRET_KEY=local-dev-secret-key
+            - SECRET_KEY=${FETCH_SECRET_KEY:-local-dev-secret-key}
+            - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@inventory-database:5432/inventory_service}
+            - MIGRATION_URL=${MIGRATION_URL:-postgresql://postgres:postgres@inventory-database:5432/inventory_service}
         volumes:
             - /var/log/fetch:/code/app/logs:rw
             - ./.certs:/code/certs:ro

@@ -5,7 +5,6 @@ FROM dpage/pgadmin4
 # # Set environment variables
 # ENV PGADMIN_VERSION=7.1
 # ENV PGADMIN_DEFAULT_EMAIL=admin@fetch.example.com
-# ENV PGADMIN_DEFAULT_PASSWORD=admin
 
 # # Install dependencies
 # RUN apt-get update && apt-get install -y libgmp-dev libpq-dev

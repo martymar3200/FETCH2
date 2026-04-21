@@ -43,7 +43,7 @@ from app.models.users import User
 from app.models.requests import Request
 from app.main import app as fastapi_app
 
-TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/test_database"
+TEST_DATABASE_URL = "postgresql://user:pass@localhost:5433/test_database"
 
 
 # ---------------------------------------------------------------------------

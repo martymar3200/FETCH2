@@ -19,24 +19,37 @@ This is the starting point for working with FETCH2 locally as a developer. After
 
 ```bash
 git clone <your-repository-url> FETCH2
-cd FETCH2/fetch-local
+cd FETCH2
 ```
 
-### 2. Start the Application
+### 2. Configure Environment Variables
+
+Before starting the containers, you must create local environment files from the provided templates:
 
 ```bash
-docker compose up --build
+# Backend configuration
+cp inventory_service/.env.example inventory_service/.env
+
+# Infrastructure configuration
+cp fetch-local/.env.example fetch-local/.env
+
+# Frontend configuration
+cp vue/env/.env.example vue/env/.env.local
 ```
 
-Or run detached (in the background):
+### 3. Start the Application
 
 ```bash
+cd fetch-local
 docker compose up --build -d
 ```
 
+> [!IMPORTANT]  
+> **Rebuilding the Web App**: If you ever change the values in `vue/env/.env.local`, you **must** run `docker compose build web` for the changes to take effect, as the Quasar PWA is compiled into static files at build-time.
+
 On first boot, the Inventory Service container will automatically run Alembic database migrations to create the schema. Watch the `inventory-api` container logs for `"Migrating..."` and `"Application startup complete"` to confirm it's ready.
 
-### 3. Seed Test Data
+### 4. Seed Test Data
 
 The database starts with only the schema — no sample data. To populate the database with test users, locations, shelves, and other sample data:
 
@@ -52,18 +65,22 @@ This rebuilds the API container and runs the data seeding script, which creates:
 
 > **Note:** The full seed generates ~2,400 shelves and associated positions. This can take a few minutes on the first run.
 
-### 4. Open the Application
+### 5. Open the Application
 
 Navigate to **https://127.0.0.1:8000** in your browser.
 
-> **⚠️ Self-Signed Certificate Warning:** The local environment serves the web app over HTTPS with a self-signed certificate generated at build time. Your browser will show a security warning — this is expected and safe to bypass:
-> - **Chrome:** Click "Advanced" → "Proceed to 127.0.0.1 (unsafe)"
-> - **Firefox:** Click "Advanced…" → "Accept the Risk and Continue"
-> - **Safari:** Click "Show Details" → "visit this website"
+> **⚠️ SSL Certificate Warning:** The local environment serves the app over HTTPS. By default, I have generated a self-signed certificate in `fetch-local/.certs/`. Your browser will show a security warning:
+> - **Action**: You must click "Advanced" → "Proceed" for **both** the frontend (`https://localhost:8000`) and the API (`https://localhost:8001`) in your browser to allow background requests to succeed.
 >
-> On macOS, you can optionally add the generated certificates from `fetch-local/.certs/` to your Keychain to suppress the warning.
+> **Permanent Fix (Recommended)**: Use **`mkcert`** to create a trusted local Certificate Authority:
+> ```bash
+> brew install mkcert
+> mkcert -install
+> cd fetch-local/.certs
+> mkcert localhost 127.0.0.1 ::1
+> ```
 
-### 5. Log In
+### 6. Log In
 
 In local and debug environments, a **legacy login** endpoint is available that does not require an SSO identity provider. Use the login form with one of the seeded user emails:
 

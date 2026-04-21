@@ -46,8 +46,8 @@ The backend is configured via environment variables (or a `.env` file). These ar
 |---|---|---|---|
 | `APP_ENVIRONMENT` | Yes | `local` | Deployment environment. Must be one of: `local`, `debug`, `develop`, `test`, `stage`, `production`. Controls SAML config selection, SchemaSpy, and legacy login availability. |
 | `SECRET_KEY` | **Yes** | *(none — will crash if missing)* | Secret key for JWT token signing. Use a strong, random string (e.g., `openssl rand -hex 32`). |
-| `DATABASE_URL` | Yes | `postgresql://postgres:postgres@inventory-database:5432/inventory_service` | Full SQLAlchemy connection string for the PostgreSQL database. |
-| `MIGRATION_URL` | No | `postgresql://postgres:postgres@localhost:5432/inventory_service` | Database URL used by Alembic for migrations. Only needed if running migrations from outside the container network. |
+| `DATABASE_URL` | Yes | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Full SQLAlchemy connection string for the PostgreSQL database. |
+| `MIGRATION_URL` | No | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Database URL used by Alembic for migrations. Only needed if running migrations from outside the container network. |
 | `VUE_HOST` | Yes | `https://localhost:8000` | The base URL of the Vue frontend. Used for SAML redirect after login. Set to your production URL (e.g., `https://fetch.example.com`). |
 | `ALLOWED_ORIGINS` | Yes | localhost variants | Comma-separated list of allowed CORS origins. Must include your production frontend URL. |
 | `ALLOWED_ORIGINS_REGEX` | No | `^https://.*\.example\.com$` | Regex pattern for additional CORS origin matching. |
@@ -57,11 +57,12 @@ The backend is configured via environment variables (or a `.env` file). These ar
 | `IDP_LOGIN_URL` | No | `https://login.example.com/...` | SAML Identity Provider login URL. |
 | `ENABLE_ORM_SQL_LOGGING` | No | `false` | Enable SQLAlchemy SQL query logging. Leave `false` in production. |
 
-> **⚠️ SECURITY:** The `SECRET_KEY` is critical for JWT security. Never use the local development key (`local-dev-secret-key`) in production. Generate a strong key:
+> [!CAUTION]
+> **SECURITY CRITICAL:** The `SECRET_KEY` is absolutely required for JWT security. NEVER reuse a key from development or another environment. If this key is compromised, an attacker can impersonate any user in the system. Generate a fresh key using:
 > ```bash
 > openssl rand -hex 32
 > ```
-> Inject it via Kubernetes Secrets, Docker secrets, or your cloud provider's secrets manager — not in plain text in compose files or manifests.
+> Inject it via Kubernetes Secrets, Docker secrets, or your cloud provider's secrets manager — **never** in plain text in version-controlled manifests.
 
 ### Frontend (Vue)
 

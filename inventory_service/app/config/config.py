@@ -18,11 +18,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str # NIST Control: Enforces fail-safe cryptography without hardcoded fallbacks
     VUE_HOST: str = "https://localhost:8000"
     DATABASE_URL: str = (
-        "postgresql://postgres:postgres@inventory-database:5432/inventory_service"
+        "postgresql://user:pass@inventory-database:5432/inventory_service"
     )
     # migration_url = database_url except in local
     MIGRATION_URL: str = (
-        "postgresql://postgres:postgres@localhost:5432/inventory_service"
+        "postgresql://user:pass@localhost:5432/inventory_service"
     )
     ENABLE_ORM_SQL_LOGGING: bool = False
     # Allowed origins for CORS (Requires precise start/end matching)
