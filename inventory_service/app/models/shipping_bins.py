@@ -12,6 +12,7 @@ from app.models.users import User # Needed for injection
 if TYPE_CHECKING:
     from app.models.shipping_jobs import ShippingJob
     from app.models.items import Item
+    from app.models.non_tray_items import NonTrayItem
     from app.models.delivery_locations import DeliveryLocation
 
 class ShippingBinStatus(str, Enum):
@@ -56,6 +57,7 @@ class ShippingBin(Base):
     delivery_location: Mapped[Optional["DeliveryLocation"]] = relationship(lazy="selectin")
     
     items: Mapped[List["Item"]] = relationship("Item", backref=backref("shipping_bin", lazy="selectin"), foreign_keys="[Item.shipping_bin_id]", lazy="selectin")
+    non_tray_items: Mapped[List["NonTrayItem"]] = relationship("NonTrayItem", backref=backref("shipping_bin", lazy="selectin"), foreign_keys="[NonTrayItem.shipping_bin_id]", lazy="selectin")
     
     cleared_by: Mapped[Optional["User"]] = relationship("User", backref=backref("cleared_shipping_bins", lazy="selectin"), foreign_keys=[cleared_by_id], lazy="selectin")
 

@@ -82,7 +82,7 @@
                 Current Bin: {{ currentBin.barcode }}
               </div>
               <div class="text-caption">
-                ID: {{ currentBin.id }} | Items: {{ currentBin.items?.length || 0 }}
+                ID: {{ currentBin.id }} | Items: {{ currentBin.item_count }}
               </div>
               <div
                 v-if="currentBin.delivery_location"
@@ -169,7 +169,7 @@
                   {{ bin.barcode }}
                 </q-item-label>
                 <q-item-label caption>
-                  {{ bin.items?.length || 0 }} Items
+                  {{ bin.item_count }} Items
                   <span v-if="bin.delivery_location"> -> {{ bin.delivery_location.name }}</span>
                 </q-item-label>
               </q-item-section>
@@ -183,6 +183,7 @@
             <q-card>
               <q-card-section class="q-pa-xs">
                 <q-list dense>
+                  <!-- Standard Items -->
                   <q-item
                     v-for="item in bin.items"
                     :key="item.id"
@@ -199,11 +200,35 @@
                         icon="delete"
                         color="negative"
                         size="sm"
-                        @click="handleRemoveItem(bin.id, item.id)"
+                        @click="handleRemoveItem(bin.id, item.id, 'item')"
                       />
                     </q-item-section>
                   </q-item>
-                  <q-item v-if="!bin.items?.length">
+
+                  <!-- Non-Tray Items -->
+                  <q-item
+                    v-for="item in bin.non_tray_items"
+                    :key="'nt-' + item.id"
+                  >
+                    <q-item-section>
+                      <q-item-label>{{ item.barcode?.value }}</q-item-label>
+                      <q-item-label caption>Non-Tray</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <BaseButton
+                        v-if="!isCompleted"
+                        flat
+                        round
+                        dense
+                        icon="delete"
+                        color="negative"
+                        size="sm"
+                        @click="handleRemoveItem(bin.id, item.id, 'non_tray_item')"
+                      />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item v-if="bin.item_count === 0">
                     <q-item-section class="text-italic text-grey">
                       Empty Bin
                     </q-item-section>
@@ -438,9 +463,9 @@ const handleItemScan = async () => {
   }
 }
 
-const handleRemoveItem = async (binId, itemId) => {
+const handleRemoveItem = async (binId, itemId, itemType) => {
   try {
-    await removeItemFromBin(jobId, binId, itemId)
+    await removeItemFromBin(jobId, binId, itemId, itemType)
     Notify.create({
       type: 'positive',
       message: 'Item Removed'
@@ -500,7 +525,7 @@ const confirmCancelJob = () => {
 }
 
 const canComplete = computed(() => {
-  return shippingJob.value?.bins?.some(b => b.items?.length > 0)
+  return shippingJob.value?.bins?.some(b => b.item_count > 0)
 })
 
 const isCompleted = computed(() => {

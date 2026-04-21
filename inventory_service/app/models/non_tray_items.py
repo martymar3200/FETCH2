@@ -48,6 +48,7 @@ class NonTrayItemStatus(str, Enum):
     Withdrawn = "Withdrawn"
     Accessioned = "Accessioned"
     Verified = "Verified"
+    Retrieved = "Retrieved"
 
 class ILSSyncState(str, Enum):
     IN_SYNC = "IN_SYNC"
@@ -108,6 +109,7 @@ class NonTrayItem(Base):
     shelving_job_id: Mapped[Optional[int]] = mapped_column(ForeignKey(ShelvingJob.__table__.c.id), nullable=True)
     shelf_position_id: Mapped[Optional[int]] = mapped_column(ForeignKey(ShelfPosition.__table__.c.id), nullable=True, unique=True)
     media_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey(MediaType.__table__.c.id), nullable=True)
+    shipping_bin_id: Mapped[Optional[int]] = mapped_column(ForeignKey("shipping_bins.id"), nullable=True)
     
     # Note: shelf_position_proposed_id does not reference another table
     shelf_position_proposed_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -116,6 +118,7 @@ class NonTrayItem(Base):
     scanned_for_accession: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_verification: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_shelving: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    scanned_for_shipping: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_refile_queue: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     scanned_for_refile: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     

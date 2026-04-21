@@ -18,6 +18,7 @@ from app.models.users import User
 from app.models.shipping_jobs import ShippingJob, ShippingJobStatus
 from app.models.shipping_bins import ShippingBin, ShippingBinStatus
 from app.models.items import Item, ItemStatus
+from app.models.non_tray_items import NonTrayItem, NonTrayItemStatus
 from app.models.delivery_locations import DeliveryLocation
 from app.models.barcodes import Barcode
 
@@ -128,6 +129,7 @@ def get_shipping_job_detail(
 ):
     query = select(ShippingJob).where(ShippingJob.id == id).options(
         selectinload(ShippingJob.bins).selectinload(ShippingBin.items).selectinload(Item.barcode),
+        selectinload(ShippingJob.bins).selectinload(ShippingBin.non_tray_items).selectinload(NonTrayItem.barcode),
         selectinload(ShippingJob.bins).selectinload(ShippingBin.delivery_location),
         selectinload(ShippingJob.assigned_user)
     )
@@ -249,6 +251,16 @@ def delete_shipping_job(
                 scanned_for_shipping=False
             )
         )
+        # Revert non-tray items
+        session.execute(
+            update(NonTrayItem)
+            .where(NonTrayItem.shipping_bin_id.in_(bin_ids))
+            .values(
+                status=NonTrayItemStatus.Retrieved,
+                shipping_bin_id=None,
+                scanned_for_shipping=False
+            )
+        )
         
     log_audit_event(
         session,
@@ -344,27 +356,37 @@ def check_item_for_shipping(
     if not barcode_obj:
         raise NotFound(detail="Barcode not found")
         
-    # 2. Find Item
+    # 2. Find Item or NonTrayItem
     item = session.execute(
         select(Item).where(Item.barcode_id == barcode_obj.id)
     ).scalars().first()
     
+    non_tray_item = None
     if not item:
+        non_tray_item = session.execute(
+            select(NonTrayItem).where(NonTrayItem.barcode_id == barcode_obj.id)
+        ).scalars().first()
+    
+    if not item and not non_tray_item:
         raise NotFound(detail="Item not found")
         
     # 3. Validate Status (Retrieved)
-    if item.status != ItemStatus.Retrieved:
-        raise ValidationException(detail=f"Item status is {item.status}, must be Retrieved")
+    status = item.status if item else non_tray_item.status
+    if status != (ItemStatus.Retrieved if item else NonTrayItemStatus.Retrieved):
+        raise ValidationException(detail=f"Item status is {status}, must be Retrieved")
 
-    # 4. Find Active Request (The requested logic)
+    # 4. Find Active Request
     from app.models.requests import Request, RequestStatus
     
+    if item:
+        query = select(Request).where(Request.item_id == item.id)
+    else:
+        query = select(Request).where(Request.non_tray_item_id == non_tray_item.id)
+        
     request = session.execute(
-        select(Request).where(
-            Request.item_id == item.id,
-            Request.status != RequestStatus.Completed
-        ).order_by(Request.create_dt.desc())
-        .options(selectinload(Request.delivery_location)) # Load location for response
+        query.where(Request.status != RequestStatus.Completed)
+        .order_by(Request.create_dt.desc())
+        .options(selectinload(Request.delivery_location))
     ).scalars().first()
     
     if not request:
@@ -377,7 +399,8 @@ def check_item_for_shipping(
         delivery_location_id=request.delivery_location_id,
         delivery_location=request.delivery_location,
         request_id=request.id,
-        item_id=item.id
+        item_id=item.id if item else None,
+        non_tray_item_id=non_tray_item.id if non_tray_item else None
     )
 
 @router.post("/{id}/bins/{bin_id}/items", response_model=ShippingBinDetailOutput, dependencies=[Depends(RequiresPermission("process_shipping_jobs"))])
@@ -408,52 +431,57 @@ def scan_item_into_bin(
     if not barcode_obj:
         raise NotFound(detail="Barcode not found")
         
-    # Find Item
+    # Find Item or NonTrayItem
     item = session.execute(
         select(Item).where(Item.barcode_id == barcode_obj.id)
     ).scalars().first()
     
+    non_tray_item = None
     if not item:
+        non_tray_item = session.execute(
+            select(NonTrayItem).where(NonTrayItem.barcode_id == barcode_obj.id)
+        ).scalars().first()
+    
+    if not item and not non_tray_item:
         raise NotFound(detail="Item not found")
         
     # Validate Status
-    # Allow Retrieved. Maybe Picklist/Verified if we want to support flexible flows?
-    # For now, strict: Must be Retrieved (picked)
-    if item.status != ItemStatus.Retrieved:
-        raise ValidationException(detail=f"Item status is {item.status}, must be Retrieved")
+    status = item.status if item else non_tray_item.status
+    if status != (ItemStatus.Retrieved if item else NonTrayItemStatus.Retrieved):
+        raise ValidationException(detail=f"Item status is {status}, must be Retrieved")
         
-    if item.shipping_bin_id:
-        # Check if the bin is still active (not cleared, not from a completed job)
-        existing_bin = session.get(ShippingBin, item.shipping_bin_id)
+    # Check current bin
+    current_item_bin_id = item.shipping_bin_id if item else non_tray_item.shipping_bin_id
+    if current_item_bin_id:
+        existing_bin = session.get(ShippingBin, current_item_bin_id)
         if existing_bin and existing_bin.cleared_dt is None:
             existing_job = session.get(ShippingJob, existing_bin.shipping_job_id)
             if existing_job and existing_job.status != ShippingJobStatus.Completed:
                 raise ValidationException(detail="Item already in a shipping bin")
-        # Stale association from completed/cleared bin — clean it up
-        item.shipping_bin_id = None
-        item.scanned_for_shipping = False
+        
+        # Clean up stale association
+        if item:
+            item.shipping_bin_id = None
+            item.scanned_for_shipping = False
+        else:
+            non_tray_item.shipping_bin_id = None
+            non_tray_item.scanned_for_shipping = False
 
-    # Validate Location
-    # We need to check item's destination vs bin's assigned destination
-    # Item destination is derived from Request -> DeliveryLocation? 
-    # Or just Item -> DeliveryLocation?
-    # Usually: Request -> DeliveryLocation. Or user-assigned field on Item?
-    # Since items are "Retrieved" from a Picklist, they are associated with a Request.
-    
-    # We need to find the Active Request for this Item.
-    # Logic: Look for Request where item_id = item.id and status != Completed?
-    # Or assuming "Retrieved" means it has an active request.
+    # Find Active Request
     from app.models.requests import Request, RequestStatus
     
+    if item:
+        query = select(Request).where(Request.item_id == item.id)
+    else:
+        query = select(Request).where(Request.non_tray_item_id == non_tray_item.id)
+        
     request = session.execute(
-        select(Request).where(
-            Request.item_id == item.id,
-            Request.status != RequestStatus.Completed
-        ).order_by(Request.create_dt.desc())
+        query.where(Request.status != RequestStatus.Completed)
+        .order_by(Request.create_dt.desc())
     ).scalars().first()
     
     if not request:
-        raise ValidationException(detail="No active request found for this item. Items must have an active request to be shipped.")
+        raise ValidationException(detail="No active request found for this item.")
          
     item_loc_id = request.delivery_location_id if request else None
     
@@ -463,47 +491,43 @@ def scan_item_into_bin(
     # Bin Logic
     if bin_obj.delivery_location_id:
         if item_loc_id and bin_obj.delivery_location_id != item_loc_id:
-             # Mismatch!
-             # Get names for error message
              bin_loc = session.get(DeliveryLocation, bin_obj.delivery_location_id)
              item_loc = session.get(DeliveryLocation, item_loc_id)
              raise ValidationException(
                  detail=f"Location Mismatch: Item is for {item_loc.name}, Bin is for {bin_loc.name}"
              )
     else:
-        # Assign bin to this location
         if item_loc_id:
             bin_obj.delivery_location_id = item_loc_id
             
     # Add Item to Bin
-    item.shipping_bin_id = bin_obj.id
-    item.scanned_for_shipping = True
-    # We keep status as Retrieved until Job Complete.
-    
-    # Update Job Status if needed
-    job = session.get(ShippingJob, id)
-    if job and job.status == ShippingJobStatus.Created:
-        job.status = ShippingJobStatus.Running
-        session.add(job)
-
-    session.add(item)
+    if item:
+        item.shipping_bin_id = bin_obj.id
+        item.scanned_for_shipping = True
+        session.add(item)
+    else:
+        non_tray_item.shipping_bin_id = bin_obj.id
+        non_tray_item.scanned_for_shipping = True
+        session.add(non_tray_item)
     session.add(bin_obj)
     session.commit()
 
+    entity_id = item.id if item else non_tray_item.id
     log_audit_event(
         session,
         AuditEventType.ITEM_SCANNED,
         f"Item {item_barcode} scanned into Bin {bin_obj.barcode}",
         job_type="shipping_jobs",
         job_id=id,
-        entity_type="items",
-        entity_id=item.id,
+        entity_type="items" if item else "non_tray_items",
+        entity_id=entity_id,
     )
     session.commit()
 
     # Re-query bin with delivery_location eagerly loaded
     bin_query = select(ShippingBin).where(ShippingBin.id == bin_obj.id).options(
         selectinload(ShippingBin.items).selectinload(Item.barcode),
+        selectinload(ShippingBin.non_tray_items).selectinload(NonTrayItem.barcode),
         selectinload(ShippingBin.delivery_location)
     )
     bin_obj = session.execute(bin_query).scalars().first()
@@ -514,27 +538,35 @@ def remove_item_from_bin(
     id: int,
     bin_id: int,
     item_id: int,
+    item_type: str = Query("item", enum=["item", "non_tray_item"]),
     session: Session = Depends(get_session)
 ):
     check_shipping_enabled(session)
     
-    item = session.get(Item, item_id)
-    if not item or item.shipping_bin_id != bin_id:
-        raise NotFound(detail="Item not found in this bin")
-        
-    item.shipping_bin_id = None
-    item.scanned_for_shipping = False
+    if item_type == "item":
+        item = session.get(Item, item_id)
+        if not item or item.shipping_bin_id != bin_id:
+            raise NotFound(detail="Item not found in this bin")
+        item.shipping_bin_id = None
+        item.scanned_for_shipping = False
+        session.add(item)
+    else:
+        item = session.get(NonTrayItem, item_id)
+        if not item or item.shipping_bin_id != bin_id:
+            raise NotFound(detail="Item not found in this bin")
+        item.shipping_bin_id = None
+        item.scanned_for_shipping = False
+        session.add(item)
     
-    session.add(item)
     session.commit()
 
     log_audit_event(
         session,
         AuditEventType.ITEM_REMOVED,
-        f"Item {item_id} removed from Bin {bin_id}",
+        f"Item {item_id} ({item_type}) removed from Bin {bin_id}",
         job_type="shipping_jobs",
         job_id=id,
-        entity_type="items",
+        entity_type="items" if item_type == "item" else "non_tray_items",
         entity_id=item_id,
     )
     session.commit()
@@ -566,34 +598,49 @@ def complete_shipping_job(
     bin_ids = [b.id for b in job.bins]
     
     if bin_ids:
-        # Get item IDs for request completion
+        # Get Item IDs
         item_ids = [
             item_id for (item_id,) in session.execute(
                 select(Item.id).where(Item.shipping_bin_id.in_(bin_ids))
             ).all()
         ]
+        # Get Non-Tray Item IDs
+        non_tray_item_ids = [
+            nt_id for (nt_id,) in session.execute(
+                select(NonTrayItem.id).where(NonTrayItem.shipping_bin_id.in_(bin_ids))
+            ).all()
+        ]
 
-        session.execute(
-            update(Item)
-            .where(Item.shipping_bin_id.in_(bin_ids))
-            .values(
-                status=ItemStatus.Out,
-                update_dt=datetime.now(timezone.utc)
-            )
-        )
-
-        # Complete associated requests that are in Retrieved status
+        # Update Items
         if item_ids:
-            from app.models.requests import Request, RequestStatus
+            session.execute(
+                update(Item)
+                .where(Item.id.in_(item_ids))
+                .values(status=ItemStatus.Out, update_dt=datetime.now(timezone.utc))
+            )
+        # Update Non-Tray Items
+        if non_tray_item_ids:
+            session.execute(
+                update(NonTrayItem)
+                .where(NonTrayItem.id.in_(non_tray_item_ids))
+                .values(status=NonTrayItemStatus.Out, update_dt=datetime.now(timezone.utc))
+            )
+
+        # Complete associated requests
+        from app.models.requests import Request, RequestStatus
+        if item_ids:
             session.execute(
                 update(Request)
                 .where(Request.item_id.in_(item_ids))
                 .where(Request.status == RequestStatus.Retrieved)
-                .values(
-                    status=RequestStatus.Completed,
-                    fulfilled=True,
-                    update_dt=datetime.now(timezone.utc)
-                )
+                .values(status=RequestStatus.Completed, fulfilled=True, update_dt=datetime.now(timezone.utc))
+            )
+        if non_tray_item_ids:
+            session.execute(
+                update(Request)
+                .where(Request.non_tray_item_id.in_(non_tray_item_ids))
+                .where(Request.status == RequestStatus.Retrieved)
+                .values(status=RequestStatus.Completed, fulfilled=True, update_dt=datetime.now(timezone.utc))
             )
         
     job.status = ShippingJobStatus.Completed
@@ -635,14 +682,16 @@ def clear_bin(
     if not bin_obj:
         raise NotFound(detail="Active bin not found")
 
-    # Clear item associations before marking bin as cleared
+    # Clear item associations
     session.execute(
         update(Item)
         .where(Item.shipping_bin_id == bin_obj.id)
-        .values(
-            shipping_bin_id=None,
-            scanned_for_shipping=False
-        )
+        .values(shipping_bin_id=None, scanned_for_shipping=False)
+    )
+    session.execute(
+        update(NonTrayItem)
+        .where(NonTrayItem.shipping_bin_id == bin_obj.id)
+        .values(shipping_bin_id=None, scanned_for_shipping=False)
     )
         
     bin_obj.cleared_dt = datetime.now(timezone.utc)
@@ -681,6 +730,7 @@ def get_shipping_manifest(
     # Load Bins and Items and Locations for printing
     query = select(ShippingJob).where(ShippingJob.id == id).options(
         selectinload(ShippingJob.bins).selectinload(ShippingBin.items).selectinload(Item.barcode),
+        selectinload(ShippingJob.bins).selectinload(ShippingBin.non_tray_items).selectinload(NonTrayItem.barcode),
         selectinload(ShippingJob.bins).selectinload(ShippingBin.delivery_location)
     )
     

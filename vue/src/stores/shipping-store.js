@@ -149,18 +149,27 @@ export const useShippingStore = defineStore('shipping-store', {
       }
     },
 
-    async removeItemFromBin (jobId, binId, itemId) {
+    async removeItemFromBin (jobId, binId, itemId, itemType = 'item') {
       try {
-        await this.$api.delete(`${inventoryServiceApi.shippingJobs}${jobId}/bins/${binId}/items/${itemId}`)
+        await this.$api.delete(`${inventoryServiceApi.shippingJobs}${jobId}/bins/${binId}/items/${itemId}`, {
+          params: { item_type: itemType }
+        })
 
         // Optimistically remove from local state
         const binIndex = this.shippingJob.bins.findIndex(b => b.id === binId)
         if (binIndex !== -1) {
           const bin = this.shippingJob.bins[binIndex]
-          bin.items = bin.items.filter(i => i.id !== itemId)
+          const listName = itemType === 'item' ? 'items' : 'non_tray_items'
+
+          if (bin[listName]) {
+            bin[listName] = bin[listName].filter(i => i.id !== itemId)
+          }
+
           // If current bin, update it too
           if (this.currentBin && this.currentBin.id === binId) {
-            this.currentBin.items = this.currentBin.items.filter(i => i.id !== itemId)
+            if (this.currentBin[listName]) {
+              this.currentBin[listName] = this.currentBin[listName].filter(i => i.id !== itemId)
+            }
           }
         }
       } catch (error) {

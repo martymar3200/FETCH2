@@ -29,6 +29,7 @@ class ShippingItemCheckOutput(BaseModel):
     delivery_location: Optional[DeliveryLocationNestedForShipping] = None
     request_id: Optional[int] = None
     item_id: Optional[int] = None
+    non_tray_item_id: Optional[int] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -45,10 +46,11 @@ class ShippingBinDetailOutput(BaseModel):
     create_dt: datetime
     update_dt: datetime
     items: List[ItemNestedForShipping] = []
+    non_tray_items: List[ItemNestedForShipping] = []
 
     @computed_field
     def item_count(self) -> int:
-        return len(self.items)
+        return len(self.items) + len(self.non_tray_items)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -101,7 +103,7 @@ class ShippingJobOutput(BaseModel):
         
     @computed_field
     def total_items(self) -> int:
-        return sum(len(b.items) for b in self.bins)
+        return sum(len(b.items) + len(b.non_tray_items) for b in self.bins)
 
     model_config = ConfigDict(from_attributes=True)
 
