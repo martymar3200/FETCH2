@@ -106,19 +106,16 @@
         @click.capture="setMainNavDrawerOpen(false)"
       >
         <q-item
-          class="q-my-lg align-center"
+          class="q-mt-xl q-mb-lg"
           clickable
           tag="a"
           role="link"
           :to="'/'"
         >
-          <q-item-section>
-            <img
-              :src="mainLogo"
-              alt="FETCH LOGO"
-              width="268"
-              height="100"
-            />
+          <q-item-section class="flex flex-center">
+            <div class="nav-logo-text">
+              FETCH<span>2</span>
+            </div>
           </q-item-section>
         </q-item>
 
@@ -191,7 +188,7 @@ import UserLogin from '@/components/User/UserLogin.vue'
 import UserMenu from '@/components/User/UserMenu.vue'
 import BaseButton from '@/components/Base/BaseButton.vue'
 
-const mainLogo = '/assets/FETCH-Logo.svg'
+
 const route = useRoute()
 const router = useRouter()
 
@@ -418,11 +415,13 @@ const displayRouteGuardAlert = (pathName) => {
     }
   }
 
+
   &-list {
     position: relative;
     display: flex;
     flex-flow: column nowrap;
     height: 100%;
+    padding-top: 24px;
 
     &-link {
       &-admin {
@@ -433,6 +432,35 @@ const displayRouteGuardAlert = (pathName) => {
 
   &-banner {
     border-top: 1px solid $secondary;
+  }
+}
+</style>
+<style lang="scss">
+/* Global styles for the navigation drawer and logo */
+.nav-side {
+  border-radius: 0 24px 24px 0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+
+  .q-drawer__content {
+    border-radius: 0 24px 24px 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+.nav-logo-text {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.05em;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    color: #1d4ed8; /* Blue 700 Accent */
+    margin-left: 2px;
   }
 }
 </style>
