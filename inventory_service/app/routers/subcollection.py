@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -135,9 +136,6 @@ def delete_subcollection(id: int, session: Session = Depends(get_session)):
         session.delete(subcollection)
         session.commit()
 
-        return HTTPException(
-            status_code=204,
-            detail=f"Subcollection id {id} Deleted Successfully",
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Subcollection ID {id} Not Found")

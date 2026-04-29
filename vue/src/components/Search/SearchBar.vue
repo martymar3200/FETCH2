@@ -185,7 +185,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onMounted, ref, watch, inject, computed } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRoute, useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
@@ -330,7 +330,7 @@ const executeExactSearch = async () => {
     }
     showExactSearch.value = true
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to execute search'
     })

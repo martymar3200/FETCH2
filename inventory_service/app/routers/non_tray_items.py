@@ -4,6 +4,7 @@ from io import StringIO
 from typing import Optional
 
 import pandas as pd
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -489,9 +490,7 @@ def delete_non_tray_item(id: int, session: Session = Depends(get_session)):
         session.delete(non_tray_item)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Non Tray Item ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Non Tray Item ID {id} Not Found")
 

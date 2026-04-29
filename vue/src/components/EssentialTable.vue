@@ -358,7 +358,7 @@ const mainProps = defineProps({
       // example of how filterOptions need to be structured
       // [
       //   {
-      //     field: 'media_type', or field: row => row.media_type.name
+      //     field: 'media_type', or field: (row) => row.media_type.name
       //     label: 'Media Type'
       //     options: [
       //       {
@@ -539,43 +539,40 @@ const filterTableData = () => {
     if (opt.options.some(obj => obj.value == true)) {
       // if opt contains an apiField return that instead of the table field (this is for paginated filtering from the api)
       const optValue = opt.options.filter(obj => obj.value == true).map(obj => Object.hasOwn(obj, 'boolValue') ? obj.boolValue : obj.text)
-      if (opt.apiField) {
-        return {
-          [opt.apiField]: optValue
-        }
-      } else {
-        return {
-          [opt.field]: optValue
-        }
+      return {
+        field: opt.field,
+        apiField: opt.apiField,
+        val: optValue
       }
     } else {
       return []
     }
   })
-  // convert the filters array to a single object
-  const activeFiltersObj = Object.assign({}, ...activeFilters)
 
   if (mainProps.enablePagination) {
+    // convert the filters array to a single object for the API
+    const activeFiltersObj = {}
+    activeFilters.forEach(filter => {
+      if (filter.apiField) {
+        activeFiltersObj[filter.apiField] = filter.val
+      } else if (typeof filter.field === 'string') {
+        activeFiltersObj[filter.field] = filter.val
+      }
+    })
     // call the table request function and pass active filters + required table props
     onTableRequest(tableComponent.value, activeFiltersObj)
   } else {
-    // filters the original table data based on the active filters obj if pagination is not enabled
+    // filters the original table data based on the active filters if pagination is not enabled
     const filteredData = mainProps.tableData.filter(entry => {
-    // iterate through every active filter by field and selected filter values and check if the value exists under the table data entrys field
-      const filterMatchesData = Object.entries(activeFiltersObj).every(([
-        field,
-        val
-      ]) => {
-        if (field.includes('=>')) {
-          // if we pass in an arrow function string convert it to an actual function to check the entry param path
-          // ex row => row.barcode.value becomes entry.barcode.value and we compare that value to the selected filter
-          const fieldArrowFunc = eval(field)
-          return val.includes(fieldArrowFunc(entry))
+      // iterate through every active filter and check if the value exists under the table data entry's field
+      return activeFilters.every(filter => {
+        if (typeof filter.field === 'function') {
+          // field is a function reference — call it to extract the value from the entry
+          return filter.val.includes(filter.field(entry))
         } else {
-          return val.includes(entry[field])
+          return filter.val.includes(entry[filter.field])
         }
       })
-      return filterMatchesData
     })
 
     localTableData.value = [...toRaw(filteredData)]

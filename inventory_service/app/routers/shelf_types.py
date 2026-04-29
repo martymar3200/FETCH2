@@ -3,6 +3,7 @@
 import logging
 from typing import Optional, List
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -247,7 +248,5 @@ def delete_shelf_type(id: int, session: Session = Depends(get_session)):
         else:
             session.delete(shelf_type)
             session.commit()
-        return HTTPException(
-            status_code=204, detail=f"Shelf Type ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
     raise NotFound(detail=f"Shelf Type ID {id} Not Found")

@@ -1,6 +1,7 @@
 # /code/app/routers/barcodes.py - FINAL CORRECTED V2
 import re
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -198,8 +199,6 @@ def delete_barcode(id: str, session: Session = Depends(get_session)):
         session.delete(barcode)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Barcode ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Barcode ID {id} Not Found")

@@ -1,5 +1,6 @@
 # /code/app/routers/conveyance_bins.py - REFACRORED TO SQLALCHEMY V2
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -130,9 +131,6 @@ def delete_conveyance_bin(id: int, session: Session = Depends(get_session)):
         session.delete(conveyance_bin)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Conveyance Bin ID {id} Deleted "
-                                    f"Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Conveyance Bin ID {id} Not Found")

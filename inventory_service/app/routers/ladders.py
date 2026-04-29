@@ -2,6 +2,7 @@
 
 from typing import Optional, List
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -183,9 +184,7 @@ def delete_ladder(id: int, session: Session = Depends(get_session)):
         session.delete(ladder)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Ladder ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Ladder ID {id} Not Found")
 

@@ -1,5 +1,6 @@
 import logging
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -161,8 +162,6 @@ def delete_module(id: int, session: Session = Depends(get_session)):
         session.delete(module)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Module ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Module ID {id} Not Found")

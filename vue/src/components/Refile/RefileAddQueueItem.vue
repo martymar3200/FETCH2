@@ -176,7 +176,7 @@ import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useRefileStore } from '@/stores/refile-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import PopupModal from '@/components/PopupModal.vue'
 
@@ -235,7 +235,7 @@ const handleScan = (barcode_value) => {
   if (barcode_value !== refileItem.value?.barcode?.value) {
     addItemToQueue(barcode_value)
   } else {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'The scanned item barcode was already added. Please try again!'
     })
@@ -251,7 +251,7 @@ const addItemToQueue = async (barcode_value) => {
 
     // next check if scanned barcode is an item type barcode
     if (barcodeDetails.value.id && barcodeDetails.value.type.name !== 'Item') {
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'The scanned barcode is not an "Item Barcode"! Please try again.'
       })
@@ -269,14 +269,14 @@ const addItemToQueue = async (barcode_value) => {
 
     await postRefileQueueItem(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Item added to queue',
       position: 'top',
       timeout: 1000
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to add item to queue'
     })

@@ -155,7 +155,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, onBeforeMount, toRaw } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
@@ -561,12 +561,12 @@ const addNewListType = async () => {
         break
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully added a new ${titleCaseListType.value}.`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to add new item'
     })
@@ -602,7 +602,7 @@ const updateListType = async () => {
           await Promise.all(removedSizeClasses.map(async sizeClassObj => {
             const res = await deleteShelfType(sizeClassObj.shelf_type_id)
             if (res.status !== 200) {
-              Notify.create({
+              notify({
                 type: 'negative',
                 message: `The shelf type: "${payload.type} - ${sizeClassObj.name}" is in use and cannot be deleted.`,
                 timeout: 0,
@@ -640,7 +640,7 @@ const updateListType = async () => {
             max_capacity: sizeClassObj.max_capacity
           })
           if (res.status !== 200) {
-            Notify.create({
+            notify({
               type: 'negative',
               message: `"${payload.type} - ${sizeClassObj.name}" - ${res.response.data.detail}`,
               timeout: 0,
@@ -690,12 +690,12 @@ const updateListType = async () => {
         break
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully updated the ${titleCaseListType.value}.`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update item'
     })

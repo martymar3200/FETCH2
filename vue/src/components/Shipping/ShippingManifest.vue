@@ -175,7 +175,7 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onMounted, computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { useShippingStore } from '@/stores/shipping-store'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import ShippingManifestBatchSheet from '@/components/Shipping/ShippingManifestBatchSheet.vue'
 
 const route = useRoute()
@@ -239,7 +239,7 @@ const loadManifest = async () => {
     }
 
   } catch (e) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to load manifest'
     })

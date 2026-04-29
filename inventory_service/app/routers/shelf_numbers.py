@@ -1,5 +1,6 @@
 # /code/app/routers/shelf_numbers.py - REFACRORED TO SQLALCHEMY V2
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -128,9 +129,6 @@ def delete_shelf_number(id: int, session: Session = Depends(get_session)):
         session.delete(shelf_number)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Shelf Number ID {id} Deleted "
-                                    f"Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Shelf Number ID {id} Not Found")

@@ -327,7 +327,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount, watch } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -701,7 +701,7 @@ const executeAdvancedSearch = async () => {
       query: queryParams
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to execute advanced search'
     })

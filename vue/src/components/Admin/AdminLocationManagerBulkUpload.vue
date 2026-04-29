@@ -160,7 +160,7 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useOptionStore } from '@/stores/option-store'
 import { useBuildingStore } from '@/stores/building-store'
 import PopupModal from '@/components/PopupModal.vue'
@@ -276,14 +276,14 @@ const submitBulkUploadLocationForm = async () => {
     }
     await postBulkLocation(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Successfully Uploaded New Locations!'
     })
   } catch (error) {
     if (error.response?.data) {
       error.response.data.forEach(err => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: `Bulk Location upload failed: ${JSON.stringify(err)}`,
           timeout: 0,
@@ -296,7 +296,7 @@ const submitBulkUploadLocationForm = async () => {
         })
       })
     } else {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || error.message || 'Failed to upload locations'
       })

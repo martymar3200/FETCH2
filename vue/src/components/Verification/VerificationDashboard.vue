@@ -170,7 +170,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount, computed } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useGlobalStore } from '@/stores/global-store'
@@ -397,7 +397,7 @@ const loadVerificationJobs = async (qParams) => {
 
     await getVerificationJobList(filterParams)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -443,7 +443,7 @@ const loadVerificationJob = async (workflowId) => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })

@@ -104,7 +104,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
@@ -148,7 +148,7 @@ const logoutUser = async () => {
     //reload the route to trigger any route gaurds if the user is on an auth based page
     router.go()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Logout failed'
     })

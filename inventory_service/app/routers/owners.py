@@ -2,6 +2,7 @@
 
 from typing import Optional, Union
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -195,9 +196,7 @@ def delete_owner(id: int, session: Session = Depends(get_session)):
         session.delete(owner)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Owner ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Owner ID {id} Not Found")
 

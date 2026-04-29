@@ -19,7 +19,7 @@
 <script setup>
 import { onBeforeMount, onMounted, inject, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useVerificationStore } from 'src/stores/verification-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -61,7 +61,7 @@ watch(() => route.params.containerId, async (newId, oldId) => {
     // Re-fetch the data for the newly selected tray
     if (verificationJob.value.trayed) {
       await getVerificationTray(newId).catch(error => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: error.response?.data?.detail || error
         })

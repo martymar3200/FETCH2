@@ -61,7 +61,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import inventoryServiceApi from '@/http/InventoryService.js'
 import { ref, computed, onMounted } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
@@ -128,7 +128,7 @@ const internalLogin = async () => {
     // Refresh to allow the app to boot with the new cookie
     window.location.reload()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Login failed'
     })

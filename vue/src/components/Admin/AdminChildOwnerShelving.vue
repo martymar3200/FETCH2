@@ -57,7 +57,7 @@ import { ref, onMounted } from 'vue'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 
 // Store Data
 const { appIsLoadingData, appActionIsLoadingData } = storeToRefs(useGlobalStore())
@@ -110,13 +110,13 @@ const updateSetting = async (newValue) => {
       settingExists.value = true
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Child owner shelving setting updated successfully.'
     })
   } catch (error) {
     console.error('Update error:', error)
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to update child owner shelving setting.'
     })

@@ -72,7 +72,8 @@ import { ref, onMounted } from 'vue'
 import { useGlobalStore } from '@/stores/global-store'
 import { useIlsSyncErrorStore } from '@/stores/ils-sync-error-store'
 import { storeToRefs } from 'pinia'
-import { Notify, Dialog } from 'quasar'
+import { Dialog } from 'quasar'
+import { notify } from '@/utils/notify'
 
 // Stores
 const globalStore = useGlobalStore()
@@ -137,7 +138,7 @@ const loadData = async () => {
     await ilsSyncErrorStore.getIlsSyncErrors()
   } catch (err) {
     console.error(err)
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to load ILS Sync Errors'
     })
@@ -156,14 +157,14 @@ const confirmResolve = (row) => {
     try {
       appActionIsLoadingData.value = true
       await ilsSyncErrorStore.resolveIlsSyncError(row.id)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Issue Resoloved'
       })
       await loadData()
     } catch (err) {
       console.error(err)
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'Error marking resolved'
       })
@@ -183,14 +184,14 @@ const confirmRetry = (row) => {
     try {
       appActionIsLoadingData.value = true
       await ilsSyncErrorStore.retryIlsSyncError(row.id)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Validation Sync Re-Queued!'
       })
       await loadData()
     } catch (err) {
       console.error(err)
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'Retry Failed (Only works on fully built engines)'
       })

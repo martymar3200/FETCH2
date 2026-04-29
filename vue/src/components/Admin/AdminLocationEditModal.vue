@@ -123,7 +123,7 @@ import { ref, computed, onBeforeMount } from 'vue'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useBuildingStore } from '@/stores/building-store'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import SelectInput from '@/components/SelectInput.vue'
 import TextInput from '@/components/TextInput.vue'
@@ -404,14 +404,14 @@ const addEntity = async () => {
         break
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully added a new ${singularLevel.value}`
     })
 
     emit('saved')
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || `Failed to add ${singularLevel.value}`
     })
@@ -430,14 +430,14 @@ const insertEntity = async () => {
       await postInsertShelve(payload)
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully inserted a new ${singularLevel.value}`
     })
 
     emit('saved')
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || `Failed to insert ${singularLevel.value}`
     })
@@ -475,14 +475,14 @@ const updateEntity = async () => {
         break
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully updated the ${singularLevel.value}`
     })
 
     emit('saved')
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || `Failed to update ${singularLevel.value}`
     })

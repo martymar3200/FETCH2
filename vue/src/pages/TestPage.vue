@@ -260,7 +260,7 @@ import { storeToRefs } from 'pinia'
 import { useOptionStore } from '@/stores/option-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { ref, toRaw, onMounted, watch, inject } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 import { useFileSystemAccessHandler } from '@/composables/useFileSystemAccessHandler.js'
 import PopupModal from '@/components/PopupModal.vue'
@@ -370,12 +370,12 @@ const saveOwnerTierList = async () => {
   try {
     await addDataToIndexDb('ownerTiers', toRaw(ownerTierOptions.value))
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Owner Tiers saved for offline usage'
     })
   } catch (err) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: err.message || 'Error saving Owner Tiers'
     })
@@ -387,7 +387,7 @@ const loadShelves = async (qParams) => {
     tableLoading.value = true
     await getOptions('shelves', { ...qParams })
   } catch (err) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: err.message || 'Error loading shelves'
     })
@@ -399,12 +399,12 @@ const loadShelves = async (qParams) => {
 
 const generateTestAlert = (val) => {
   if (val == 1) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'This is a user generated error message'
     })
   } else {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'This is a user generated error message with audio',
       timeout: 0,
@@ -424,7 +424,7 @@ const saveTextFileToDevice = async () => {
 
   await saveAsTextFile(fileContent.value)
 
-  Notify.create({
+  notify({
     type: 'positive',
     message: 'A new text file has been saved to the device'
   })
@@ -434,7 +434,7 @@ const saveChangesToText = async () => {
 
   await updateTextFile(fileContent.value)
 
-  Notify.create({
+  notify({
     type: 'positive',
     message: 'The selected text file has been updated on the device'
   })

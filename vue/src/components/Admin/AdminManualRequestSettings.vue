@@ -52,7 +52,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -96,12 +96,12 @@ const saveSettings = async () => {
       isExistingSetting.value = true
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Successfully updated manual request settings.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.response?.data?.detail || error.message || 'Failed to save settings'
     })

@@ -336,7 +336,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
@@ -484,12 +484,12 @@ const saveItemEdits = async (hideModal) => {
       await patchAccessionNonTrayItem(payload)
 
       if (addVerifiedAlert) {
-        Notify.create({
+        notify({
           type: 'positive',
           message: 'The non-tray item has been updated and verified.'
         })
       } else {
-        Notify.create({
+        notify({
           type: 'positive',
           message: 'The non-tray item has been updated.'
         })
@@ -502,7 +502,7 @@ const saveItemEdits = async (hideModal) => {
         size_class_id: selectedSizeClass.value?.id
       })
 
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Job settings updated successfully.'
       })
@@ -511,7 +511,7 @@ const saveItemEdits = async (hideModal) => {
     hideModal()
     showEditModal.value = false
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.message || error?.toString() || 'An error occurred'
     })
@@ -541,12 +541,12 @@ const triggerItemScan = async () => {
           containerId: barcode
         }
       })
-      Notify.create({
+      notify({
         type: 'info',
         message: 'Loaded existing item.'
       })
     } catch (error) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error?.message || error?.toString() || 'An error occurred'
       })
@@ -575,12 +575,12 @@ const updateAccessionJobStatus = async (status) => {
       id: accessionJob.value.id,
       status
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Job ${status === 'Paused' ? 'paused' : 'resumed'} successfully.`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.message || error?.toString() || 'An error occurred'
     })
@@ -597,7 +597,7 @@ const cancelAccessionJob = async () => {
       status: 'Cancelled'
     })
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Accession Job has been canceled.'
     })
@@ -609,7 +609,7 @@ const cancelAccessionJob = async () => {
       params: { jobId: null }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.message || error?.toString() || 'An error occurred'
     })
@@ -627,7 +627,7 @@ const completeAccessionJob = async (hideModal, shouldPrint = false) => {
       status: 'Completed'
     })
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Accession Job has been completed.'
     })
@@ -644,7 +644,7 @@ const completeAccessionJob = async (hideModal, shouldPrint = false) => {
       params: { jobId: null }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.message || error?.toString() || 'An error occurred'
     })

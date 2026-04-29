@@ -1,5 +1,6 @@
 # /code/app/routers/barcodes.py - REFACRORED TO SQLALCHEMY V2
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -132,9 +133,6 @@ def delete_barcode_types(id: int, session: Session = Depends(get_session)):
         session.delete(barcode_types)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Barcode Type ID {id} Deleted "
-                                    f"Successfully"
-            )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Barcode Type ID {id} Not Found")

@@ -132,25 +132,25 @@
   }
 
   // New status - same as Created (blue)
-  &.status-new {
+  &--new {
     background: linear-gradient(135deg, #0066cc 0%, #3399ff 100%);
     color: white;
   }
 
   // In Progress status (amber/orange)
-  &.status-in-progress {
+  &--in-progress {
     background: linear-gradient(135deg, #e6a700 0%, #F2C037 100%);
     color: #1D1D1D;
   }
 
   // Failed status (red)
-  &.status-failed {
+  &--failed {
     background: linear-gradient(135deg, #a00000 0%, #d32f2f 100%);
     color: white;
   }
 
   // Cancelled status (grey)
-  &.status-cancelled {
+  &--cancelled {
     background: linear-gradient(135deg, #666666 0%, #999999 100%);
     color: white;
   }

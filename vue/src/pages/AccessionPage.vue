@@ -16,7 +16,7 @@
 <script setup>
 import { onBeforeMount, onMounted, inject, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useAccessionStore } from 'src/stores/accession-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -55,7 +55,7 @@ watch(() => route.params.containerId, async (newId, oldId) => {
   if (newId && newId !== oldId) {
     if (accessionJob.value.trayed) {
       await getAccessionTray(newId).catch(error => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: error.response?.data?.detail || error
         })
@@ -83,7 +83,7 @@ onMounted( async () => {
   if (route.params.containerId) {
     if (accessionJob.value.trayed) {
       await getAccessionTray(route.params.containerId).catch(error => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: error.response?.data?.detail || error
         })
@@ -96,7 +96,7 @@ onMounted( async () => {
       })
     } else {
       await getAccessionNonTrayItem(route.params.containerId).catch(error => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: error.response?.data?.detail || error
         })

@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Response, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -136,8 +137,6 @@ def delete_container_type(id: int, session: Session = Depends(get_session)):
         session.delete(container_type)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Container Type ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Container Type ID {id} Not Found")

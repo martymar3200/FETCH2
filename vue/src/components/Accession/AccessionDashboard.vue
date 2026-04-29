@@ -328,7 +328,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useUserStore } from '@/stores/user-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from 'src/stores/option-store'
@@ -585,7 +585,7 @@ const loadAccessionJobs = async (qParams) => {
 
     await getAccessionJobList(filterParams)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -630,7 +630,7 @@ const loadAccessionJob = async (workflowId) => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -660,12 +660,12 @@ const submitAccessionJob = async () => {
       }
     })
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'An Accession Job has successfully been created.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })

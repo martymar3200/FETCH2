@@ -97,7 +97,7 @@
 
 <script setup>
 import { watch, computed, inject } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useRecordManagementStore } from '@/stores/record-management-store'
@@ -156,7 +156,7 @@ const fetchItemLocation = async (barcodeValue) => {
 
     // Step 2: Check if the barcode is actually for an "Item".
     if (barcodeDetails.value.id && barcodeDetails.value.type.name !== 'Item') {
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'The scanned barcode is not an "Item Barcode"! Please try again.'
       })
@@ -171,7 +171,7 @@ const fetchItemLocation = async (barcodeValue) => {
     // This block will now catch errors from getBarcodeDetails OR if we throw our own.
     // We check error.message to avoid showing our internal 'Not an item barcode' message.
     if (error.message !== 'Not an item barcode') {
-      Notify.create({
+      notify({
         type: 'negative',
         message: `Barcode ${barcodeValue} not in FETCH`,
         timeout: 0,

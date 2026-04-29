@@ -504,7 +504,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useRefileStore } from '@/stores/refile-store'
@@ -996,7 +996,7 @@ const loadRefileJobs = async (qParams) => {
       await getRefileQueueList(queueFilterParams)
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load refile jobs'
     })
@@ -1054,7 +1054,7 @@ const loadRefileQueueByBuilding = async (modeOverride = null) => {
       showAddRefileJob.value = true
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load refile queue'
     })
@@ -1077,7 +1077,7 @@ const loadRefileJob = async (id) => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load refile job'
     })
@@ -1095,7 +1095,7 @@ const createRefileJob = async () => {
     await postRefileJob(payload)
 
     // display an alert with the created refile job id so you can click that and link directly to the new job if needed
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully created Refile Job #: <a href='/refile/${refileJob.value.id}' style='color: white; text-decoration: underline;'>${refileJob.value.id}</a>`,
       html: true,
@@ -1109,7 +1109,7 @@ const createRefileJob = async () => {
     })
     loadRefileJobs()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create refile job'
     })
@@ -1128,7 +1128,7 @@ const updateRefileJob = async () => {
     await postRefileJobItem(payload)
 
     // display an alert with the updated refilet job id so you can click that and link directly to the job if needed
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully added items to Refile Job #: <a href='/refile/${refileJob.value.id}' style='color: white; text-decoration: underline;'>${refileJob.value.id}</a>`,
       html: true,
@@ -1142,7 +1142,7 @@ const updateRefileJob = async () => {
     })
     loadRefileJobs()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update refile job'
     })

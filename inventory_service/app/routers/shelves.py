@@ -4,6 +4,7 @@ import logging
 import re
 from typing import List, Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 from fastapi_pagination import paginate as paginate_list
@@ -774,9 +775,7 @@ def delete_shelf(id: int, session: Session = Depends(get_session)):
         session.delete(shelf)
         session.commit()
 
-        return HTTPException(
-            status_code=204, detail=f"Shelf ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Shelf ID {id} Not Found")
 

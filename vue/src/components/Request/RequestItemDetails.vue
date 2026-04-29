@@ -185,7 +185,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
 import { useRequestStore } from '@/stores/request-store'
@@ -246,7 +246,7 @@ const deleteRequest = async () => {
     appActionIsLoadingData.value = true
     await deleteRequestJob(requestJob.value.id)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The request has been deleted.'
     })
@@ -261,7 +261,7 @@ const deleteRequest = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to delete request',
       timeout: 0,

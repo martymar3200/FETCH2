@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from typing import List
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -637,10 +638,7 @@ def delete_withdraw_job(job_id: int, session: Session = Depends(get_session)):
     session.delete(withdraw_job)
     session.commit()
 
-    return HTTPException(
-        status_code=204,
-        detail=f"Withdraw Job id {job_id} Deleted Successfully",
-    )
+    return Response(status_code=204)
 
 
 @router.post("/{job_id}/add_items", response_model=WithdrawJobDetailOutput)

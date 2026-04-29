@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -122,8 +123,6 @@ def delete_item_retrieval_event(id: int, session: Session = Depends(get_session)
     if item_retrieval_event:
         session.delete(item_retrieval_event)
         session.commit()
-        return HTTPException(
-            status_code=204, detail=f"Item Retrieval Event ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Item Retrieval Event ID {id} Not Found")

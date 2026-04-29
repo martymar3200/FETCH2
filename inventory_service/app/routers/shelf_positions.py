@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -181,6 +182,4 @@ def delete_shelf_position(id: int, session: Session = Depends(get_session)):
     session.delete(shelf_position)
     session.commit()
 
-    return HTTPException(
-        status_code=204, detail=f"Shelf Position ID {id} Deleted Successfully"
-    )
+    return Response(status_code=204)

@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+from fastapi.responses import Response
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -125,9 +126,6 @@ def delete_non_tray_item_retrieval_event(
     if non_tray_item_retrieval_event:
         session.delete(non_tray_item_retrieval_event)
         session.commit()
-        return HTTPException(
-            status_code=204,
-            detail=f"Non Tray Item Retrieval Event ID {id} Deleted Successfully",
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Non Tray Item Retrieval Event ID {id} Not Found")

@@ -148,7 +148,7 @@ import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import PopupModal from '@/components/PopupModal.vue'
 import BarcodeBox from '@/components/BarcodeBox.vue'
 import TextInput from '@/components/TextInput.vue'
@@ -196,7 +196,7 @@ watch(compiledBarCode, (barcode) => {
 const triggerItemScan = (barcode_value) => {
   // check if barcode already is part of the job items
   if (withdrawJobItems.value.length > 0 && (withdrawJobItems.value.some(itm => itm.barcode.value == barcode_value) || withdrawJob.value.trays.some(itm => itm.barcode.value == barcode_value))) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'The scanned barcode already exists in this withdraw job. Please try again!'
     })
@@ -215,14 +215,14 @@ const addItemToWithdrawJob = async () => {
     }
     const res = await postWithdrawJobItem(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Successfully added an item to the Withdraw Job!'
     })
     // check if errors are returned in our 200 response and display them
     if (res) {
       res.forEach(err => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: `Batch withdraw upload failed for the following: ${JSON.stringify(err)}`
         })
@@ -236,13 +236,13 @@ const addItemToWithdrawJob = async () => {
   } catch (error) {
     if (error.response?.data?.errors) {
       error.response.data.errors.forEach(err => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: `Batch withdraw upload failed: ${JSON.stringify(err)}`
         })
       })
     } else {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || error.message || 'Failed to add item'
       })
@@ -263,14 +263,14 @@ const bulkAddItemToWithdrawJob = async () => {
     }
     const res = await postWithdrawJobBulkItems(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Successfully bulk added items to the Withdraw Job!'
     })
     // check if errors are returned in our 200 response and display them
     if (res) {
       res.forEach(err => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: `Batch withdraw upload failed for the following: ${JSON.stringify(err)}`
         })
@@ -280,13 +280,13 @@ const bulkAddItemToWithdrawJob = async () => {
     //TODO figure out how to handle error logging for the user
     if (error.response?.data?.errors) {
       error.response.data.errors.forEach(err => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: `Batch withdraw upload failed: ${JSON.stringify(err)}`
         })
       })
     } else {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || error.message || 'Bulk upload failed'
       })

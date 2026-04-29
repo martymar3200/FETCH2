@@ -72,7 +72,7 @@
 import { ref, onBeforeMount } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useGroupStore } from '@/stores/group-store'
 import { useUserStore } from '@/stores/user-store'
@@ -149,7 +149,7 @@ const loadAdminGroupPermissions = async () => {
     // get the group based permissions to compare against
     await getAdminGroupPermissions(route.params.groupId)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load group permissions'
     })
@@ -169,7 +169,7 @@ const addAdminGroupPermission = async (permissionId) => {
     // reload user permissions
     await getUserPermissions()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update admin group permission'
     })
@@ -189,7 +189,7 @@ const removeAdminGroupPermission = async (permissionId) => {
     // reload user permissions
     await getUserPermissions()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to remove admin group permission'
     })

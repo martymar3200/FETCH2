@@ -351,7 +351,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, onBeforeMount, computed, watch } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRoute, useRouter } from 'vue-router'
 import { useReportsStore } from '@/stores/reports-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -1352,7 +1352,7 @@ const regenerateReport = async (qParams) => {
       ...serverSideFilters
     }, reportType.value)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to regenerate report'
     })

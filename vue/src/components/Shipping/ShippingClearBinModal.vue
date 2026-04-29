@@ -77,7 +77,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, nextTick } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useShippingStore } from '@/stores/shipping-store'
 import PopupModal from '@/components/PopupModal.vue'
 import TextInput from '@/components/TextInput.vue'
@@ -106,7 +106,7 @@ const submitClearBin = async () => {
   try {
     await clearBin(barcode.value)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Bin ${barcode.value} cleared successfully`
     })
@@ -123,7 +123,7 @@ const submitClearBin = async () => {
     })
 
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Failed to clear bin'
     })

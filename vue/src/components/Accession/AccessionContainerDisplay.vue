@@ -633,7 +633,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch, computed, inject, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
@@ -861,7 +861,7 @@ async function processTrayScan (barcode_value) {
     await getOptions('sizeClass', { short_name: barcode_value.slice(0, 2) })
     const generateSizeClass = sizeClass.value.find(size => size.short_name == barcode_value.slice(0, 2))?.id
     if (!generateSizeClass && accessionJob.value.status !== 'Completed') {
-      Notify.create({
+      notify({
         type: 'negative',
         message: `The tray can not be added, the container size ${barcode_value.slice(0, 2)} doesnt exist in the system. Please add it and try again.`
       })
@@ -903,7 +903,7 @@ async function processTrayScan (barcode_value) {
       })
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -932,7 +932,7 @@ async function processItemScan (barcode_value) {
           (item) => item.barcode.id == barcodeDetails.value.id
         )
       ) {
-        Notify.create({
+        notify({
           type: 'negative',
           message: 'The scanned item was already added to this tray.'
         })
@@ -962,7 +962,7 @@ async function processItemScan (barcode_value) {
       }
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: `Error with barcode "${barcode_value}": ${error.response?.data?.detail || error}`
     })
@@ -1021,7 +1021,7 @@ const addContainerItem = async () => {
       await postAccessionNonTrayItem(payload)
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1061,12 +1061,12 @@ const updateContainerItem = async (barcode_value) => {
     }
     selectedItems.value[0].barcode.value = barcode_value
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The item has been updated.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1099,12 +1099,12 @@ const deleteContainerItem = async () => {
       })
     )
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The selected item(s) has been removed.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1176,14 +1176,14 @@ const updateJobMediaType = async (hideModal) => {
     await patchAccessionJob({
       media_type_id: selectedMediaType.value?.id || selectedMediaType.value
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Job settings updated successfully.'
     })
     hideModal()
     showEditJobModal.value = false
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1206,7 +1206,7 @@ const updateTrayContainerBarcode = async () => {
     }
     await patchAccessionTray(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The tray has been updated.'
     })
@@ -1220,7 +1220,7 @@ const updateTrayContainerBarcode = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1239,7 +1239,7 @@ const cancelAccessionJob = async () => {
     }
     await patchAccessionJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Accession Job has been canceled.'
     })
@@ -1254,7 +1254,7 @@ const cancelAccessionJob = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1269,7 +1269,7 @@ const removeTrayContainer = async () => {
     await deleteAccessionTrayItem(accessionContainer.value.items.map(item => item.id))
     await deleteAccessionTray(accessionContainer.value.id)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Tray Container has been deleted.'
     })
@@ -1283,7 +1283,7 @@ const removeTrayContainer = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1336,12 +1336,12 @@ const updateAccessionJobStatus = async (status) => {
 
     await patchAccessionJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Job Status has been updated to: ${status}`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1371,7 +1371,7 @@ const completeAccessionJob = async () => {
     await patchAccessionJob(payload)
 
     verificationJobGenerated.value = true
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Job has been completed and moved for verification.'
     })
@@ -1383,7 +1383,7 @@ const completeAccessionJob = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -1400,7 +1400,7 @@ const checkVerificationJobGeneration = async () => {
       return
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })

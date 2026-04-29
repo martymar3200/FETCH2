@@ -163,7 +163,7 @@ $color-map: (
 }
 .flex-xl-shrink {
   @media (min-width: $breakpoint-xl-min) {
-    flex-grow: 1 !important;
+    flex-shrink: 1 !important;
   }
 }
 

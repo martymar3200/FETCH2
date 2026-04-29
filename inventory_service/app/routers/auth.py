@@ -164,7 +164,7 @@ async def saml_metadata():
     metadata = settings.get_sp_metadata()
     errors = settings.validate_metadata(metadata)
     if len(errors) > 0:
-        return HTTPException(status_code=500, detail=', '.join(errors))
+        raise HTTPException(status_code=500, detail=', '.join(errors))
     return Response(content=metadata, media_type="text/xml")
 
 @router.get("/sso/login")
@@ -191,9 +191,9 @@ async def saml_acs(request: Request, session: Session = Depends(get_session)):
     errors = auth.get_errors()
     last_error_reason = auth.get_last_error_reason()
     if len(errors) > 0 or not auth.is_authenticated():
-        # return HTTPException(status_code=400, detail=', '.join(errors))
+        # raise HTTPException(status_code=400, detail=', '.join(errors))
         # temp debug
-        return HTTPException(status_code=400, detail=f"{errors}, last error reason: {last_error_reason}")
+        raise HTTPException(status_code=400, detail=f"{errors}, last error reason: {last_error_reason}")
 
     user_info = auth.get_attributes()
 

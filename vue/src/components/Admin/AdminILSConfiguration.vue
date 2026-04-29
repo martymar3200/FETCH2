@@ -311,7 +311,8 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { useGlobalStore } from '@/stores/global-store'
 import { useIlsConfigurationStore } from '@/stores/ils-configuration-store'
 import { storeToRefs } from 'pinia'
-import { Notify, Dialog } from 'quasar'
+import { Dialog } from 'quasar'
+import { notify } from '@/utils/notify'
 
 // Stores
 const globalStore = useGlobalStore()
@@ -401,7 +402,7 @@ const loadData = async () => {
     await ilsStore.getIlsConfigurations()
   } catch (err) {
     console.error(err)
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to load ILS Configurations'
     })
@@ -445,13 +446,13 @@ const onSubmit = async () => {
 
     if (editingId.value) {
       await ilsStore.patchIlsConfiguration(editingId.value, payload)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Configuration Updated'
       })
     } else {
       await ilsStore.postIlsConfiguration(payload)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Configuration Created'
       })
@@ -460,7 +461,7 @@ const onSubmit = async () => {
     await loadData()
   } catch (err) {
     console.error(err)
-    Notify.create({
+    notify({
       type: 'negative',
       message: err?.response?.data?.detail || 'An error occurred'
     })
@@ -479,14 +480,14 @@ const confirmDelete = (row) => {
     try {
       appActionIsLoadingData.value = true
       await ilsStore.deleteIlsConfiguration(row.id)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Configuration Deleted'
       })
       await loadData()
     } catch (err) {
       console.error(err)
-      Notify.create({
+      notify({
         type: 'negative',
         message: err?.response?.data?.detail || 'Deletion failed (Check active Owner assignments)'
       })

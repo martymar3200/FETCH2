@@ -406,7 +406,7 @@ import { useUserStore } from '@/stores/user-store'
 import { useWithdrawalStore } from '@/stores/withdrawal-store'
 
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import EssentialTable from '@/components/EssentialTable.vue'
@@ -709,19 +709,19 @@ const handleScanInput = async () => {
     const errors = await postWithdrawJobItem(payload)
 
     if (errors && errors.length > 0) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: errors.join(', ')
       })
     } else {
-      Notify.create({
+      notify({
         type: 'positive',
         message: `Item ${barcode} added to job.`,
         timeout: 1000
       })
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to add item'
     })
@@ -749,12 +749,12 @@ const updateWithdrawJob = async () => {
 
     await patchWithdrawJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The job has been updated.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update job'
     })
@@ -771,7 +771,7 @@ const cancelWithdrawJob = async () => {
 
     await deleteWithdrawJob(withdrawJob.value.id)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Withdraw Job has been canceled.'
     })
@@ -783,7 +783,7 @@ const cancelWithdrawJob = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to cancel job'
     })
@@ -796,7 +796,7 @@ const completeWithdrawJob = async (withdrawType) => {
   try {
     // check if an associated picklist exists and make sure it is completed
     if (withdrawJob.value.pick_list && withdrawJob.value.pick_list.status !== 'Completed') {
-      Notify.create({
+      notify({
         type: 'negative',
         message: `A Pick list job # <a href='/picklist/${withdrawJob.value.pick_list_id}' style='color: white; text-decoration: underline;'>${withdrawJob.value.pick_list_id}</a> was generated for withdrawal but not completed yet, please complete the picklist job inorder to complete withdrawal process.`,
         html: true,
@@ -822,7 +822,7 @@ const completeWithdrawJob = async (withdrawType) => {
 
     await patchWithdrawJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'All items have been successfully withdrawn, the job has been completed.'
     })
@@ -832,7 +832,7 @@ const completeWithdrawJob = async (withdrawType) => {
       batchSheetComponent.value.printBatchReport()
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to complete job'
     })
@@ -851,12 +851,12 @@ const removeWithdrawItems = async (barcode_values) => {
 
     await deleteWithdrawJobItems(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The item has been removed from the job.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to remove item'
     })
@@ -876,7 +876,7 @@ const createPicklistJob = async () => {
 
     await patchWithdrawJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully created Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' style='color: white; text-decoration: underline;'>${withdrawJob.value.pick_list_id}</a>`,
       html: true,
@@ -889,7 +889,7 @@ const createPicklistJob = async () => {
       ]
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create picklist job'
     })
@@ -909,7 +909,7 @@ const addToPicklistJob = async () => {
 
     await patchWithdrawJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully updated Pick List #: <a href='/picklist/${withdrawJob.value.pick_list_id}' style='color: white; text-decoration: underline;'>${withdrawJob.value.pick_list_id}</a>`,
       html: true,
@@ -922,7 +922,7 @@ const addToPicklistJob = async () => {
       ]
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update picklist job'
     })

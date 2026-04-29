@@ -243,7 +243,8 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed, inject } from 'vue'
-import { Notify, useQuasar } from 'quasar'
+import { useQuasar } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useBuildingStore } from '@/stores/building-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -717,7 +718,7 @@ const handleSelectionChange = async (level) => {
         break
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load location data'
     })
@@ -751,7 +752,7 @@ const loadTableData = async (qParams) => {
         break
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load location data'
     })
@@ -778,7 +779,7 @@ const handleOptionMenu = async (option, rowData) => {
           case 'Shelves': await deleteShelve(rowData.id); break
         }
 
-        Notify.create({
+        notify({
           type: 'positive',
           message: `Successfully deleted the ${singularLevel.value}`
         })
@@ -797,7 +798,7 @@ const handleOptionMenu = async (option, rowData) => {
         }
 
       } catch (error) {
-        Notify.create({
+        notify({
           type: 'negative',
           message: error.response?.data?.detail || error.message || `Failed to delete ${singularLevel.value}`
         })

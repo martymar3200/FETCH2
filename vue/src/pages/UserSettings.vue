@@ -93,7 +93,7 @@ import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
 import SelectInput from '@/components/SelectInput.vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 
 const userStore = useUserStore()
 const { userData } = storeToRefs(userStore)
@@ -122,12 +122,12 @@ const onBuildingChange = async (newVal) => {
     await userStore.updateUserProfile(userData.value.user_id, {
       default_building_id: newVal
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Default building updated successfully'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to update default building'
     })

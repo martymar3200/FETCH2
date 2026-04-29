@@ -393,7 +393,7 @@ import { useRouter } from 'vue-router'
 import { useShelvingStore } from '@/stores/shelving-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useVerificationStore } from '@/stores/verification-store'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 
 const router = useRouter()
 const shelvingStore = useShelvingStore()
@@ -534,12 +534,12 @@ const addFromVerificationJobs = async () => {
     const containerList = await shelvingStore.getShelveByListContainers(createdJobId.value)
     containers.value = containerList
     selectedVerificationJobs.value = []
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Added ${containerList.length} containers from verification jobs`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Failed to add containers'
     })
@@ -570,7 +570,7 @@ const addManualContainer = async () => {
     )
     containers.value.push(container)
     manualBarcode.value = ''
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Container added successfully'
     })
@@ -585,12 +585,12 @@ const removeContainer = async (containerId) => {
   try {
     await shelvingStore.removeContainerFromShelveByList(createdJobId.value, containerId)
     containers.value = containers.value.filter(c => c.id !== containerId)
-    Notify.create({
+    notify({
       type: 'info',
       message: 'Container removed'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Failed to remove container'
     })
@@ -617,7 +617,7 @@ const createJobOnly = async () => {
     createdJobId.value = job.id
     jobCreated.value = true
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Failed to create job'
     })
@@ -651,7 +651,7 @@ const createJob = async (mode) => {
       containers.value = await shelvingStore.getShelveByListContainers(createdJobId.value)
       showPreAssignDialog.value = true
     } catch (error) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || 'Pre-assignment failed'
       })
@@ -659,7 +659,7 @@ const createJob = async (mode) => {
       creatingJob.value = false
     }
   } else {
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Job created successfully'
     })
@@ -677,7 +677,7 @@ const runPreAssignment = async () => {
     preAssignmentRun.value = true
     showPreAssignDialog.value = true
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || 'Pre-assignment failed'
     })

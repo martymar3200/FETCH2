@@ -1,6 +1,5 @@
 # /code/app/events.py - FULL REFACRORED TO SQLALCHEMY V2
 
-import debugpy
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import event, select, update

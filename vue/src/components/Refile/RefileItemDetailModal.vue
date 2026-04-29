@@ -161,7 +161,7 @@ import { useGlobalStore } from '@/stores/global-store'
 import { useRefileStore } from '@/stores/refile-store'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import PopupModal from '@/components/PopupModal.vue'
 import BarcodeBox from '@/components/BarcodeBox.vue'
 
@@ -203,7 +203,7 @@ watch(compiledBarCode, (barcode) => {
 })
 const triggerTrayScan = (barcode_value) => {
   if (refileItem.value.status !== 'Out') {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'The scanned item has already been marked as refiled.',
       timeout: 2000
@@ -211,7 +211,7 @@ const triggerTrayScan = (barcode_value) => {
   } else if (barcode_value == refileItem.value.tray.barcode.value && !refileItem.value.status !== 'Out') {
     updateTrayItemAsRefiled()
   } else {
-    Notify.create({
+    notify({
       type: 'negative',
       message: `The scanned tray barcode does not match this items tray barcode (${refileItem.value.tray.barcode.value}). Please try again!`,
       timeout: 2000
@@ -220,7 +220,7 @@ const triggerTrayScan = (barcode_value) => {
 }
 const triggerShelfScan = (barcode_value) => {
   if (refileItem.value.status !== 'Out') {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'The scanned item has already been marked as refiled.',
       timeout: 2000
@@ -228,7 +228,7 @@ const triggerShelfScan = (barcode_value) => {
   } else if (barcode_value == refileItem.value.shelf_position.shelf.barcode.value && !refileItem.value.status !== 'Out') {
     updateNonTrayItemAsRefiled()
   } else {
-    Notify.create({
+    notify({
       type: 'negative',
       message: `The scanned shelf barcode does not match the non tray items shelf barcode (${refileItem.value.shelf_position.shelf.barcode.value}). Please try again!`,
       timeout: 2000
@@ -263,14 +263,14 @@ const updateTrayItemAsRefiled = async () => {
 
     addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(originalRefileJob.value)))
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The tray item has been refiled.'
     })
     resetRefileItem()
     emit('hide')
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update tray item'
     })
@@ -305,14 +305,14 @@ const updateNonTrayItemAsRefiled = async () => {
 
     addDataToIndexDb('refileStore', 'originalRefileJob', JSON.parse(JSON.stringify(originalRefileJob.value)))
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The non tray item has been refiled.'
     })
     resetRefileItem()
     emit('hide')
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update non-tray item'
     })

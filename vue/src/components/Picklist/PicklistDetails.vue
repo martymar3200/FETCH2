@@ -238,7 +238,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, onMounted, ref, computed, inject, toRaw, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
@@ -399,7 +399,7 @@ const currentIsoDate = inject('current-iso-date')
 const formatDateTime = inject('format-date-time')
 const getItemLocation = inject('get-item-location')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
-const getUniqueListByKey = inject('get-uniqure-list-by-key')
+const getUniqueListByKey = inject('get-unique-list-by-key')
 
 const headerSubtitle = computed(() => {
   const building = picklistJob.value.building?.name || '-'
@@ -485,13 +485,13 @@ watch(compiledBarCode, (barcode) => {
 const triggerItemScan = (barcode_value) => {
   // check if the scanned barcode is in the item data and that the barcode hasnt been retrieved already
   if (!picklistItems.value.some(itm => itm.item ? itm.item.barcode.value == barcode_value : itm.non_tray_item.barcode.value == barcode_value)) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'The scanned item does not exist in this pick list job. Please try again.'
     })
     return
   } else if (picklistItems.value.some(itm => itm.item ? itm.item.barcode.value == barcode_value && itm.status !== 'PickList' : itm.non_tray_item.barcode.value == barcode_value && itm.status !== 'PickList')) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'The scanned item has already been marked as retrieved.'
     })
@@ -537,12 +537,12 @@ const executePicklistJob = async () => {
     }
     await patchPicklistJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Pick List Job Successfully Started'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to start job'
     })
@@ -560,12 +560,12 @@ const updatePicklistJob = async () => {
     }
     await patchPicklistJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The job has been updated.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update job'
     })
@@ -584,12 +584,12 @@ const updatePicklistJobStatus = async (status) => {
     }
     await patchPicklistJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Job Status has been updated to: ${status}`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update status'
     })
@@ -602,7 +602,7 @@ const cancelPicklistJob = async () => {
     appIsLoadingData.value = true
     await deletePicklistJob(picklistJob.value.id)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Pick List Job has been canceled.'
     })
@@ -614,7 +614,7 @@ const cancelPicklistJob = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to cancel job'
     })
@@ -637,7 +637,7 @@ const completePicklistJob = async (printBool) => {
     if (printBool) {
       batchSheetComponent.value.printBatchReport()
     }
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Pick List Job has been completed.'
     })
@@ -649,7 +649,7 @@ const completePicklistJob = async (printBool) => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to complete job'
     })
@@ -665,12 +665,12 @@ const removePicklistItem = async (itemId) => {
     appIsLoadingData.value = true
     await deletePicklistJobItem(itemId)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `${itemId} has been sent back to the request queue.`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to remove item'
     })
@@ -693,7 +693,7 @@ const updatePicklistItem = async (barcode_value) => {
 
     // Note: The store's optimisticUpdate handles moving the item to the bottom of the list and syncing IndexDb.
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update item'
     })

@@ -384,7 +384,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed, inject, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useGlobalStore } from '@/stores/global-store'
@@ -505,13 +505,13 @@ const updateUserAssignment = async () => {
     }
     await patchVerificationJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'User assigned successfully'
     })
     editJob.value = false
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update user assignment'
     })
@@ -579,7 +579,7 @@ const openEditModal = async () => {
 
     editMode.value = true
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -601,7 +601,7 @@ const triggerItemScan = async () => {
 
   // Prevent scan if assigned to another user
   if (isAssignedToOtherUser.value) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'This job is assigned to another user. You cannot verify items.'
     })
@@ -620,7 +620,7 @@ const triggerItemScan = async () => {
       if (!verificationContainer.value.scanned_for_verification) {
         await verifyNonTrayItem(verificationContainer.value.id)
       } else {
-        Notify.create({
+        notify({
           type: 'info',
           message: 'Item already verified'
         })
@@ -637,7 +637,7 @@ const triggerItemScan = async () => {
       audioAlert()
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error,
       timeout: 0,
@@ -679,7 +679,7 @@ const addItemToJob = async () => {
       user_id: userData.value.user_id
     }
     await postVerificationNonTrayItem(payload)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Item has been added to the job.'
     })
@@ -688,7 +688,7 @@ const addItemToJob = async () => {
       await updateVerificationJobStatus('Running')
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -718,12 +718,12 @@ const updateVerificationJobStatus = async (status) => {
       assigned_user_id: verificationJob.value.assigned_user_id || userData.value.user_id,
       run_timestamp: currentIsoDate()
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Job ${status === 'Paused' ? 'paused' : 'resumed'} successfully.`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -737,7 +737,7 @@ const cancelVerification = async () => {
     appActionIsLoadingData.value = true
     await cancelVerificationJob(verificationJob.value.id)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Verification Job canceled'
     })
@@ -749,7 +749,7 @@ const cancelVerification = async () => {
     })
 
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })
@@ -771,7 +771,7 @@ const completeVerificationJob = async (shouldPrint = false) => {
       emit('print')
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Job Completed'
     })
@@ -780,7 +780,7 @@ const completeVerificationJob = async (shouldPrint = false) => {
       params: { jobId: null }
     })
   } catch (e) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: e.response?.data?.detail || e
     })
@@ -808,13 +808,13 @@ const updateNonTrayItem = async () => {
     }
     await patchVerificationNonTrayItem(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The non-tray item has been updated.'
     })
     editMode.value = false
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error
     })

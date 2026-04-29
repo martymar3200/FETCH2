@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -123,9 +124,6 @@ def delete_verification_change(id: int, session: Session = Depends(get_session))
         session.delete(existing_verification_change)
         session.commit()
 
-        return HTTPException(
-            status_code=204,
-            detail=f"Verification Change id {id} Deleted Successfully",
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Verification Change ID {id} Not Found")

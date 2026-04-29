@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -513,9 +514,7 @@ def delete_refile_job(id: int, session: Session = Depends(get_session)):
     session.delete(refile_job)
     session.commit()
 
-    return HTTPException(
-        status_code=204, detail=f"Refile Job ID {id} Deleted Successfully"
-    )
+    return Response(status_code=204)
 
 
 @router.post("/{job_id}/add_items", response_model=RefileJobDetailOutput, dependencies=[Depends(RequiresPermission("process_refile_jobs"))])

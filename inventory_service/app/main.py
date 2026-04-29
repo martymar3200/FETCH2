@@ -13,7 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import importlib
 import pkgutil 
 
-from app.middlware import JWTMiddleware
+from app.middleware import JWTMiddleware
 
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
@@ -38,12 +38,14 @@ from app.config.exceptions import (
     InternalServerError,
     NotAuthorized,
     Forbidden,
+    MethodNotAllowed,
     bad_request_exception_handler,
     not_found_exception_handler,
     validation_exception_handler,
     internal_server_error_exception_handler,
     not_authorized_exception_handler,
     forbidden_exception_handler,
+    method_not_allowed_exception_handler,
     unhandled_exception_handler,
 )
 from app.routers import (
@@ -205,6 +207,7 @@ app.exception_handler(ValidationException)(validation_exception_handler)
 app.exception_handler(InternalServerError)(internal_server_error_exception_handler)
 app.exception_handler(NotAuthorized)(not_authorized_exception_handler)
 app.exception_handler(Forbidden)(forbidden_exception_handler)
+app.exception_handler(MethodNotAllowed)(method_not_allowed_exception_handler)
 app.exception_handler(DBAPIError)(unhandled_exception_handler)
 app.exception_handler(Exception)(unhandled_exception_handler)
 

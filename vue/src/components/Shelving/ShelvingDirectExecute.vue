@@ -313,7 +313,7 @@ import { useShelvingStore } from '@/stores/shelving-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
@@ -438,13 +438,13 @@ const updateUserAssignment = async () => {
       id: job.value.id,
       assigned_user_id: job.value.assigned_user_id
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'User assignment updated'
     })
     editJob.value = false
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to update user assignment'
     })
@@ -505,12 +505,12 @@ const startJob = async () => {
       id: job.value.id,
       status: 'Running'
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Job started!'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -535,14 +535,14 @@ const cancelJob = async () => {
       status: 'Cancelled'
     })
     showCancelDialog.value = false
-    Notify.create({
+    notify({
       type: 'info',
       message: 'Job cancelled'
     })
     deleteDataInIndexDb('shelvingStore', 'shelvingJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to cancel job'
     })
@@ -557,7 +557,7 @@ const scanShelf = async () => {
   }
 
   if (!checkUserPermission('can_create_and_execute_direct_shelving_job')) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Permission denied'
     })
@@ -574,7 +574,7 @@ const scanShelf = async () => {
       containerInput.value?.focus()
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to scan shelf'
     })
@@ -639,7 +639,7 @@ const shelveContainer = async () => {
     }
     await postShelvingJobContainer(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Container shelved!'
     })
@@ -667,14 +667,14 @@ const completeJob = async () => {
     })
 
     showCompleteDialog.value = false
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Job completed!'
     })
     deleteDataInIndexDb('shelvingStore', 'shelvingJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to complete job'
     })

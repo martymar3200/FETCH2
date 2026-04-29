@@ -212,7 +212,9 @@
                   >
                     <q-item-section>
                       <q-item-label>{{ item.barcode?.value }}</q-item-label>
-                      <q-item-label caption>Non-Tray</q-item-label>
+                      <q-item-label caption>
+                        Non-Tray
+                      </q-item-label>
                     </q-item-section>
                     <q-item-section side>
                       <BaseButton
@@ -260,7 +262,8 @@ import { useShippingStore } from '@/stores/shipping-store'
 import TextInput from '@/components/TextInput.vue'
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
-import { Notify, useQuasar } from 'quasar'
+import { useQuasar } from 'quasar'
+import { notify } from '@/utils/notify'
 
 const $q = useQuasar()
 
@@ -333,7 +336,7 @@ const handleBinScan = async () => {
         playSound('error')
         lastMessage.value = `Location Mismatch! Bin is for ${bin.delivery_location?.name}, Item is for ${pendingItem.value.delivery_location?.name}`
         lastMessageType.value = 'text-red-10'
-        Notify.create({
+        notify({
           type: 'negative',
           message: lastMessage.value
         })
@@ -348,7 +351,7 @@ const handleBinScan = async () => {
         // Auto-add the item
         try {
           await scanItemIntoBin(jobId, bin.id, pendingItem.value.barcode)
-          Notify.create({
+          notify({
             type: 'positive',
             message: `Item ${pendingItem.value.barcode} Auto-added!`
           })
@@ -359,7 +362,7 @@ const handleBinScan = async () => {
         } catch (err) {
           lastMessage.value = `Failed to auto-add item: ${err.message}`
           lastMessageType.value = 'text-red-10'
-          Notify.create({
+          notify({
             type: 'negative',
             message: lastMessage.value
           })
@@ -418,7 +421,7 @@ const handleItemScan = async () => {
       if (existingBin) {
         lastMessage.value = `Item is for ${locName}. Scan Bin ${existingBin.barcode}`
         lastMessageType.value = 'text-blue-10'
-        Notify.create({
+        notify({
           type: 'info',
           message: `Scan Bin ${existingBin.barcode}`,
           timeout: 5000
@@ -426,7 +429,7 @@ const handleItemScan = async () => {
       } else {
         lastMessage.value = `Item is for ${locName}. Scan a NEW Bin.`
         lastMessageType.value = 'text-deep-orange-10'
-        Notify.create({
+        notify({
           type: 'warning',
           message: `Scan a NEW Bin for ${locName}`,
           timeout: 5000
@@ -466,12 +469,12 @@ const handleItemScan = async () => {
 const handleRemoveItem = async (binId, itemId, itemType) => {
   try {
     await removeItemFromBin(jobId, binId, itemId, itemType)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Item Removed'
     })
   } catch (e) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to remove item'
     })
@@ -510,13 +513,13 @@ const confirmCancelJob = () => {
   }).onOk(async () => {
     try {
       await deleteShippingJob(jobId)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Job Cancelled'
       })
       router.push({ name: 'shipping' })
     } catch (e) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'Failed to cancel job'
       })
@@ -566,13 +569,13 @@ const menuOptions = computed(() => {
 const confirmComplete = async () => {
   try {
     await completeShippingJob(jobId)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Job Completed!'
     })
     router.push({ name: 'shipping' })
   } catch (e) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to complete job'
     })

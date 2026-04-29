@@ -293,7 +293,7 @@ import { useShelvingStore } from '@/stores/shelving-store'
 import { useGlobalStore } from '@/stores/global-store'
 import { useBarcodeStore } from '@/stores/barcode-store'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
@@ -465,13 +465,13 @@ const startJob = async () => {
       id: job.value.id,
       status: 'Running'
     })
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Move job started!'
     })
     saveState()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -492,14 +492,14 @@ const cancelJob = async () => {
       status: 'Cancelled'
     })
     showCancelDialog.value = false
-    Notify.create({
+    notify({
       type: 'info',
       message: 'Move job cancelled'
     })
     deleteDataInIndexDb('shelvingStore', 'moveJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to cancel job'
     })
@@ -514,7 +514,7 @@ const scanDestination = async () => {
   }
 
   if (!checkUserPermission('can_move_trays_and_items_shelving_locations')) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Permission denied'
     })
@@ -550,7 +550,7 @@ const scanDestination = async () => {
       containerInput.value?.focus()
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.response?.data?.detail || 'Failed to scan destination'
     })
@@ -720,14 +720,14 @@ const completeJob = async () => {
     })
 
     showCompleteDialog.value = false
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Move job completed!'
     })
     deleteDataInIndexDb('shelvingStore', 'moveJob')
     router.push({ name: 'shelving' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error?.response?.data?.detail || 'Failed to complete job'
     })
@@ -819,7 +819,7 @@ onMounted(async () => {
         }
       }
     } catch (error) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'Failed to load move job'
       })

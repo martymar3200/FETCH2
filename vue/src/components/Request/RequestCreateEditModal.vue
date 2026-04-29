@@ -203,7 +203,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, computed, watch, onMounted } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { useUserStore } from '@/stores/user-store'
@@ -352,7 +352,7 @@ const createRequestJob = async (isNext = false) => {
         requested_by_id: userData.value.user_id
       }
       await postRequestJob(payload)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Successfully created the request.'
       })
@@ -365,7 +365,7 @@ const createRequestJob = async (isNext = false) => {
       }
       await postRequestBatchJob(payload)
 
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'Successfully uploaded batch requests.'
       })
@@ -374,18 +374,18 @@ const createRequestJob = async (isNext = false) => {
     }
   } catch (error) {
     if (mainProps.type == 'manual') {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || error.message || 'Failed to create request'
       })
     } else if (error.response.status == 400) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'Batch request upload failed with errors. See downloaded error report.'
       })
       handleCSVDownload(error.response.data, 'Bulk_Request_Errors')
     } else {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || error.message || 'Failed to upload batch requests'
       })
@@ -420,14 +420,14 @@ const editRequestJob = async () => {
       priority_id: manualRequestForm.value.priority_id
     }
     await patchRequestJob(payload)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Successfully updated the request.'
     })
 
     emit('changeDisplay', 'request_view')
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update request'
     })

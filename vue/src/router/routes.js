@@ -366,11 +366,13 @@ const routes = [
           requiresAuth: true
         }
       },
-      {
-        name: 'test',
-        path: '/test',
-        component: () => import('@/pages/TestPage.vue')
-      },
+      ...(import.meta.env.VITE_ENV !== 'production' ? [
+        {
+          name: 'test',
+          path: '/test',
+          component: () => import('@/pages/TestPage.vue')
+        }
+      ] : []),
       {
         name: 'verification',
         path: 'verification/:jobId?',

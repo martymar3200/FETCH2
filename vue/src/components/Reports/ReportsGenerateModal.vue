@@ -484,7 +484,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount, computed } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -1248,7 +1248,7 @@ const generateReport = async () => {
     //emit to main report dashboard and pass query params so we can store them in the route
     emit('submit', queryParams)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to generate report'
     })

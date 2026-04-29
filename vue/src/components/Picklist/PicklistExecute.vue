@@ -253,7 +253,7 @@ import { usePicklistStore } from '@/stores/picklist-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
@@ -424,7 +424,7 @@ const startJob = async () => {
     await picklistStore.patchPicklistJob(payload)
     saveState()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -443,7 +443,7 @@ const pauseJob = async () => {
     }
     await picklistStore.patchPicklistJob(payload)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to pause job'
     })
@@ -462,7 +462,7 @@ const resumeJob = async () => {
     }
     await picklistStore.patchPicklistJob(payload)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to resume job'
     })
@@ -489,7 +489,7 @@ const processScan = async (barcode) => {
   )
 
   if (!item) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Item not in this pick list'
     })
@@ -499,7 +499,7 @@ const processScan = async (barcode) => {
   }
 
   if (item.status !== 'PickList') {
-    Notify.create({
+    notify({
       type: 'warning',
       message: 'Item already retrieved'
     })
@@ -521,14 +521,14 @@ const processScan = async (barcode) => {
     barcodeInput.value = ''
     saveState()
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Item retrieved',
       position: 'top',
       timeout: 1000
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to update item'
     })
@@ -541,13 +541,13 @@ const processScan = async (barcode) => {
 const revertItem = async (row) => {
   try {
     await picklistStore.deletePicklistJobItem(row.id)
-    Notify.create({
+    notify({
       type: 'info',
       message: 'Item reverted to queue'
     })
     saveState()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to revert item'
     })
@@ -568,7 +568,7 @@ const completeJob = async (print) => {
     deleteDataInIndexDb('picklistStore', 'activeJob')
     router.push({ name: 'picklist' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to complete job'
     })
@@ -588,13 +588,13 @@ const updateUserAssignment = async () => {
     }
     await picklistStore.patchPicklistJob(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'User assigned successfully'
     })
     editJob.value = false
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to assign user'
     })
@@ -610,7 +610,7 @@ const cancelJob = async () => {
     deleteDataInIndexDb('picklistStore', 'activeJob')
     router.push({ name: 'picklist' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to cancel job'
     })

@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -139,6 +140,6 @@ def delete_size_class(id: int, session: Session = Depends(get_session)):
     if size_class:
         session.delete(size_class)
         session.commit()
-        return HTTPException(status_code=204)
+        return Response(status_code=204)
     else:
         raise HTTPException(status_code=404, detail=f"Size Class ID {id} Not Found")

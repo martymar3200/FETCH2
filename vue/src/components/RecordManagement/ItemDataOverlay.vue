@@ -379,7 +379,7 @@ import { ref, inject } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import BarcodeBox from '@/components/BarcodeBox.vue'
 import API from '@/http/InventoryService'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 
 // Props
 const mainProps = defineProps({
@@ -409,13 +409,13 @@ const fetchJitMetadata = async () => {
     const barcode = renderItemBarcode()
     const { data } = await API.get(API.getItemMetadata.replace('/metadata/', `/${barcode}/metadata`))
     jitMetadata.value = data
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Live metadata loaded successfully'
     })
   } catch (err) {
     console.error(err)
-    Notify.create({
+    notify({
       type: 'negative',
       message: err?.response?.data?.detail || 'Failed to fetch live metadata'
     })

@@ -224,7 +224,7 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useShippingStore } from '@/stores/shipping-store'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import EssentialTable from '@/components/EssentialTable.vue'
@@ -336,7 +336,7 @@ const submitCreateJob = async () => {
   creatingJob.value = true
   try {
     const job = await createShippingJob({})
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Job ${job.id} Created`
     })
@@ -345,7 +345,7 @@ const submitCreateJob = async () => {
       params: { jobId: job.id }
     })
   } catch (e) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to create job'
     })

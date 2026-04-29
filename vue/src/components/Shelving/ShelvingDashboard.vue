@@ -536,7 +536,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -863,7 +863,7 @@ const loadShelvingJobs = async (qParams) => {
 
     await getShelvingJobList(filterParams)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load shelving jobs'
     })
@@ -940,7 +940,7 @@ const loadShelvingJob = async (jobId, type) => {
       })
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load shelving job'
     })
@@ -974,12 +974,12 @@ const submitShelvingJob = async () => {
       }
     })
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'A Shelving Job has been successfully created.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create Shelving Job'
     })
@@ -1006,12 +1006,12 @@ const submitDirectToShelfJob = async () => {
       }
     })
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'A Direct Shelving Job has been successfully created.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create Direct Shelving Job'
     })
@@ -1041,7 +1041,7 @@ const submitShelvingMove = async (moveType) => {
       }
     })
   } catch (e) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: e.response?.data?.detail || e.message || 'Failed to create Move Job'
     })

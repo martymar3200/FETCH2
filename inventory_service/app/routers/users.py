@@ -3,6 +3,7 @@
 import logging
 from typing import Optional, List
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -154,7 +155,7 @@ def delete_user(
     if user:
         session.delete(user)
         session.commit()
-        return HTTPException(status_code=204)
+        return Response(status_code=204)
 
     raise NotFound(detail=f"User ID {id} Not Found")
 

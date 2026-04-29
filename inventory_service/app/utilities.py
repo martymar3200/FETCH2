@@ -11,7 +11,7 @@ import pandas as pd
 import pytz
 from datetime import timezone
 # UPDATED IMPORTS: Remove sqlmodel, import select from sqlalchemy, Session from sqlalchemy.orm
-from sqlalchemy import and_, text, asc, desc, func, column, or_, not_, select, cast, String
+from sqlalchemy import and_, text, asc, desc, func, column, or_, not_, select, cast, String, update
 from sqlalchemy.orm import joinedload, aliased, RelationshipProperty, Session # Session is now imported from sqlalchemy.orm
 from sqlalchemy.inspection import inspect
 from fastapi import Header, Depends
@@ -57,13 +57,12 @@ def get_module_shelf_position(session, shelf_position):
     """
     Retrieves the module associated with a given shelf position.
     """
-    # NOTE: session.query().options(joinedload) is V1 style but still works in V2.
-    shelf = (
-        session.query(Shelf)
+
+    shelf = session.scalars(
+        select(Shelf)
         .options(joinedload(Shelf.ladder))
-        .filter(Shelf.id == shelf_position.shelf_id)
-        .first()
-    )
+        .where(Shelf.id == shelf_position.shelf_id)
+    ).first()
 
     if not shelf:
         raise NotFound(detail=f"Shelf ID {shelf_position.shelf_id} Not Found")
@@ -551,13 +550,12 @@ def get_refile_queue(params):
 
 
 # Request Batch Upload Helper Functions
-def _fetch_existing_data(session, model, values, column):
-    return session.query(model).filter(column.in_(values)).all()
+    return session.scalars(select(model).where(column.in_(values))).all()
 
 
 def _fetch_building_id_from_item(session, item_id, item_type):
     if item_type == "Item":
-        item = session.query(Item).get(item_id)
+        item = session.get(Item, item_id)
         if item and item.tray:
             tray = item.tray
             if tray.shelf_position_id and tray.shelf_position:
@@ -575,7 +573,7 @@ def _fetch_building_id_from_item(session, item_id, item_type):
                                     if module.building_id:
                                         return module.building_id
     else:
-        non_tray_item = session.query(NonTrayItem).get(item_id)
+        non_tray_item = session.get(NonTrayItem, item_id)
         if (
             non_tray_item
             and non_tray_item.shelf_position_id
@@ -647,12 +645,10 @@ def _validate_items(session, items, request_data, errors):
         row_index = request_data[
             request_data["Item Barcode"].astype(str) == barcode_value
         ].index[0]
-        item = session.query(Item).filter(Item.barcode_id == barcode_id).first()
-        non_tray_item = (
-            session.query(NonTrayItem)
-            .filter(NonTrayItem.barcode_id == barcode_id)
-            .first()
-        )
+        item = session.scalars(select(Item).where(Item.barcode_id == barcode_id)).first()
+        non_tray_item = session.scalars(
+            select(NonTrayItem).where(NonTrayItem.barcode_id == barcode_id)
+        ).first()
 
         if item:
             _validate_item(
@@ -722,17 +718,15 @@ def _validate_item(
         return
 
     if item_type == "Items":
-        existing_request = (
-            session.query(Request)
-            .filter(Request.item_id == item.id, Request.fulfilled == False)
-            .first()
-        )
+        existing_request = session.scalars(
+            select(Request)
+            .where(Request.item_id == item.id, Request.fulfilled == False)
+        ).first()
     elif item_type == "Non tray item":
-        existing_request = (
-            session.query(Request)
-            .filter(Request.non_tray_item_id == item.id, Request.fulfilled == False)
-            .first()
-        )
+        existing_request = session.scalars(
+            select(Request)
+            .where(Request.non_tray_item_id == item.id, Request.fulfilled == False)
+        ).first()
 
     if existing_request or item.status == "Requested":
         errors.append(
@@ -775,15 +769,13 @@ def _validate_item(
 
 
 def _fetch_tray_shelf_position(session, tray_id):
-    return session.query(ShelfPosition).join(Tray).filter(Tray.id == tray_id).first()
+    return session.scalars(select(ShelfPosition).join(Tray).where(Tray.id == tray_id)).first()
 
 
 def _fetch_non_tray_shelf_position(session, shelf_position_id):
-    return (
-        session.query(ShelfPosition)
-        .filter(ShelfPosition.id == shelf_position_id)
-        .first()
-    )
+    return session.scalars(
+        select(ShelfPosition).where(ShelfPosition.id == shelf_position_id)
+    ).first()
 
 
 def validate_request_data(session, request_data: pd.DataFrame):
@@ -893,23 +885,21 @@ def validate_request_data(session, request_data: pd.DataFrame):
     item_ids = [b.id for b in barcodes]
     
     # Fetch Items with their Trays and ShelfPositions (limit round trips)
-    items = (
-        session.query(Item)
+    items = session.scalars(
+        select(Item)
         .options(
             joinedload(Item.tray).joinedload(Tray.shelf_position)
         )
-        .filter(Item.barcode_id.in_(item_ids))
-        .all()
-    )
+        .where(Item.barcode_id.in_(item_ids))
+    ).all()
     item_map = {item.barcode_id: item for item in items}
 
     # Fetch NonTrayItems with ShelfPositions
-    non_tray_items = (
-        session.query(NonTrayItem)
+    non_tray_items = session.scalars(
+        select(NonTrayItem)
         .options(joinedload(NonTrayItem.shelf_position))
-        .filter(NonTrayItem.barcode_id.in_(item_ids))
-        .all()
-    )
+        .where(NonTrayItem.barcode_id.in_(item_ids))
+    ).all()
     non_tray_item_map = {nti.barcode_id: nti for nti in non_tray_items}
 
     # 3. Fetch all Active Requests for these items
@@ -917,17 +907,16 @@ def validate_request_data(session, request_data: pd.DataFrame):
     found_item_ids = [i.id for i in items]
     found_non_tray_ids = [nti.id for nti in non_tray_items]
 
-    active_requests = (
-        session.query(Request)
-        .filter(
+    active_requests = session.scalars(
+        select(Request)
+        .where(
             or_(
                 Request.item_id.in_(found_item_ids),
                 Request.non_tray_item_id.in_(found_non_tray_ids)
             )
         )
-        .filter(Request.fulfilled == False)
-        .all()
-    )
+        .where(Request.fulfilled == False)
+    ).all()
     
     # Create sets of "requested" IDs for O(1) lookup
     requested_item_ids = {r.item_id for r in active_requests if r.item_id}
@@ -1116,24 +1105,24 @@ def process_request_data(session, request_df: pd.DataFrame, batch_upload_id, req
     barcodes = request_df["Item Barcode"].tolist()
     barcode_objs = _fetch_existing_data(session, Barcode, barcodes, Barcode.value)
     barcode_dict = {b.value: str(b.id) for b in barcode_objs}
-    items = session.query(Item).filter(Item.barcode_id.in_(
-        session.query(Barcode.id).filter(Barcode.value.in_(barcodes))
-    )).all()
-    non_tray_items = session.query(NonTrayItem).filter(NonTrayItem.barcode_id.in_(
-        session.query(Barcode.id).filter(Barcode.value.in_(barcodes))
-    )).all()
+    items = session.scalars(select(Item).where(Item.barcode_id.in_(
+        select(Barcode.id).where(Barcode.value.in_(barcodes))
+    ))).all()
+    non_tray_items = session.scalars(select(NonTrayItem).where(NonTrayItem.barcode_id.in_(
+        select(Barcode.id).where(Barcode.value.in_(barcodes))
+    ))).all()
 
     if items:
         item_ids = [item.id for item in items]
-        session.query(Item).filter(Item.id.in_(item_ids)).update(
-            {"status": "Requested"}, synchronize_session=False
+        session.execute(
+            update(Item).where(Item.id.in_(item_ids)).values(status="Requested")
         )
 
     if non_tray_items:
         non_tray_items_ids = [item.id for item in non_tray_items]
-        session.query(NonTrayItem).filter(
-            NonTrayItem.id.in_(non_tray_items_ids)
-        ).update({"status": "Requested"}, synchronize_session=False)
+        session.execute(
+            update(NonTrayItem).where(NonTrayItem.id.in_(non_tray_items_ids)).values(status="Requested")
+        )
 
     priorities = _fetch_existing_data(
         session, Priority, request_df["Priority"].tolist(), Priority.value
@@ -1231,8 +1220,7 @@ COMPLETED_STATUS = "Completed"
 
 
 def _get_shelf_position(session: Session, tray_id: int):
-    # NOTE: session.query() is V1 style but still works
-    return session.query(ShelfPosition).join(Tray).filter(Tray.id == tray_id).first()
+    return session.scalars(select(ShelfPosition).join(Tray).where(Tray.id == tray_id)).first()
 
 
 def _get_existing_withdrawals(session: Session, item_ids, item_type):
@@ -1240,12 +1228,10 @@ def _get_existing_withdrawals(session: Session, item_ids, item_type):
         "Item": ItemWithdrawal,
         "NonTrayItem": NonTrayItemWithdrawal,
     }
-    # NOTE: session.query() is V1 style but still works
-    return (
-        session.query(model_map[item_type])
-        .filter(model_map[item_type].item_id.in_(item_ids))
-        .all()
-    )
+    return session.scalars(
+        select(model_map[item_type])
+        .where(model_map[item_type].item_id.in_(item_ids))
+    ).all()
 
 
 def _validate_withdraw_job_existing_item(existing_withdraws, job_id, status):
@@ -1277,19 +1263,17 @@ def _validate_withdraw_item(session, item, withdraw_job_id, barcode, index, erro
     _validate_item_status(
         item, index, item_errors, "Item must have status of ['In', 'Out']"
     )
-    # NOTE: session.query() is V1 style but still works
-    shelf_position = (
-        session.query(ShelfPosition).join(Tray).filter(Tray.id == item.tray_id).first()
-    )
+    shelf_position = session.scalars(
+        select(ShelfPosition).join(Tray).where(Tray.id == item.tray_id)
+    ).first()
     if validate_item_not_shelved(shelf_position):
         errors.append({"line": int(index), "error": "Item is not shelved"})
-    # NOTE: session.query() is V1 style but still works
-    existing_withdrawals = (
-        session.query(WithdrawJob)
+    
+    existing_withdrawals = session.scalars(
+        select(WithdrawJob)
         .join(ItemWithdrawal, WithdrawJob.id == ItemWithdrawal.withdraw_job_id)
-        .filter(ItemWithdrawal.item_id == item.id)
-        .all()
-    )
+        .where(ItemWithdrawal.item_id == item.id)
+    ).all()
     if _validate_withdraw_job_existing_item(
         existing_withdrawals, withdraw_job_id, "Completed"
     ):
@@ -1320,32 +1304,31 @@ def process_withdraw_job_data(
     barcode_ids = [barcode.id for barcode in barcodes]
 
     # Fetch all necessary data in batch
-    # NOTE: session.query() is V1 style but still works
     items = {
         item.barcode_id: item
-        for item in session.query(Item).filter(Item.barcode_id.in_(barcode_ids)).all()
+        for item in session.scalars(select(Item).where(Item.barcode_id.in_(barcode_ids))).all()
     }
     non_tray_items = {
         non_tray_item.barcode_id: non_tray_item
-        for non_tray_item in session.query(NonTrayItem)
-        .filter(NonTrayItem.barcode_id.in_(barcode_ids))
-        .all()
+        for non_tray_item in session.scalars(
+            select(NonTrayItem).where(NonTrayItem.barcode_id.in_(barcode_ids))
+        ).all()
     }
 
     # Fetch existing withdrawals in one batch query
-    # NOTE: session.query() is V1 style but still works
     existing_withdrawals = {
         non_tray_item_id: withdraw_job_id
-        for non_tray_item_id, withdraw_job_id in session.query(
-            NonTrayItemWithdrawal.non_tray_item_id,
-            NonTrayItemWithdrawal.withdraw_job_id,
-        )
-        .filter(
-            NonTrayItemWithdrawal.non_tray_item_id.in_(
-                [item.id for item in non_tray_items.values()]  # Extract `id` values
+        for non_tray_item_id, withdraw_job_id in session.execute(
+            select(
+                NonTrayItemWithdrawal.non_tray_item_id,
+                NonTrayItemWithdrawal.withdraw_job_id,
             )
-        )
-        .all()
+            .where(
+                NonTrayItemWithdrawal.non_tray_item_id.in_(
+                    [item.id for item in non_tray_items.values()]  # Extract `id` values
+                )
+            )
+        ).all()
     }
 
     # ... (rest of function is untouched) ...

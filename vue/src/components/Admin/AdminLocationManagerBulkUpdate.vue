@@ -69,7 +69,7 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useBuildingStore } from '@/stores/building-store'
 import PopupModal from '@/components/PopupModal.vue'
 import FileUploadInput from '@/components/FileUploadInput.vue'
@@ -115,7 +115,7 @@ const submitBulkUpdateForm = async () => {
     }
     await postBulkUpdateLocations(payload)
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Successfully Bulk Updated Locations!'
     })
@@ -123,7 +123,7 @@ const submitBulkUpdateForm = async () => {
   } catch (error) {
     if (error.response?.data && Array.isArray(error.response.data)) {
       error.response.data.forEach(err => {
-        Notify.create({
+        notify({
           type: 'negative',
           message: `Bulk update failed: ${JSON.stringify(err)}`,
           timeout: 0,
@@ -136,7 +136,7 @@ const submitBulkUpdateForm = async () => {
         })
       })
     } else {
-      Notify.create({
+      notify({
         type: 'negative',
         message: error.response?.data?.detail || error.message || 'Failed to bulk update locations'
       })

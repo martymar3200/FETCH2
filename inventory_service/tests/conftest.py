@@ -3,6 +3,7 @@ import os
 # Inject required environment variables before app imports so pydantic-settings doesn't fail
 os.environ["SECRET_KEY"] = "test-secret"
 os.environ["APP_ENVIRONMENT"] = "test"
+os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5433/test_database"
 
 import time
 import logging
@@ -46,7 +47,7 @@ DOCKER_CLEANUP_COMMAND = "docker system prune -fa"
 DOCKER_CLEANUP_VOLUME_COMMAND = "docker volume prune -fa"
 
 ALEMBIC_UPGRADE_COMMAND = "alembic upgrade head"
-TEST_DATABASE_URL = "postgresql://user:pass@localhost:5433/test_database"
+TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/test_database"
 
 # Create a new database for testing
 engine = create_engine(TEST_DATABASE_URL)
@@ -54,7 +55,7 @@ engine = create_engine(TEST_DATABASE_URL)
 logger = logging.getLogger("tests.configtest")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def init_db():
     # ... (same content) ...
     result = subprocess.run(
@@ -67,6 +68,11 @@ def init_db():
         logging.info("Docker container started successfully.")
 
     time.sleep(10)  # Wait for the database to be ready
+
+    if not database_exists(engine.url):
+        create_database(engine.url)
+
+    subprocess.run(ALEMBIC_UPGRADE_COMMAND.split(), check=True)
 
     yield
 

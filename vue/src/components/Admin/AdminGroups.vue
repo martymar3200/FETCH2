@@ -308,7 +308,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -391,7 +391,7 @@ const loadAdminGroups = async () => {
     appIsLoadingData.value = true
     await getAdminGroupList()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load admin groups'
     })
@@ -411,7 +411,7 @@ const loadAdminGroupPermissions = async () => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load group permissions'
     })
@@ -425,7 +425,7 @@ const loadAdminGroupUsers = async () => {
     await getAdminGroupUsers(selectedGroup.value.id)
     showGroupUserModal.value = true
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load group users'
     })
@@ -443,12 +443,12 @@ const createAdminGroup = async () => {
 
 
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `The ${groupDetails.value.name} group has been created.`
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create group'
     })
@@ -468,12 +468,12 @@ const updateAdminGroup = async () => {
 
 
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The groups name has been updated.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update group name'
     })
@@ -489,12 +489,12 @@ const removeAdminGroup = async () => {
 
 
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The group has been successfully deleted.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to delete group'
     })
@@ -511,7 +511,7 @@ const addAdminGroupUser = async () => {
 
 
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The group users have been updated.'
     })
@@ -521,7 +521,7 @@ const addAdminGroupUser = async () => {
       loadUserPermissions()
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to add user to group'
     })
@@ -537,7 +537,7 @@ const removeAdminGroupUser = async () => {
 
 
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The user has been successfully deleted from the group.'
     })
@@ -547,7 +547,7 @@ const removeAdminGroupUser = async () => {
       loadUserPermissions()
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to remove user from group'
     })
@@ -561,7 +561,7 @@ const loadUserPermissions = async () => {
   try {
     await getUserPermissions()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to reload user permissions'
     })

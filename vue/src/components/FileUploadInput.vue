@@ -66,7 +66,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, watch } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 
 // Props
 const mainProps = defineProps({
@@ -137,7 +137,7 @@ const addFiles = (newFiles) => {
   // validate the files and cancel adding if a file is invalid
   for (const f of uploadableFiles) {
     if (!validateFile(f)) {
-      Notify.create({
+      notify({
         type: 'negative',
         message: 'One or More Files Selected Are Not Allowed!'
       })

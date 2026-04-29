@@ -333,7 +333,7 @@ import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useBarcodeScanHandler } from '@/composables/useBarcodeScanHandler'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler'
 import { usePermissionHandler } from '@/composables/usePermissionHandler'
@@ -545,12 +545,12 @@ const revertSelectedItemsToQueue = async () => {
       barcode_values: selectedItems.value.map(item => item.barcode?.value)
     }
     await refileStore.deleteRefileJobItems(payload)
-    Notify.create({
+    notify({
       type: 'info',
       message: 'Items reverted to queue'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to revert items'
     })
@@ -570,12 +570,12 @@ const updateRefileJob = async () => {
       run_timestamp: currentIsoDate()
     }
     await refileStore.patchRefileJob(payload)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The job has been updated.'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update job'
     })
@@ -589,7 +589,7 @@ const cancelRefileJob = async () => {
   try {
     actionLoading.value = true
     await refileStore.deleteRefileJob(job.value.id)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'The Refile Job has been canceled.'
     })
@@ -597,7 +597,7 @@ const cancelRefileJob = async () => {
     deleteDataInIndexDb('refileStore', 'originalRefileJob')
     router.push({ name: 'refile' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to cancel job'
     })
@@ -641,7 +641,7 @@ const handleBarcodeScanned = async (barcode) => {
   const item = jobItems.value.find(i => i.barcode?.value === barcode)
 
   if (!item) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Item not found in this job'
     })
@@ -650,7 +650,7 @@ const handleBarcodeScanned = async (barcode) => {
   }
 
   if (item.status === 'In') {
-    Notify.create({
+    notify({
       type: 'warning',
       message: 'Item already refiled'
     })
@@ -686,14 +686,14 @@ const completeItemRefile = async (item) => {
       payload.non_tray_item_id = item.id
       await refileStore.patchRefileJobNonTrayItemScanned(payload)
     }
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Item refiled',
       timeout: 500
     })
     closeVerifyModal()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to update item'
     })
@@ -713,7 +713,7 @@ const startJob = async () => {
     }
     await refileStore.patchRefileJob(payload)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to start job'
     })
@@ -731,7 +731,7 @@ const pauseJob = async () => {
       run_timestamp: currentIsoDate()
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to pause job'
     })
@@ -749,7 +749,7 @@ const resumeJob = async () => {
       run_timestamp: currentIsoDate()
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to resume job'
     })
@@ -769,7 +769,7 @@ const completeJob = async () => {
     deleteDataInIndexDb('refileStore', 'refileJob')
     router.push({ name: 'refile' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to complete job'
     })
@@ -794,12 +794,12 @@ const revertItem = async () => {
       barcode_values: [pendingRevertItem.value.barcode.value]
     }
     await refileStore.deleteRefileJobItems(payload)
-    Notify.create({
+    notify({
       type: 'info',
       message: 'Item reverted to queue'
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to revert item'
     })

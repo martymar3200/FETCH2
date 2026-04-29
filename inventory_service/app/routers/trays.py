@@ -1,5 +1,6 @@
 # /code/app/routers/trays.py - REFACRORED TO SQLALCHEMY V2
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -356,10 +357,7 @@ def delete_tray(id: int, session: Session = Depends(get_session)):
         session.delete(session.get(Barcode, tray.barcode_id))
         session.commit()
 
-        return HTTPException(
-            status_code=204,
-            detail=f"Tray id {id} Deleted Successfully",
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Tray ID {id} Not Found")
 

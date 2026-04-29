@@ -5,6 +5,7 @@
     @hide="emit('reset')"
   >
     <q-card
+      class="popup-modal"
       :style="{ width: modalWidth, maxWidth: '90vw' }"
     >
       <!-- header section -->

@@ -433,7 +433,8 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify, useQuasar } from 'quasar'
+import { useQuasar } from 'quasar'
+import { notify } from '@/utils/notify'
 import { api } from '@/boot/axios.js'
 import inventoryServiceApi from '@/http/InventoryService.js'
 import { useGlobalStore } from '@/stores/global-store'
@@ -775,13 +776,13 @@ const deleteBatch = async () => {
   try {
     appActionIsLoadingData.value = true
     await api.delete(`${inventoryServiceApi.batchUpload}${requestBatchJob.value.id}`)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'Batch upload deleted successfully'
     })
     router.push({ name: 'request' })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to delete batch upload'
     })
@@ -825,7 +826,7 @@ const loadRequestJob = async (id) => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load request job'
     })
@@ -842,7 +843,7 @@ const createPickListJob = async () => {
     await postPicklistJob(payload)
 
     // display an alert with the created picklist job id so you can click that and link directly to the new job if needed
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully created Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
       html: true,
@@ -856,7 +857,7 @@ const createPickListJob = async () => {
     })
     await getRequestBatchJob(requestBatchJob.value.id)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create picklist'
     })
@@ -875,7 +876,7 @@ const updatePickListJob = async () => {
     await patchPicklistJobItem(payload)
 
     // display an alert with the updated picklist job id so you can click that and link directly to the job if needed
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully added items to Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
       html: true,
@@ -889,7 +890,7 @@ const updatePickListJob = async () => {
     })
     await getRequestBatchJob(requestBatchJob.value.id)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update picklist'
     })

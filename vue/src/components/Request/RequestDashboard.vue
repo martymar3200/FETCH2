@@ -737,7 +737,7 @@
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
@@ -798,7 +798,7 @@ const triggerIlsSyncModalOpen = async () => {
   try {
     await ilsStore.getIlsConfigurations()
   } catch (err) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to load ILS Configurations'
     })
@@ -811,13 +811,13 @@ const submitIlsSyncRequest = async () => {
   appActionIsLoadingData.value = true
   try {
     await ilsStore.syncIlsRequests(selectedIlsConfigsToSync.value)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'ILS Request Sync Triggered Successfully'
     })
     showSyncIlsRequestsModal.value = false
   } catch (err) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: 'Failed to trigger ILS Sync'
     })
@@ -1049,17 +1049,17 @@ const getStatusIcon = (status) => {
 const getStatusBadgeClass = (status) => {
   switch (status) {
     case 'New':
-      return 'status-new'
+      return 'status-badge--new'
     case 'PickList':
     case 'Processing':
     case 'Retrieved':
-      return 'status-in-progress'
+      return 'status-badge--in-progress'
     case 'Completed':
-      return 'status-completed'
+      return 'status-badge--completed'
     case 'Failed':
-      return 'status-failed'
+      return 'status-badge--failed'
     case 'Cancelled':
-      return 'status-cancelled'
+      return 'status-badge--cancelled'
     default:
       return ''
   }
@@ -1351,7 +1351,7 @@ const loadRequestJobs = async (qParams) => {
       await getRequestBatchJobList(batchFilterParams)
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load requests'
     })
@@ -1417,7 +1417,7 @@ const loadRequestJobsByBuilding = async (modeOverride = null) => {
       showAddPickList.value = true
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to filter requests'
     })
@@ -1450,7 +1450,7 @@ const loadRequestJob = async (id) => {
       })
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load request job'
     })
@@ -1468,7 +1468,7 @@ const createPickListJob = async () => {
     await postPicklistJob(payload)
 
     // display an alert with the created picklist job id so you can click that and link directly to the new job if needed
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully created Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
       html: true,
@@ -1483,7 +1483,7 @@ const createPickListJob = async () => {
     requestTableComponent.value.resetTablePagination()
     loadRequestJobs()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to create picklist'
     })
@@ -1502,7 +1502,7 @@ const updatePickListJob = async () => {
     await patchPicklistJobItem(payload)
 
     // display an alert with the updated picklist job id so you can click that and link directly to the job if needed
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully added items to Pick List #: <a href='/picklist/${picklistJob.value.id}' style='color: white; text-decoration: underline;'>${picklistJob.value.id}</a>`,
       html: true,
@@ -1517,7 +1517,7 @@ const updatePickListJob = async () => {
     requestTableComponent.value.resetTablePagination()
     loadRequestJobs()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to update picklist'
     })

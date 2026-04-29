@@ -110,7 +110,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, computed } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useGlobalStore } from '@/stores/global-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
@@ -638,7 +638,7 @@ const loadListData = async (qParams) => {
     // set the listData total based on the loaded list options from store
     listDataTotal.value = optionsTotal.value
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load list data'
     })
@@ -669,7 +669,7 @@ const deleteListOption = async (id) => {
           if (res.status == 200) {
             deletedShelfTypes.push(shelfType)
           } else {
-            Notify.create({
+            notify({
               type: 'negative',
               message: `"${shelfType.type} - ${shelfType.size_class.name}" is in use and cannot be deleted.`,
               timeout: 0,
@@ -685,12 +685,12 @@ const deleteListOption = async (id) => {
 
         // display and alert for the successfully deleted shelfTypes
         if (deletedShelfTypes.length == matchingShelfTypesById.length) {
-          Notify.create({
+          notify({
             type: 'positive',
             message: `"${deletedShelfTypes[0].type}" has been successfully deleted.`
           })
         } else if (deletedShelfTypes.length > 0) {
-          Notify.create({
+          notify({
             type: 'positive',
             message: `${deletedShelfTypes.length} size classes have been successfully deleted from "${deletedShelfTypes[0].type}".`
           })
@@ -710,7 +710,7 @@ const deleteListOption = async (id) => {
         break
     }
 
-    Notify.create({
+    notify({
       type: 'positive',
       message: `Successfully Deleted The ${renderTableTitle.value}.`
     })
@@ -718,7 +718,7 @@ const deleteListOption = async (id) => {
     // update listDataTotal for pagination
     listDataTotal.value = listDataTotal.value == 0 ? 0 : listDataTotal.value - 1
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to delete item'
     })

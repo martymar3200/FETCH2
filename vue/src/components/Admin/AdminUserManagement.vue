@@ -163,7 +163,7 @@ import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
 import { useAdminUserStore } from '@/stores/admin-user-store'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import EssentialTable from '@/components/EssentialTable.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import TextInput from '@/components/TextInput.vue'
@@ -237,7 +237,7 @@ const loadUsers = async (qParams = {}) => {
     appIsLoadingData.value = true
     await userStore.getUsers(qParams)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load users'
     })
@@ -273,7 +273,7 @@ const closeUserModal = () => {
 
 const submitUserForm = async () => {
   if (!userForm.value.first_name || !userForm.value.last_name || !userForm.value.email) {
-    Notify.create({
+    notify({
       type: 'warning',
       message: 'Please fill in all required fields'
     })
@@ -284,13 +284,13 @@ const submitUserForm = async () => {
     appActionIsLoadingData.value = true
     if (userModalMode.value === 'Create') {
       await userStore.createUser(userForm.value)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'User created successfully'
       })
     } else {
       await userStore.updateUser(userForm.value.id, userForm.value)
-      Notify.create({
+      notify({
         type: 'positive',
         message: 'User updated successfully'
       })
@@ -298,7 +298,7 @@ const submitUserForm = async () => {
     loadUsers()
     closeUserModal()
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || `Failed to ${userModalMode.value.toLowerCase()} user`
     })
@@ -320,7 +320,7 @@ const executeDeleteUser = async () => {
   try {
     appActionIsLoadingData.value = true
     await userStore.deleteUser(userToDelete.value.id)
-    Notify.create({
+    notify({
       type: 'positive',
       message: 'User deleted successfully'
     })
@@ -328,7 +328,7 @@ const executeDeleteUser = async () => {
     showDeleteModal.value = false
     userToDelete.value = null
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to delete user'
     })

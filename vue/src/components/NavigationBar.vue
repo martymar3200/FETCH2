@@ -173,7 +173,7 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useGlobalStore } from '@/stores/global-store'
@@ -376,14 +376,14 @@ const triggerBackgroundSync = async () => {
       // User has been logged out and redirected by store handler, nothing to do here
       return
     }
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.message || 'Sync failed due to an error. Remaining queue saved.'
     })
   }
 }
 const displayRouteGuardAlert = (pathName) => {
-  Notify.create({
+  notify({
     type: 'negative',
     message: `Sorry, you do not have permission to view the <b>${pathName.replaceAll('-', ' ')}</b> page!`,
     html: true

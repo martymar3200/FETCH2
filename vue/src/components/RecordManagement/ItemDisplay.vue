@@ -329,7 +329,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { inject, onMounted, ref, watch, computed } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import { useRecordManagementStore } from '@/stores/record-management-store'
@@ -370,7 +370,7 @@ const fetchILSDetails = async () => {
     isLoadingILS.value = true
     ilsMetadata.value = await recordManagementStore.getIlsItemMetadata(itemDetails.value.barcode.value)
   } catch (err) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: err.response?.data?.detail || 'Failed to fetch ILS details'
     })
@@ -395,7 +395,7 @@ const openEditModal = () => {
 
 const handleEditSuccess = () => {
   isEditModalVisible.value = false
-  Notify.create({
+  notify({
     type: 'positive',
     message: 'Non-Tray Item updated successfully.'
   })
@@ -577,7 +577,7 @@ const loadRequestHistory = async (qParams) => {
       })
     }
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load request history'
     })

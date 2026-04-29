@@ -76,7 +76,7 @@
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { onBeforeMount, ref, inject, watch } from 'vue'
-import { Notify } from 'quasar'
+import { notify } from '@/utils/notify'
 import { useRoute, useRouter  } from 'vue-router'
 import { useSearchStore } from '@/stores/search-store'
 import { useGlobalStore } from '@/stores/global-store'
@@ -772,7 +772,7 @@ const loadAdvancedSearch = async (qParams) => {
       }
     })
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to load advanced search results'
     })
@@ -799,7 +799,7 @@ const downloadAdvancedSearchReport = async () => {
     }
     await downloadAdvancedSearchResults(endpoint)
   } catch (error) {
-    Notify.create({
+    notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to download report'
     })

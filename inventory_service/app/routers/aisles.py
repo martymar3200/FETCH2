@@ -1,5 +1,6 @@
 # /code/app/routers/aisles.py - REFACTORED: Removed AisleNumber lookup table dependency
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -162,8 +163,6 @@ def delete_aisle(id: int, session: Session = Depends(get_session)):
 
         session.delete(aisle)
         session.commit()
-        return HTTPException(
-            status_code=204, detail=f"Aisle ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Aisle ID {id} Not Found")

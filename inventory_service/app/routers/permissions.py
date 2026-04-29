@@ -1,5 +1,6 @@
 # /code/app/routers/permissions.py - REFACRORED TO SQLALCHEMY V2
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -115,8 +116,6 @@ def delete_permission(id: int, session: Session = Depends(get_session)):
     if permission:
         session.delete(permission)
         session.commit()
-        return HTTPException(
-            status_code=204, detail=f"Permission ID {id} Deleted Successfully"
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Permission ID {id} Not Found")

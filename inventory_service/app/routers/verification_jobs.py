@@ -3,6 +3,7 @@
 import logging
 from typing import List, Optional
 
+from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
@@ -462,10 +463,7 @@ def delete_verification_job(id: int, session: Session = Depends(get_session)):
         )
         session.commit()
 
-        return HTTPException(
-            status_code=204,
-            detail=f"Verification Job id {id} Deleted Successfully",
-        )
+        return Response(status_code=204)
 
     raise NotFound(detail=f"Verification Job ID {id} Not Found")
 
