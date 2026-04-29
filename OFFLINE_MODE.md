@@ -515,7 +515,6 @@ This prevents accidental loss of context. The operations themselves are **never 
 | [`quasar.config.js`](vue/quasar.config.js) | Build | PWA mode configuration (`injectManifest`) |
 | [`useOfflineSync.js`](vue/src/composables/useOfflineSync.js) | Composable | Core sync engine: queue, replay, count |
 | [`useIndexDbHandler.js`](vue/src/composables/useIndexDbHandler.js) | Composable | IndexedDB CRUD wrapper |
-| [`useBackgroundSyncHandler.js`](vue/src/composables/useBackgroundSyncHandler.js) | Composable | Legacy Workbox background sync handler |
 | [`global-store.js`](vue/src/stores/global-store.js) | Store | `appIsOffline`, `appPendingSync` state |
 | [`shelving-store.js`](vue/src/stores/shelving-store.js) | Store | 4 offline-capable shelving actions |
 | [`picklist-store.js`](vue/src/stores/picklist-store.js) | Store | 3 offline-capable picklist actions |

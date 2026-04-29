@@ -43,12 +43,15 @@ vue/
 ├── src/
 │   ├── boot/                     # App initialization plugins
 │   │   ├── axios.js              # Axios instance + interceptors
-│   │   ├── notify-defaults.js    # Error audio alerts on negative notifications
 │   │   ├── htmlToPaper.js        # Print support
 │   │   └── vueJsonExcel.js       # Excel export
 │   ├── components/               # Reusable components (grouped by domain)
 │   │   ├── Base/                 # Design system primitives
-│   │   │   └── BaseButton.vue
+│   │   │   ├── BaseButton.vue
+│   │   │   ├── BaseInput.vue
+│   │   │   ├── BaseSelect.vue
+│   │   │   ├── BaseCard.vue
+│   │   │   └── BaseDialog.vue
 │   │   ├── Accession/
 │   │   ├── Admin/
 │   │   ├── Picklist/
@@ -75,7 +78,8 @@ vue/
 │   │   └── routes.js             # All route definitions
 │   ├── stores/                   # Pinia stores (one per domain)
 │   └── utils/
-│       └── audio.js              # Error beep audio utility
+│       ├── audio.js              # Error beep audio utility
+│       └── notify.js             # Notification wrapper with audio alerts
 ├── src-pwa/                      # PWA service worker files
 │   ├── custom-service-worker.js
 │   ├── register-service-worker.js
@@ -125,28 +129,26 @@ All colors are defined as SCSS variables and available globally in any `.vue` or
 
 ### Responsive Breakpoints
 
-Two breakpoint systems are available:
+Use Quasar's built-in `$breakpoint-*` SCSS variables for all responsive styling:
 
-**Quasar defaults** (used in templates with `$q.screen`):
-
-| Name | Range |
-|---|---|
-| `xs` | 0–599px |
-| `sm` | 600–1023px |
-| `md` | 1024–1439px |
-| `lg` | 1440–1920px |
-| `xl` | 1921px+ |
-
-**Custom `@include respond()` mixin** (used in SCSS):
+| Name | Range | SCSS Variable (max) | SCSS Variable (min) |
+|---|---|---|---|
+| `xs` | 0–599px | `$breakpoint-xs-max` | — |
+| `sm` | 600–1023px | `$breakpoint-sm-max` | `$breakpoint-sm-min` |
+| `md` | 1024–1439px | `$breakpoint-md-max` | `$breakpoint-md-min` |
+| `lg` | 1440–1920px | `$breakpoint-lg-max` | `$breakpoint-lg-min` |
+| `xl` | 1921px+ | — | `$breakpoint-xl-min` |
 
 ```scss
 // Usage in component <style> blocks
-@include respond(phone) { /* ≤767px */ }
-@include respond(tablet) { /* ≤960px */ }
-@include respond(laptop) { /* ≤1259px */ }
-@include respond(desktop) { /* ≥1260px */ }
-@include respond(desktop-lg) { /* ≥1500px */ }
+@media (max-width: $breakpoint-xs-max) { /* phone */ }
+@media (max-width: $breakpoint-sm-max) { /* tablet */ }
+@media (max-width: $breakpoint-md-max) { /* laptop */ }
+@media (min-width: $breakpoint-lg-min) { /* desktop */ }
+@media (min-width: $breakpoint-xl-min) { /* large desktop */ }
 ```
+
+> **Note**: A legacy `@include respond()` mixin exists in `mixins.scss` but is **deprecated**. All new code should use the Quasar `$breakpoint-*` variables directly.
 
 ### Typography
 
@@ -164,7 +166,10 @@ Use the `.status-badge` class with modifiers for workflow statuses:
 <span class="status-badge status-badge--running">Running</span>
 <span class="status-badge status-badge--completed">Completed</span>
 <span class="status-badge status-badge--paused">Paused</span>
-<span class="status-badge status-failed">Failed</span>
+<span class="status-badge status-badge--failed">Failed</span>
+<span class="status-badge status-badge--new">New</span>
+<span class="status-badge status-badge--in-progress">In Progress</span>
+<span class="status-badge status-badge--cancelled">Cancelled</span>
 ```
 
 Each badge uses a gradient background, rounded pill shape, and a subtle hover lift effect.
@@ -280,7 +285,6 @@ All composables live in `src/composables/` and follow the `use*` naming conventi
 | `useCurrentScreenSize` | Reactive screen size label | `currentScreenSize` → `'xs'`, `'sm'`, `'md'`, `'lg'`, `'xl'` |
 | `useScrollPosition` | Track scroll position | Scroll-related refs |
 | `useFileSystemAccessHandler` | File system API access | File read/write helpers |
-| `useBackgroundSyncHandler` | Legacy Workbox background sync | `triggerBackgroundSync()`, `bgSyncData` |
 
 ### Barcode Scanning Pattern
 
@@ -400,7 +404,7 @@ export const useExampleStore = defineStore('example-store', {
 - **API endpoints** are referenced from `InventoryService.js`, never hardcoded
 - **`originalExampleItem`** is always set alongside the main item (used for dirty-checking / unsaved changes detection)
 - **Offline-capable actions** use `offlineAwareRequest()` with `optimisticUpdate` and `updateSnapshot` callbacks
-- **Error handling**: Actions `throw error` — the calling component is responsible for catching and showing `Notify.create()` messages
+- **Error handling**: Actions `throw error` — the calling component is responsible for catching and showing `notify()` messages (imported from `@/utils/notify`)
 - **Reset actions**: Every store has a `resetStore()` method that calls `this.$reset()`
 
 ### API Endpoint Registry
@@ -549,7 +553,7 @@ src/components/Audit/
 | `render-item-barcode-display` | `renderItemBarcodeDisplay(item)` | Shows `withdrawn_barcode` if present, else `barcode` |
 | `handle-csv-download` | `handleCSVDownload(data, name)` | Triggers a CSV file download |
 | `get-nested-key-path` | `getNestedKeyPath(obj, 'a.b.c')` | Safe deep property access |
-| `get-uniqure-list-by-key` | `getUniqueListByKey(arr, key)` | Deduplicates an array of objects |
+| `get-unique-list-by-key` | `getUniqueListByKey(arr, key)` | Deduplicates an array of objects |
 
 **Usage in any child component:**
 
@@ -583,7 +587,16 @@ The Axios instance (`boot/axios.js`) is configured with:
 
 ### Notification Defaults
 
-The `notify-defaults.js` boot file monkey-patches `Notify.create()` to play an **audio alert beep** on any notification with `type: 'negative'` or `color: 'negative'`. This ensures staff on the warehouse floor hear error alerts even when not looking at the screen.
+The `notify()` utility function (from `@/utils/notify.js`) wraps Quasar's `Notify.create()` to automatically play an **audio alert beep** on any notification with `type: 'negative'` or `color: 'negative'`. This ensures staff on the warehouse floor hear error alerts even when not looking at the screen.
+
+```javascript
+import { notify } from '@/utils/notify'
+
+notify({ type: 'negative', message: 'Scan failed' })  // plays audio alert
+notify({ type: 'positive', message: 'Item saved' })    // no audio
+```
+
+> **Note**: All components import `notify` from `@/utils/notify` instead of `Notify` from `quasar`. Do not use `Notify.create()` directly.
 
 ---
 
@@ -594,14 +607,19 @@ The `notify-defaults.js` boot file monkey-patches `Notify.create()` to play an *
 | [`quasar.variables.scss`](vue/src/css/quasar.variables.scss) | Design tokens (colors, breakpoints, typography) |
 | [`app.scss`](vue/src/css/app.scss) | SCSS entry point (imports all layers) |
 | [`utility.scss`](vue/src/css/base/utility.scss) | Auto-generated color classes, layout utilities, status badges |
-| [`mixins.scss`](vue/src/css/base/mixins.scss) | `@include respond()` breakpoint mixin |
+| [`mixins.scss`](vue/src/css/base/mixins.scss) | `@include respond()` breakpoint mixin (deprecated — use `$breakpoint-*` variables) |
 | [`qbtn.scss`](vue/src/css/components/qbtn.scss) | `.btn-modern`, `.btn-dashed` button styles |
 | [`qtable.scss`](vue/src/css/components/qtable.scss) | Table shadows, zebra striping, status badge system |
 | [`BaseButton.vue`](vue/src/components/Base/BaseButton.vue) | Variant-based button component |
+| [`BaseInput.vue`](vue/src/components/Base/BaseInput.vue) | Standardized text input wrapper |
+| [`BaseSelect.vue`](vue/src/components/Base/BaseSelect.vue) | Standardized select dropdown wrapper |
+| [`BaseCard.vue`](vue/src/components/Base/BaseCard.vue) | Standardized card container |
+| [`BaseDialog.vue`](vue/src/components/Base/BaseDialog.vue) | Standardized dialog wrapper |
 | [`EssentialTable.vue`](vue/src/components/EssentialTable.vue) | Data table with filter/rearrange/pagination |
 | [`NavigationBar.vue`](vue/src/components/NavigationBar.vue) | Header, offline banners, nav drawer, sync trigger |
 | [`MainLayout.vue`](vue/src/layouts/MainLayout.vue) | Root layout + global provide/inject utilities |
 | [`axios.js`](vue/src/boot/axios.js) | Axios instance + auth interceptors |
+| [`notify.js`](vue/src/utils/notify.js) | Notification wrapper with audio alerts |
 | [`InventoryService.js`](vue/src/http/InventoryService.js) | Centralized API endpoint registry |
 | [`routes.js`](vue/src/router/routes.js) | Route definitions with auth/permission meta |
 | [`index.js`](vue/src/stores/index.js) | Pinia plugin (`$api`, `apiPageSizeDefault`) |

@@ -2,13 +2,15 @@
 
 Technical debt and cleanup items identified during the frontend and backend architecture audits (April 2026). Items are prioritized by severity and grouped by category.
 
+> **Status (April 29, 2026)**: All 19 items have been addressed. 17 items are fully resolved; NICE-3 is advisory (applies to new stores only).
+
 ---
 
 ## 🔴 Bugs
 
 These are incorrect behaviors that should be fixed in the next sprint.
 
-### BUG-1: `.flex-xl-shrink` sets wrong CSS property
+### BUG-1: `.flex-xl-shrink` sets wrong CSS property ✅
 
 - **File**: [`utility.scss:166`](vue/src/css/base/utility.scss)
 - **Priority**: High
@@ -27,7 +29,7 @@ These are incorrect behaviors that should be fixed in the next sprint.
 
 ---
 
-### BUG-2: Typo in global provide key
+### BUG-2: Typo in global provide key ✅
 
 - **File**: [`MainLayout.vue:165`](vue/src/layouts/MainLayout.vue)
 - **Priority**: High
@@ -44,7 +46,7 @@ These are incorrect behaviors that should be fixed in the next sprint.
 
 ---
 
-### BUG-3: `eval()` usage in EssentialTable filter logic
+### BUG-3: `eval()` usage in EssentialTable filter logic ✅
 
 - **File**: [`EssentialTable.vue:572`](vue/src/components/EssentialTable.vue)
 - **Priority**: High
@@ -78,7 +80,7 @@ This requires updating all `filterOptions` definitions across components that pa
 
 ---
 
-### BUG-4: Delete endpoints return `HTTPException` instead of `Response`
+### BUG-4: Delete endpoints return `HTTPException` instead of `Response` ✅
 
 - **File**: [`buildings.py:172`](inventory_service/app/routers/buildings.py) (and likely other routers)
 - **Priority**: High
@@ -95,12 +97,12 @@ This requires updating all `filterOptions` definitions across components that pa
 ```
 
 **Action**:
-- [ ] Search all routers for `return HTTPException(status_code=204` and replace with `return Response(status_code=204)`
-- [ ] Verify frontend handles 204 (no-content) responses correctly
+- [x] Search all routers for `return HTTPException(status_code=204` and replace with `return Response(status_code=204)`
+- [x] Verify frontend handles 204 (no-content) responses correctly
 
 ---
 
-### BUG-5: Unconditional `import debugpy` in production code
+### BUG-5: Unconditional `import debugpy` in production code ✅
 
 - **File**: [`events.py:3`](inventory_service/app/events.py)
 - **Priority**: High
@@ -120,7 +122,7 @@ Simply remove the import — it is not used anywhere in the file.
 
 Items that aren't broken but add maintenance burden, confusion, or inconsistency.
 
-### DEBT-1: Remove legacy `useBackgroundSyncHandler` composable
+### DEBT-1: Remove legacy `useBackgroundSyncHandler` composable ✅
 
 - **File**: [`useBackgroundSyncHandler.js`](vue/src/composables/useBackgroundSyncHandler.js)
 - **Priority**: Medium
@@ -131,13 +133,13 @@ Items that aren't broken but add maintenance burden, confusion, or inconsistency
 **Usage**: Only referenced in `TestPage.vue`. Not used in any production workflow.
 
 **Action**:
-- [ ] Verify no production components import `useBackgroundSyncHandler`
-- [ ] Remove the composable file
-- [ ] Update `TestPage.vue` to use `useOfflineSync` if the test page is retained
+- [x] Verify no production components import `useBackgroundSyncHandler`
+- [x] Remove the composable file
+- [x] Update `TestPage.vue` to use `useOfflineSync` if the test page is retained
 
 ---
 
-### DEBT-2: Remove scaffold/example files
+### DEBT-2: Remove scaffold/example files ✅
 
 - **Files**:
   - [`example-store.js`](vue/src/stores/example-store.js)
@@ -148,13 +150,13 @@ Items that aren't broken but add maintenance burden, confusion, or inconsistency
 **Problem**: Template/scaffold files from the initial project setup are still shipped in production builds. They add to bundle size and create confusion for new developers who might think they're active features.
 
 **Action**:
-- [ ] Delete `example-store.js`
-- [ ] Delete the `src/pages/example/` directory
-- [ ] Remove any related routes from `routes.js`
+- [x] Delete `example-store.js`
+- [x] Delete the `src/pages/example/` directory
+- [x] Remove any related routes from `routes.js`
 
 ---
 
-### DEBT-3: Gate or remove `TestPage.vue`
+### DEBT-3: Gate or remove `TestPage.vue` ✅
 
 - **File**: [`TestPage.vue`](vue/src/pages/TestPage.vue)
 - **Priority**: Medium
@@ -175,7 +177,7 @@ Items that aren't broken but add maintenance burden, confusion, or inconsistency
 
 ---
 
-### DEBT-4: Refactor provide/inject globals into composables
+### DEBT-4: Refactor provide/inject globals into composables ✅
 
 - **File**: [`MainLayout.vue`](vue/src/layouts/MainLayout.vue)
 - **Priority**: Medium
@@ -214,7 +216,7 @@ Items that aren't broken but add maintenance burden, confusion, or inconsistency
 
 ---
 
-### DEBT-5: Standardize breakpoint system
+### DEBT-5: Standardize breakpoint system ✅
 
 - **Files**:
   - [`quasar.variables.scss`](vue/src/css/quasar.variables.scss)
@@ -242,7 +244,7 @@ Developers have to know which system is used in each file, and the differing ran
 
 ---
 
-### DEBT-6: Expand Base component library
+### DEBT-6: Expand Base component library ✅
 
 - **Directory**: [`vue/src/components/Base/`](vue/src/components/Base/)
 - **Priority**: Low
@@ -267,7 +269,7 @@ Each component should use `v-bind="$attrs"` pass-through (like `BaseButton` does
 
 ---
 
-### DEBT-7: Rename misspelled `middlware.py`
+### DEBT-7: Rename misspelled `middlware.py` ✅
 
 - **File**: [`middlware.py`](inventory_service/app/middlware.py)
 - **Priority**: Medium
@@ -276,13 +278,13 @@ Each component should use `v-bind="$attrs"` pass-through (like `BaseButton` does
 **Problem**: The middleware filename is misspelled as `middlware.py` (missing "e"). Every import in the codebase references the misspelled name (`from app.middlware import JWTMiddleware`). This is confusing for new developers.
 
 **Action**:
-- [ ] Rename `middlware.py` → `middleware.py`
-- [ ] Update all imports (search for `from app.middlware`)
-- [ ] Verify the app starts correctly after renaming
+- [x] Rename `middlware.py` → `middleware.py`
+- [x] Update all imports (search for `from app.middlware`)
+- [x] Verify the app starts correctly after renaming
 
 ---
 
-### DEBT-8: Remove redundant session factory functions
+### DEBT-8: Remove redundant session factory functions ✅
 
 - **File**: [`session.py:75-87`](inventory_service/app/database/session.py)
 - **Priority**: Medium
@@ -304,13 +306,13 @@ def get_sqlalchemy_session_for_storage_migration():
 These are legacy artifacts from the data migration scripts. They add confusion since developers may think they have distinct behavior.
 
 **Action**:
-- [ ] Search for all call sites of these three functions
-- [ ] Replace with a single `get_sqlalchemy_session_thread_safe()` (or inline `sa_hybrid_session_local()`)
-- [ ] Remove the two redundant functions
+- [x] Search for all call sites of these three functions
+- [x] Replace with a single `get_sqlalchemy_session_thread_safe()` (or inline `sa_hybrid_session_local()`)
+- [x] Remove the two redundant functions
 
 ---
 
-### DEBT-9: Remove debug/backup files from app directory
+### DEBT-9: Remove debug/backup files from app directory ✅
 
 - **Files**:
   - [`filter_params_backup.py`](inventory_service/app/filter_params_backup.py)
@@ -323,12 +325,12 @@ These are legacy artifacts from the data migration scripts. They add confusion s
 **Problem**: Debug scripts and backup files are shipped in the production app directory. `filter_params_backup.py` is a stale copy of `filter_params.py`. `reproduce_500.py` is a one-off diagnostic script. `profiling.py` and `memory_monitor.py` are dev-only tools.
 
 **Action**:
-- [ ] Delete `filter_params_backup.py` and `reproduce_500.py`
-- [ ] Move `profiling.py` and `memory_monitor.py` to a `dev/` directory, or gate them behind `APP_ENVIRONMENT` checks
+- [x] Delete `filter_params_backup.py` and `reproduce_500.py`
+- [x] Move `profiling.py` and `memory_monitor.py` to a `dev/` directory, or gate them behind `APP_ENVIRONMENT` checks
 
 ---
 
-### DEBT-10: Migrate remaining SQLAlchemy v1 query patterns to v2
+### DEBT-10: Migrate remaining SQLAlchemy v1 query patterns to v2 ✅
 
 - **File**: [`utilities.py`](inventory_service/app/utilities.py)
 - **Priority**: Low
@@ -347,13 +349,13 @@ session.execute(select(Item).where(Item.barcode_id == barcode_id)).scalars().fir
 This inconsistency makes the codebase harder to maintain and prevents a clean deprecation of v1 patterns.
 
 **Action**:
-- [ ] Audit `utilities.py` for all `session.query()` calls
-- [ ] Refactor to use `session.execute(select(...))` pattern
-- [ ] Test batch upload and refile queue functionality after migration
+- [x] Audit `utilities.py` for all `session.query()` calls
+- [x] Refactor to use `session.execute(select(...))` pattern
+- [x] Test batch upload and refile queue functionality after migration
 
 ---
 
-### DEBT-11: Register `MethodNotAllowed` exception handler
+### DEBT-11: Register `MethodNotAllowed` exception handler ✅
 
 - **Files**:
   - [`exceptions.py`](inventory_service/app/config/exceptions.py)
@@ -374,7 +376,7 @@ This inconsistency makes the codebase harder to maintain and prevents a clean de
 
 Low-priority improvements for long-term code health.
 
-### NICE-1: Standardize status badge naming convention
+### NICE-1: Standardize status badge naming convention ✅
 
 - **File**: [`qtable.scss`](vue/src/css/components/qtable.scss)
 - **Priority**: Low
@@ -388,7 +390,7 @@ Low-priority improvements for long-term code health.
 
 ---
 
-### NICE-2: Replace Notify monkey-patch with composable
+### NICE-2: Replace Notify monkey-patch with composable ✅
 
 - **File**: [`notify-defaults.js`](vue/src/boot/notify-defaults.js)
 - **Priority**: Low
@@ -446,9 +448,8 @@ export const useNewStore = defineStore('new-store', () => {
 
 ## Summary
 
-| Priority | Count | Estimated Total Effort |
+| Priority | Count | Status |
 |---|---|---|
-| 🔴 Bug | 5 | ~4 hours |
-| 🟡 Technical Debt | 11 | ~18 hours |
-| 🟢 Nice-to-Have | 3 | ~3 hours |
-| **Total** | **19** | **~25 hours** |
+| 🔴 Bug | 5 | ✅ All resolved |
+| 🟡 Technical Debt | 11 | ✅ All resolved |
+| 🟢 Nice-to-Have | 3 | ✅ NICE-1, NICE-2 resolved; NICE-3 advisory (new stores only) |

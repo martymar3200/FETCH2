@@ -50,7 +50,7 @@ inventory_service/
 ├── alembic.ini                   # Alembic connection config
 ├── app/
 │   ├── main.py                   # FastAPI app, lifespan, router registration
-│   ├── middlware.py              # JWTMiddleware (auth + logging)
+│   ├── middleware.py              # JWTMiddleware (auth + logging)
 │   ├── auth/
 │   │   └── dependencies.py       # get_current_user_with_permissions, RequiresPermission
 │   ├── config/
@@ -307,6 +307,7 @@ Each entity has a router file under `app/routers/`. Every router must be importe
 
 ```python
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy.orm import Session
@@ -379,7 +380,7 @@ def delete_building(id: int, session: Session = Depends(get_session)):
     # Check for dependent data before deleting
     session.delete(building)
     session.commit()
-    return HTTPException(status_code=204, detail="Deleted Successfully")
+    return Response(status_code=204)
 ```
 
 ### Registering in `main.py`
@@ -823,7 +824,7 @@ Settings are loaded via `pydantic-settings` with `.env` file support and cached 
 | File | Purpose |
 |---|---|
 | [`main.py`](inventory_service/app/main.py) | App factory, lifespan, middleware, router registration |
-| [`middlware.py`](inventory_service/app/middlware.py) | JWT auth middleware + request logging |
+| [`middleware.py`](inventory_service/app/middleware.py) | JWT auth middleware + request logging |
 | [`dependencies.py`](inventory_service/app/auth/dependencies.py) | `get_current_user_with_permissions`, `RequiresPermission` |
 | [`base.py`](inventory_service/app/database/base.py) | `DeclarativeBase` with auto-tablename + audit columns |
 | [`session.py`](inventory_service/app/database/session.py) | Engine, session factories, `get_session` DI |
