@@ -77,9 +77,17 @@ export const useUserStore = defineStore('user-store', {
 
         if (reauthenticate) {
           // if the reauthenticate flag is passed (usually occurs when user gets timed-out via 401)
-          // we want to auto reauthenticate the user and preserve the users route by sending the user to the sso login with a preserve_route query param
-          const baseUrl = process.env.VITE_INV_SERVCE_API.replace(/\/+$/, '')
-          window.location.replace(`${baseUrl}${inventoryServiceApi.authSsoLogin}?preserve_route=${this.router.currentRoute._value.fullPath}`)
+          // we want to auto reauthenticate the user if in a SAML environment
+          const isSamlEnv = process.env.VITE_ENV === 'production' || process.env.VITE_ENV === 'stage'
+
+          if (isSamlEnv) {
+            // we want to auto reauthenticate the user and preserve the users route by sending the user to the sso login with a preserve_route query param
+            const baseUrl = process.env.VITE_INV_SERVCE_API.replace(/\/+$/, '')
+            window.location.replace(`${baseUrl}${inventoryServiceApi.authSsoLogin}?preserve_route=${this.router.currentRoute._value.fullPath}`)
+          } else {
+            // in non-saml environments, just redirect to the home page so they can use legacy login
+            this.router.push('/')
+          }
         }
       } catch (error) {
         throw error
