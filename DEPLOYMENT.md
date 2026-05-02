@@ -1,6 +1,6 @@
 # FETCH2 Production Deployment Guide
 
-This guide covers deploying FETCH2 to a production environment. For local development setup, see the [root README](README.md) and [fetch-local/README](fetch-local/README.md).
+This guide covers deploying FETCH2 to a production environment. For local development setup, see the [root README](README.md) and [fetch-fetch-local/README](fetch-fetch-local/README.md).
 
 > **Note:** FETCH2 was originally deployed on Kubernetes with Podman, HAProxy, and Ansible. Your deployment infrastructure may differ — the concepts below apply regardless of your specific orchestrator.
 
@@ -30,9 +30,9 @@ A production FETCH2 deployment consists of three services:
 
 | Service | Description | Source |
 |---|---|---|
-| **Web App** | Vue 3 / Quasar PWA, built as static files and served by NGINX | `vue/` |
-| **Inventory API** | Python / FastAPI backend, served by Gunicorn with Uvicorn workers | `inventory_service/` |
-| **PostgreSQL** | Database engine (containerized or managed service) | `database/` |
+| **Web App** | Vue 3 / Quasar PWA, built as static files and served by NGINX | `fetch-vue/` |
+| **Inventory API** | Python / FastAPI backend, served by Gunicorn with Uvicorn workers | `fetch-inventory_service/` |
+| **PostgreSQL** | Database engine (containerized or managed service) | `fetch-database/` |
 
 ---
 
@@ -40,13 +40,13 @@ A production FETCH2 deployment consists of three services:
 
 ### Backend (Inventory API)
 
-The backend is configured via environment variables (or a `.env` file). These are defined in `inventory_service/app/config/config.py` and **must be set at container runtime** — they are NOT baked into the image.
+The backend is configured via environment variables (or a `.env` file). These are defined in `fetch-inventory_service/app/config/config.py` and **must be set at container runtime** — they are NOT baked into the image.
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `APP_ENVIRONMENT` | Yes | `local` | Deployment environment. Must be one of: `local`, `debug`, `develop`, `test`, `stage`, `production`. Controls SAML config selection, SchemaSpy, and legacy login availability. |
 | `SECRET_KEY` | **Yes** | *(none — will crash if missing)* | Secret key for JWT token signing. Use a strong, random string (e.g., `openssl rand -hex 32`). |
-| `DATABASE_URL` | Yes | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Full SQLAlchemy connection string for the PostgreSQL database. |
+| `DATABASE_URL` | Yes | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Full SQLAlchemy connection string for the PostgreSQL fetch-database. |
 | `MIGRATION_URL` | No | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Database URL used by Alembic for migrations. Only needed if running migrations from outside the container network. |
 | `VUE_HOST` | Yes | `https://localhost:8000` | The base URL of the Vue frontend. Used for SAML redirect after login. Set to your production URL (e.g., `https://fetch.example.com`). |
 | `ALLOWED_ORIGINS` | Yes | localhost variants | Comma-separated list of allowed CORS origins. Must include your production frontend URL. |
@@ -66,7 +66,7 @@ The backend is configured via environment variables (or a `.env` file). These ar
 
 ### Frontend (Vue)
 
-The Vue frontend uses build-time environment variables defined in an `.env` file at `vue/env/.env`. These are compiled into the static bundle during the build step, so they must be set **before building the image**.
+The Vue frontend uses fetch-build-time environment variables defined in an `.env` file at `fetch-vue/env/.env`. These are compiled into the static bundle during the fetch-build step, so they must be set **before fetch-building the image**.
 
 | Variable | Description | Example (Production) |
 |---|---|---|
@@ -74,9 +74,9 @@ The Vue frontend uses build-time environment variables defined in an `.env` file
 | `VITE_API_BASE_URI` | Base URL of the Inventory API | `https://api.fetch.example.com/` |
 | `VITE_INV_SERVCE_API` | Inventory Service API URL (same as above) | `https://api.fetch.example.com/` |
 
-Create your environment file before building:
+Create your environment file before fetch-building:
 ```bash
-cd vue/env
+cd fetch-vue/env
 cp .env.example .env
 # Edit .env with your production values
 ```
@@ -89,21 +89,21 @@ Each service has per-environment Containerfiles. For production, use:
 
 | Service | Containerfile | Base Image |
 |---|---|---|
-| Inventory API | `inventory_service/images/api.prod.Containerfile` | `python:3.11.4-slim` → Gunicorn |
-| Web App | `vue/images/web.prod.Containerfile` | `node:22-alpine` (build) → `nginx:1.27.2-alpine` (serve) |
-| Database | `database/pgadmin/images/` | PostgreSQL official image |
+| Inventory API | `fetch-inventory_service/images/api.prod.Containerfile` | `python:3.11.4-slim` → Gunicorn |
+| Web App | `fetch-vue/images/web.prod.Containerfile` | `node:22-alpine` (fetch-build) → `nginx:1.27.2-alpine` (serve) |
+| Database | `fetch-database/pgadmin/images/` | PostgreSQL official image |
 
 ### Building Images
 
 ```bash
 # Build the Inventory API image
-cd inventory_service
-podman build -f images/api.prod.Containerfile -t fetch-inventory-api:latest .
+cd fetch-inventory_service
+podman fetch-build -f images/api.prod.Containerfile -t fetch-inventory-api:latest .
 
 # Build the Web App image
-# IMPORTANT: Create vue/env/.env with production values BEFORE building
-cd vue
-podman build -f images/web.prod.Containerfile -t fetch-web-app:latest .
+# IMPORTANT: Create fetch-vue/env/.env with production values BEFORE fetch-building
+cd fetch-vue
+podman fetch-build -f images/web.prod.Containerfile -t fetch-web-app:latest .
 ```
 
 ### Pushing to a Registry
@@ -120,20 +120,20 @@ podman push registry.example.com/fetch/web-app:latest
 ### Production Image Details
 
 **Inventory API (`api.prod.Containerfile`):**
-- Multi-stage build: Poetry exports `requirements.txt`, then installs in a clean image
+- Multi-stage fetch-build: Poetry exports `requirements.txt`, then installs in a clean image
 - Runs Gunicorn with 5 Uvicorn workers (tuned for `2 * CPU + 1`)
 - Secrets are NOT baked in — injected at runtime
 - Alembic migrations run automatically on container startup (with advisory locking for multi-replica safety)
 
 > **⚠️ Gunicorn Workers:** The default worker count of 5 is tuned for a 2-core server using the formula `2 * CPU_CORES + 1`. If your production server has different specifications, adjust the `--workers` value in the Containerfile CMD accordingly. For a 4-core machine, use 9 workers; for an 8-core machine, use 17.
 
-> **⚠️ SAML Signing:** The `xmlsec` build dependencies are commented out in the Containerfile by default. If your Identity Provider requires signed SAML assertions (common in enterprise/government environments), you must uncomment the `xmlsec` build dependencies in `api.prod.Containerfile` AND the corresponding `pip install` line. See the comments in the Containerfile for details.
+> **⚠️ SAML Signing:** The `xmlsec` fetch-build dependencies are commented out in the Containerfile by default. If your Identity Provider requires signed SAML assertions (common in enterprise/government environments), you must uncomment the `xmlsec` fetch-build dependencies in `api.prod.Containerfile` AND the corresponding `pip install` line. See the comments in the Containerfile for details.
 
 **Web App (`web.prod.Containerfile`):**
-- Multi-stage build: Node builds the Quasar PWA, then copies static files to NGINX
+- Multi-stage fetch-build: Node fetch-builds the Quasar PWA, then copies static files to NGINX
 - NGINX serves the compiled PWA with TLS (self-signed by default)
 - TLS certificates are generated at **runtime** via an entrypoint script — if you mount real certificates, the self-signed generation is skipped automatically
-- NGINX config at `vue/nginx/production.conf` enforces TLS 1.2+, HSTS, and security headers
+- NGINX config at `fetch-vue/nginx/production.conf` enforces TLS 1.2+, HSTS, and security headers
 - Custom CA certificates can be added by uncommenting the `ADD certificates/` lines in the Containerfile
 
 ---
@@ -145,23 +145,23 @@ podman push registry.example.com/fetch/web-app:latest
 Use your cloud provider's managed PostgreSQL service (e.g., AWS RDS, Azure Database, GCP Cloud SQL).
 
 1. Create a PostgreSQL instance (version 14+)
-2. Create a database named `inventory_service`
-3. Create a dedicated user with full privileges on that database
+2. Create a fetch-database named `fetch-inventory_service`
+3. Create a dedicated user with full privileges on that fetch-database
 4. Set `DATABASE_URL` on the API container:
    ```
-   DATABASE_URL=postgresql://fetch_user:strong_password@db-host.example.com:5432/inventory_service
+   DATABASE_URL=postgresql://fetch_user:strong_password@db-host.example.com:5432/fetch-inventory_service
    ```
 
 ### Option B: Containerized PostgreSQL
 
-Use the database container image from `database/` for simpler deployments:
+Use the fetch-database container image from `fetch-database/` for simpler deployments:
 
 ```bash
-cd database
-podman build -f pgadmin/images/postgres.local.Containerfile -t fetch-postgres:latest .
+cd fetch-database
+podman fetch-build -f pgadmin/images/postgres.local.Containerfile -t fetch-postgres:latest .
 podman run -d --name fetch-db \
   -e POSTGRES_PASSWORD=strong_password \
-  -e POSTGRES_DB=inventory_service \
+  -e POSTGRES_DB=fetch-inventory_service \
   -p 5432:5432 \
   -v fetch-db-data:/var/lib/postgresql/data \
   fetch-postgres:latest
@@ -171,18 +171,18 @@ podman run -d --name fetch-db \
 
 ### Schema Initialization
 
-The Inventory API automatically runs Alembic migrations on startup. The first boot against an empty database will create all tables and indexes. No manual migration step is required.
+The Inventory API automatically runs Alembic migrations on startup. The first boot against an empty fetch-database will create all tables and indexes. No manual migration step is required.
 
 > **Multi-Replica Safety:** When running multiple API replicas, migrations are protected by a PostgreSQL advisory lock. Only the first replica to start will run migrations — the others will detect the lock and skip. This prevents race conditions where multiple containers try to alter the schema simultaneously.
 
 ### Bootstrapping the Initial Admin User
 
-In production you will **not** use the fake data seeder (`seed-fake-data`), as it injects thousands of fake library items into the database. Furthermore, you should **avoid** manually manipulating the raw `fixtures/**/*.json` files to create your facility data, as maintaining raw JSON containing complex foreign key relationships is extremely error-prone.
+In production you will **not** use the fake data seeder (`seed-fake-data`), as it injects thousands of fake library items into the fetch-database. Furthermore, you should **avoid** manually manipulating the raw `fixtures/**/*.json` files to create your facility data, as maintaining raw JSON containing complex foreign key relationships is extremely error-prone.
 
-Instead, you will use the **Production Bootstrap Tool**. This script safely injects a single System Administrator account into the database so you can log in, and then you use the secure frontend Admin UI to configure your facility setup.
+Instead, you will use the **Production Bootstrap Tool**. This script safely injects a single System Administrator account into the fetch-database so you can log in, and then you use the secure frontend Admin UI to configure your facility setup.
 
 1. Ensure your API container is running.
-2. From the `inventory_service/` directory on the host, run the bootstrap command with the email address of the person who will be the administrator (must match their SAML SSO email):
+2. From the `fetch-inventory_service/` directory on the host, run the bootstrap command with the email address of the person who will be the administrator (must match their SAML SSO email):
    ```bash
    ./helper.sh bootstrap-production admin@example.com
    ```
@@ -200,7 +200,7 @@ In production (`APP_ENVIRONMENT=production`), the legacy login endpoint is **dis
 
 ### SAML Configuration Files
 
-SAML is configured per environment in `inventory_service/app/saml/config/`:
+SAML is configured per environment in `fetch-inventory_service/app/saml/config/`:
 
 | File | Used When |
 |---|---|
@@ -272,7 +272,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout sp-key.pem -out sp-cert.pem
 ```
 
-Place these in `inventory_service/app/saml/production/` and the startup code will load them automatically.
+Place these in `fetch-inventory_service/app/saml/production/` and the startup code will load them automatically.
 
 ### IdP Registration
 
@@ -287,7 +287,7 @@ Register FETCH2 as a Service Provider with your Identity Provider using:
 
 ### Web App (NGINX)
 
-The production NGINX config (`vue/nginx/production.conf`) is pre-configured for TLS with:
+The production NGINX config (`fetch-vue/nginx/production.conf`) is pre-configured for TLS with:
 - TLS 1.2 and 1.3 only
 - Strong cipher suite
 - HSTS headers
@@ -303,7 +303,7 @@ By default, the Web App container generates a **self-signed certificate** at sta
      - /path/to/your/cert.key:/etc/ssl/private/server.key:ro
    ```
 3. The entrypoint script will detect the mounted certificate and skip self-signed generation
-4. Update `server_name` in `vue/nginx/production.conf` to your domain (default accepts any hostname)
+4. Update `server_name` in `fetch-vue/nginx/production.conf` to your domain (default accepts any hostname)
 
 ### Inventory API
 
@@ -313,7 +313,7 @@ The API itself runs on HTTP (port 8001) behind the NGINX reverse proxy or load b
 
 ## 6. Kubernetes Deployment
 
-Pre-built K8s manifests are available in `inventory_service/k8s/` and `vue/k8s/`. Ansible playbooks for cluster provisioning are in `build/ansible/k8s/`.
+Pre-built K8s manifests are available in `fetch-inventory_service/k8s/` and `fetch-vue/k8s/`. Ansible playbooks for cluster provisioning are in `fetch-build/ansible/k8s/`.
 
 ### Namespace
 
@@ -335,7 +335,7 @@ kubectl create secret docker-registry gitlab-api-2023 \
 
 ### Deploying the API
 
-1. Update the image reference in `inventory_service/k8s/deployment-prod.yml`:
+1. Update the image reference in `fetch-inventory_service/k8s/deployment-prod.yml`:
    ```yaml
    image: registry.example.com/fetch/inventory-api:latest
    ```
@@ -344,7 +344,7 @@ kubectl create secret docker-registry gitlab-api-2023 \
    kubectl create secret generic fetch-api-secrets \
      --namespace=fetch \
      --from-literal=SECRET_KEY=$(openssl rand -hex 32) \
-     --from-literal=DATABASE_URL=postgresql://user:pass@db-host:5432/inventory_service \
+     --from-literal=DATABASE_URL=postgresql://user:pass@db-host:5432/fetch-inventory_service \
      --from-literal=APP_ENVIRONMENT=production \
      --from-literal=VUE_HOST=https://fetch.example.com \
      --from-literal=ALLOWED_ORIGINS=https://fetch.example.com
@@ -357,13 +357,13 @@ kubectl create secret docker-registry gitlab-api-2023 \
    ```
 4. Apply:
    ```bash
-   kubectl apply -f inventory_service/k8s/deployment-prod.yml
-   kubectl apply -f inventory_service/k8s/service.yml
+   kubectl apply -f fetch-inventory_service/k8s/deployment-prod.yml
+   kubectl apply -f fetch-inventory_service/k8s/service.yml
    ```
 
 ### Deploying the Web App
 
-Follow the same pattern for `vue/k8s/deployment-prod.yml`.
+Follow the same pattern for `fetch-vue/k8s/deployment-prod.yml`.
 
 ### Production Resource Allocation
 
@@ -378,16 +378,16 @@ Adjust based on your expected load.
 
 ## 7. Infrastructure Tooling
 
-The `build/` directory contains additional deployment tooling:
+The `fetch-build/` directory contains additional deployment tooling:
 
 | Path | Purpose |
 |---|---|
-| `build/ansible/core/` | Base server provisioning (system tools, monitoring agents) |
-| `build/ansible/haproxy/` | HAProxy load balancer setup |
-| `build/ansible/k8s/` | Kubernetes cluster provisioning |
-| `build/ansible/inventory/` | Host inventory files per environment (`dev.ini`, `test.ini`, `stage.ini`, `prod.ini`) |
-| `build/docker/prometheus-grafana/` | Monitoring stack (Prometheus + Grafana) |
-| `build/tools/sonarqube/` | SonarQube code quality server |
+| `fetch-build/ansible/core/` | Base server provisioning (system tools, monitoring agents) |
+| `fetch-build/ansible/haproxy/` | HAProxy load balancer setup |
+| `fetch-build/ansible/k8s/` | Kubernetes cluster provisioning |
+| `fetch-build/ansible/inventory/` | Host inventory files per environment (`dev.ini`, `test.ini`, `stage.ini`, `prod.ini`) |
+| `fetch-build/docker/prometheus-grafana/` | Monitoring stack (Prometheus + Grafana) |
+| `fetch-build/tools/sonarqube/` | SonarQube code quality server |
 
 > These configurations are inherited from the original deployment and may need customization for your infrastructure.
 
@@ -405,7 +405,7 @@ After deploying all services:
 - [ ] Build out your location hierarchy (Building → Module → Aisle → Shelf)
 - [ ] (Optional) Configure ILS integration via Admin > ILS Integrations
 - [ ] Verify HTTPS is working with valid certificates
-- [ ] Confirm database backups are scheduled
+- [ ] Confirm fetch-database backups are scheduled
 - [ ] Review CORS settings in `ALLOWED_ORIGINS`
 
 ---
@@ -414,10 +414,10 @@ After deploying all services:
 
 ### Database Backups
 
-The `inventory_service/helper.sh` includes a `extract-data-migration` function that creates compressed PostgreSQL dumps:
+The `fetch-inventory_service/helper.sh` includes a `extract-data-migration` function that creates compressed PostgreSQL dumps:
 
 ```bash
-# From the inventory_service directory
+# From the fetch-inventory_service directory
 ./helper.sh extract-data-migration
 ```
 
@@ -428,12 +428,12 @@ To restore from a backup:
 ./helper.sh pg-restore <filename.dump.xz>
 ```
 
-For production, configure automated backups via your managed database service or a cron job running `pg_dump`.
+For production, configure automated backups via your managed fetch-database service or a cron job running `pg_dump`.
 
 ### Recommended Backup Schedule
 
 | Backup Type | Frequency | Retention |
 |---|---|---|
-| Full database dump | Daily | 30 days |
+| Full fetch-database dump | Daily | 30 days |
 | Point-in-time recovery (WAL) | Continuous | 7 days |
 | Pre-upgrade snapshot | Before each deployment | Until verified |

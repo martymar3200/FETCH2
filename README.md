@@ -10,15 +10,15 @@
 
 ```
 FETCH2/
-├── automation/         E2E UI tests (Java, Cucumber, Selenium) ⚠️ needs updating
-├── build/              Infrastructure & deployment (Ansible, Prometheus, K8s)
-├── database/           Container images for PostgreSQL
-├── fetch-local/        🚀 Local development entry point (Docker Compose)
-├── inventory_service/  Backend API (Python, FastAPI, SQLAlchemy, Alembic)
-└── vue/                Frontend PWA (Vue 3, Quasar, Pinia, Vite)
+├── fetch-automation/         E2E UI tests (Java, Cucumber, Selenium) ⚠️ needs updating
+├── fetch-build/              Infrastructure & deployment (Ansible, Prometheus, K8s)
+├── fetch-database/           Container images for PostgreSQL
+├── fetch-fetch-local/        🚀 Local development entry point (Docker Compose)
+├── fetch-inventory_service/  Backend API (Python, FastAPI, SQLAlchemy, Alembic)
+└── fetch-vue/                Frontend PWA (Vue 3, Quasar, Pinia, Vite)
 ```
 
-Each folder has its own `README.md` with detailed documentation. **Start with `fetch-local/`** for local development setup.
+Each folder has its own `README.md` with detailed documentation. **Start with `fetch-fetch-local/`** for local development setup.
 
 ---
 
@@ -34,21 +34,21 @@ Each folder has its own `README.md` with detailed documentation. **Start with `f
 
 The application requires environment variables to manage secrets and connections. **You must perform these steps before running the system for the first time:**
 
-**Backend (`inventory_service`):**
+**Backend (`fetch-inventory_service`):**
 ```bash
-cd inventory_service
+cd fetch-inventory_service
 cp .env.example .env
 ```
 
-**Frontend (`vue`):**
+**Frontend (`fetch-vue`):**
 ```bash
-cd vue/env
+cd fetch-vue/env
 cp .env.example .env.local
 ```
 
-**Local Infrastructure (`fetch-local`):**
+**Local Infrastructure (`fetch-fetch-local`):**
 ```bash
-cd fetch-local
+cd fetch-fetch-local
 cp .env.example .env
 ```
 
@@ -67,7 +67,7 @@ To avoid "Insecure Connection" warnings in your browser, install `mkcert` and ge
 ```bash
 brew install mkcert
 mkcert -install
-cd fetch-local/.certs
+cd fetch-fetch-local/.certs
 mkcert localhost 127.0.0.1 ::1
 ```
 
@@ -75,7 +75,7 @@ mkcert localhost 127.0.0.1 ::1
 
 ```bash
 git clone <your-repository-url> FETCH2
-cd FETCH2/fetch-local
+cd FETCH2/fetch-fetch-local
 docker compose up --build
 ```
 
@@ -100,7 +100,7 @@ Navigate to **https://127.0.0.1:8000** in your browser.
 > - **Firefox:** Click "Advanced" → "Accept the Risk and Continue"
 > - **Safari:** Click "Show Details" → "visit this website"
 >
-> Optionally, on macOS, you can add the generated cert from `fetch-local/.certs/` to your Keychain to suppress the warning permanently.
+> Optionally, on macOS, you can add the generated cert from `fetch-fetch-local/.certs/` to your Keychain to suppress the warning permanently.
 
 ### 4. Log In
 
@@ -159,14 +159,14 @@ FETCH2 supports the complete lifecycle of physical inventory management:
 
 | Folder | README | Description |
 |---|---|---|
-| *(root)* | [CONFIGURATION.md](CONFIGURATION.md) | **System configuration guide — start here before production use** |
+| *(root)* | [CONFIGURATION.md](fetch-inventory_service/CONFIGURATION.md) | **System configuration guide — start here before production use** |
 | *(root)* | [DEPLOYMENT.md](DEPLOYMENT.md) | **Production deployment guide — env vars, SSO, TLS, K8s** |
-| `fetch-local/` | [README](fetch-local/README.md) | Local dev setup, compose commands, helper scripts |
-| `inventory_service/` | [README](inventory_service/README.md) | API development, Poetry, migrations, auth, ILS, testing |
-| `vue/` | [README](vue/README.md) | Frontend setup, PWA config, linting, permissions |
-| `database/` | [README](database/README.md) | Database container management |
-| `build/` | [README](build/README.md) | Infrastructure and deployment tooling |
-| `automation/` | [README](automation/README.md) | E2E UI test suite (needs updating) |
+| `fetch-fetch-local/` | [README](fetch-fetch-local/README.md) | Local dev setup, compose commands, helper scripts |
+| `fetch-inventory_service/` | [README](fetch-inventory_service/README.md) | API development, Poetry, migrations, auth, ILS, testing |
+| `fetch-vue/` | [README](fetch-vue/README.md) | Frontend setup, PWA config, linting, permissions |
+| `fetch-database/` | [README](fetch-database/README.md) | Database container management |
+| `fetch-build/` | [README](fetch-build/README.md) | Infrastructure and deployment tooling |
+| `fetch-automation/` | [README](fetch-automation/README.md) | E2E UI test suite (needs updating) |
 
 ---
 
@@ -176,11 +176,11 @@ FETCH2 supports the complete lifecycle of physical inventory management:
 The backend has a comprehensive pytest suite covering models, location hierarchies, all 7 job workflows, and RBAC security:
 
 ```bash
-cd inventory_service
+cd fetch-inventory_service
 pytest
 ```
 
-See [inventory_service/tests/README.md](inventory_service/tests/README.md) for details.
+See [fetch-inventory_service/tests/README.md](fetch-inventory_service/tests/README.md) for details.
 
 ### E2E UI (Stale)
-The Selenium/Cucumber tests in `automation/` have not been updated since the initial project import and need a refresh pass before use.
+The Selenium/Cucumber tests in `fetch-automation/` have not been updated since the initial project import and need a refresh pass before use.

@@ -12,7 +12,7 @@ volumes:
 services:
     inventory-database:
         build:
-            context: ../database/inventory
+            context: ../fetch-database/inventory
             dockerfile: images/inventory.db.local.Containerfile
         container_name: inventory-database
         volumes:
@@ -53,7 +53,7 @@ services:
 
     pgadmin:
         build:
-          context: ../database/pgadmin
+          context: ../fetch-database/pgadmin
           dockerfile: images/pgadmin.local.Containerfile
         container_name: fetch-pgadmin4
         networks:
@@ -67,7 +67,7 @@ services:
           - fetch-pgadmin-volume:${HOME}/workspace/fetch/data/pgadmin
     inventory-api:
         build:
-            context: ../inventory_service
+            context: ../fetch-inventory_service
             dockerfile: images/api.local.Containerfile
         container_name: fetch-inventory-api
         environment:
@@ -112,7 +112,7 @@ services:
     #         - inventory-cache
     web:
         build:
-            context: ../vue
+            context: ../fetch-vue
             dockerfile: images/web.local.Containerfile
         container_name: fetch-web
         volumes:

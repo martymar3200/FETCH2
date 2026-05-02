@@ -17,16 +17,16 @@ build() {
 }
 
 build-db() {
-  (cd ../fetch-local && exec ./helper.sh build-inventory-db);
+  (cd ../fetch-fetch-local && exec ./helper.sh build-inventory-db);
 }
 
 refresh-db() {
   # Wipe db and build
-  (cd ../fetch-local && exec ./helper.sh wipe-inventory-db);
+  (cd ../fetch-fetch-local && exec ./helper.sh wipe-inventory-db);
   # Give the db a moment to catch its breath
   sleep 5;
   # Then rebuild from podman compose for schema
-  (cd ../fetch-local \
+  (cd ../fetch-fetch-local \
     && exec ./helper.sh build-inventory-api);
 }
 

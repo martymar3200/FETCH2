@@ -66,9 +66,9 @@ graph TB
 
 | Service | Technology | Port | Source |
 |---|---|---|---|
-| **Web App** | Vue 3 / Quasar PWA → NGINX | 443 (TLS) | `vue/` |
-| **Inventory API** | Python FastAPI → Gunicorn/Uvicorn | 8001 | `inventory_service/` |
-| **PostgreSQL** | PostgreSQL 14+ | 5432 | `database/` |
+| **Web App** | Vue 3 / Quasar PWA → NGINX | 443 (TLS) | `fetch-vue/` |
+| **Inventory API** | Python FastAPI → Gunicorn/Uvicorn | 8001 | `fetch-inventory_service/` |
+| **PostgreSQL** | PostgreSQL 14+ | 5432 | `fetch-database/` |
 | **Identity Provider** | SAML 2.0 (OneLogin) | External | Configured in `app/saml/config/` |
 | **FOLIO ILS** | OAuth 2.0 REST API | External | `app/ils/folio_adapter.py` |
 
@@ -105,7 +105,7 @@ sequenceDiagram
     API-->>B: 302 Redirect to IdP login URL
 
     B->>IDP: User authenticates (credentials / MFA)
-    IDP->>IDP: Validate user, build SAML Assertion
+    IDP->>IDP: Validate user, fetch-build SAML Assertion
     IDP->>API: POST /auth/sso/acs (SAML Response + RelayState)
 
     Note over API,DB: Process SAML Response
@@ -160,7 +160,7 @@ sequenceDiagram
 
 - **HttpOnly Cookies**: The JWT is never exposed to JavaScript — immune to XSS token theft
 - **Sliding Window**: Each successful request refreshes the 15-minute expiration (NIST IA-11)
-- **Dual Token Validation**: Both JWT signature AND database `fetch_auth_expiration` must be valid
+- **Dual Token Validation**: Both JWT signature AND fetch-database `fetch_auth_expiration` must be valid
 - **Environment Gating**: Legacy login is disabled when `APP_ENVIRONMENT=production`
 - **Sanitized Logging**: Authorization headers, cookies, and sensitive query params are redacted from logs (NIST AU-9)
 
@@ -168,7 +168,7 @@ sequenceDiagram
 
 ## 3. Backend API Architecture
 
-The FastAPI application is organized into distinct layers. Every request flows through middleware → router → business logic → database.
+The FastAPI application is organized into distinct layers. Every request flows through middleware → router → business logic → fetch-database.
 
 ```mermaid
 graph TB
@@ -199,7 +199,7 @@ graph TB
             R_TRY["trays"]
             R_NTI["non_tray_items"]
             R_SHF["shelves"]
-            R_BLD["buildings"]
+            R_BLD["fetch-buildings"]
             R_REQ["requests"]
         end
         subgraph ADMIN["Admin Routers"]
@@ -292,7 +292,7 @@ graph TB
 
     subgraph APP["Vue 3 Application"]
         subgraph LAYOUT["Layout Layer"]
-            ML["MainLayout.vue<br/>(NavigationBar, sidebar)"]
+            ML["MainLayout.fetch-vue<br/>(NavigationBar, sidebar)"]
         end
 
         subgraph PAGES["Page Layer (16 pages)"]
@@ -323,7 +323,7 @@ graph TB
             S_SHP["shippingStore"]
             S_REF["refileStore"]
             S_WDR["withdrawalStore"]
-            S_BLD["buildingStore"]
+            S_BLD["fetch-buildingStore"]
             S_SCH["searchStore"]
             S_OPT["optionStore<br/>(dropdowns, lookups)"]
             S_RPT["reportsStore"]
@@ -376,7 +376,7 @@ The `InventoryService.js` file defines 79 endpoint constants used by all Pinia s
 | **Auth** | `authSsoLogin`, `authSsoLogout`, `authLegacyLogin` | `/auth/sso/login/` |
 | **Workflow Jobs** | `accessionJobs`, `verificationJobs`, `shelvingJobs`, `pickLists`, `shippingJobs`, `refileJobs`, `withdrawJobs` | `/accession-jobs/workflow/` |
 | **Inventory** | `items`, `trays`, `nonTrayItems`, `shelves` | `/items/barcode/` |
-| **Admin** | `users`, `groups`, `permissions`, `buildings` | `/groups/` |
+| **Admin** | `users`, `groups`, `permissions`, `fetch-buildings` | `/groups/` |
 | **Reporting** | 12 reporting endpoints | `/reporting/open-locations/` |
 | **ILS** | `ilsConfigurations`, `ilsSyncErrors` | `/ils-configurations/` |
 
@@ -384,7 +384,7 @@ The `InventoryService.js` file defines 79 endpoint constants used by all Pinia s
 
 ## 5. Data Model
 
-The FETCH2 database contains 62+ tables. To keep the ER diagram readable, the model is organized into **five domain groups**, each shown as a separate diagram. Cross-domain foreign keys are noted in the relationship labels.
+The FETCH2 fetch-database contains 62+ tables. To keep the ER diagram readable, the model is organized into **five domain groups**, each shown as a separate diagram. Cross-domain foreign keys are noted in the relationship labels.
 
 ### 5a. Location Hierarchy
 
@@ -410,7 +410,7 @@ erDiagram
     }
     Module {
         int id PK
-        int building_id FK
+        int fetch-building_id FK
         varchar module_number
     }
     Aisle {
@@ -580,7 +580,7 @@ erDiagram
 
     ShelvingJob ||--o{ Tray : "shelves"
     ShelvingJob ||--o{ NonTrayItem : "shelves"
-    ShelvingJob }o--|| Building : "in building"
+    ShelvingJob }o--|| Building : "in fetch-building"
     ShelvingJob ||--o{ ShelvingJobContainer : "contains"
     ShelvingJob ||--o{ ShelvingJobDiscrepancy : "logs"
 
@@ -589,7 +589,7 @@ erDiagram
     Request }o--o| PickList : "grouped into"
 
     PickList ||--o{ Request : "fulfills"
-    PickList }o--o| Building : "in building"
+    PickList }o--o| Building : "in fetch-building"
     PickList ||--o{ WithdrawJob : "triggers"
 
     ShippingJob ||--o{ ShippingBin : "contains"
@@ -627,7 +627,7 @@ erDiagram
     }
     ShelvingJob {
         int id PK
-        int building_id FK
+        int fetch-building_id FK
         int assigned_user_id FK
         int created_by_id FK
         enum status
@@ -637,7 +637,7 @@ erDiagram
     }
     PickList {
         bigint id PK
-        int building_id FK
+        int fetch-building_id FK
         int assigned_user_id FK
         int created_by_id FK
         enum status
@@ -677,7 +677,7 @@ erDiagram
         int item_id FK
         int non_tray_item_id FK
         int pick_list_id FK
-        int building_id FK
+        int fetch-building_id FK
         int request_type_id FK
         int delivery_location_id FK
         int priority_id FK
@@ -699,7 +699,7 @@ Users belong to Groups (many-to-many). Groups hold Permissions (many-to-many). R
 erDiagram
     User }o--o{ Group : "belongs to (M2M via user_groups)"
     Group }o--o{ Permission : "has (M2M via group_permissions)"
-    User }o--o| Building : "default building"
+    User }o--o| Building : "default fetch-building"
 
     User {
         int id PK
@@ -708,7 +708,7 @@ erDiagram
         varchar email UK
         varchar fetch_auth_token
         timestamp fetch_auth_expiration
-        int default_building_id FK
+        int default_fetch-building_id FK
     }
     Group {
         smallint id PK
@@ -874,7 +874,7 @@ graph LR
     INV -->|"ShelfPosition<br/>(placement)"| LOC
     JOB -->|"assigned_user_id<br/>created_by_id"| RBAC
     JOB -->|"Items, Trays,<br/>NonTrayItems"| INV
-    JOB -->|"building_id"| LOC
+    JOB -->|"fetch-building_id"| LOC
     INV -->|"owner_id, size_class_id,<br/>media_type_id"| CFG
     LOC -->|"owner_id,<br/>shelf_type_id"| CFG
     CFG -->|"ILS hooks per Owner"| JOB
