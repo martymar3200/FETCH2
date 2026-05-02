@@ -110,24 +110,9 @@ class ShelvingJobBaseOutput(BaseModel):
 
 
 class ShelvingJobListOutput(ShelvingJobBaseOutput):
-    # CRITICAL FIX: Field exclude is now from pydantic.Field
-    non_tray_items: list = Field(exclude=True)
-    trays: list = Field(exclude=True)
-
-    @computed_field(title='Tray Count')
-    @property
-    def tray_count(self) -> int:
-        return len(self.trays)
-
-    @computed_field(title='NonTray Count')
-    @property
-    def non_tray_item_count(self) -> int:
-        return len(self.non_tray_items)
-
-    @computed_field(title='Container Count')
-    @property
-    def container_count(self) -> int:
-        return self.tray_count + self.non_tray_item_count
+    tray_count: int = 0
+    non_tray_item_count: int = 0
+    container_count: int = 0
 
     model_config = ConfigDict(
         json_schema_extra={

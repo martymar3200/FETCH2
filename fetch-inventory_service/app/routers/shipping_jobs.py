@@ -66,7 +66,10 @@ def get_shipping_job_list(
     """
     List shipping jobs with pagination and filtering.
     """
-    query = select(ShippingJob)
+    query = select(ShippingJob).options(
+        selectinload(ShippingJob.assigned_user),
+        selectinload(ShippingJob.created_by)
+    )
 
     if params.assigned_user_id:
         query = query.where(ShippingJob.assigned_user_id == params.assigned_user_id)

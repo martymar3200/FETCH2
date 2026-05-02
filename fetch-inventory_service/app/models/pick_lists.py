@@ -3,7 +3,8 @@
 from enum import Enum
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Integer, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import BigInteger, Integer, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey, select, func
 
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone, timedelta
@@ -55,6 +56,21 @@ class PickList(Base):
     
     # Last Transition (datetime)
     last_transition: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+
+    # --- RAM EFFICIENT COUNTS (SQL SIDE) ---
+    @hybrid_property
+    def request_count(self) -> int:
+        return len(self.requests)
+
+    @request_count.expression
+    @classmethod
+    def request_count(cls):
+        from app.models.requests import Request
+        return (
+            select(func.count(Request.id))
+            .where(Request.pick_list_id == cls.id)
+            .label("request_count")
+        )
 
     # --- RELATIONSHIPS ---
     

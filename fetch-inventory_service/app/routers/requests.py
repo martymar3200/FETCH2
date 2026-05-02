@@ -7,7 +7,7 @@ from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate
 # CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
+from sqlalchemy.orm import Session, selectinload # Session and selectinload imported from sqlalchemy.orm now
 from sqlalchemy import select, asc, desc, or_, func, update # select/update/func imported from sqlalchemy now
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
@@ -63,8 +63,16 @@ def get_request_list(
     """
     Get a list of requests
     """
-    # Create a query to select all Request from the database
-    query = select(Request).where(Request.deleted == False)
+    # Create a query to select all Request from the database with eager loading
+    query = select(Request).where(Request.deleted == False).options(
+        selectinload(Request.item),
+        selectinload(Request.non_tray_item),
+        selectinload(Request.building),
+        selectinload(Request.delivery_location),
+        selectinload(Request.request_type),
+        selectinload(Request.priority),
+        selectinload(Request.requested_by)
+    )
 
     if params.queue:
         # only return unfulfilled requests

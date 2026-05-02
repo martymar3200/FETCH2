@@ -4,7 +4,7 @@ from fastapi.responses import Response
 from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate 
-from sqlalchemy.orm import Session 
+from sqlalchemy.orm import Session, selectinload 
 from sqlalchemy import select, not_, or_, func, text, update 
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
@@ -54,7 +54,10 @@ def get_accession_job_list(
     Retrieve a paginated list of accession jobs.
     """
     try:
-        query = select(AccessionJob)
+        query = select(AccessionJob).options(
+            selectinload(AccessionJob.assigned_user),
+            selectinload(AccessionJob.created_by)
+        )
 
         if params.queue:
             subquery = (

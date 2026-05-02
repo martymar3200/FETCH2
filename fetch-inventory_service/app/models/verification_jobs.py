@@ -2,7 +2,8 @@
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Integer, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey, Boolean
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import BigInteger, Integer, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey, Boolean, select, func
 from sqlalchemy.types import Enum as SQLEnum  # Safety import
 
 from typing import Optional, List, TYPE_CHECKING
@@ -83,7 +84,43 @@ class VerificationJob(Base):
 )
 
 
-    # --- RELATIONSHIPS (CRITICAL FIX: Explicitly link forward relations) ---
+    # --- RAM EFFICIENT COUNTS (SQL SIDE) ---
+    @hybrid_property
+    def tray_count(self) -> int:
+        return len(self.trays)
+
+    @tray_count.expression
+    @classmethod
+    def tray_count(cls):
+        from app.models.trays import Tray
+        return (
+            select(func.count(Tray.id))
+            .where(Tray.verification_job_id == cls.id)
+            .label("tray_count")
+        )
+
+    @hybrid_property
+    def item_count(self) -> int:
+        return len(self.items) + len(self.non_tray_items)
+
+    @item_count.expression
+    @classmethod
+    def item_count(cls):
+        from app.models.items import Item
+        from app.models.non_tray_items import NonTrayItem
+        item_subquery = (
+            select(func.count(Item.id))
+            .where(Item.verification_job_id == cls.id)
+            .scalar_subquery()
+        )
+        non_tray_subquery = (
+            select(func.count(NonTrayItem.id))
+            .where(NonTrayItem.verification_job_id == cls.id)
+            .scalar_subquery()
+        )
+        return (item_subquery + non_tray_subquery).label("item_count")
+
+    # --- RELATIONSHIPS ---
     
     # 1. Owner
     owner: Mapped[Optional[Owner]] = relationship(

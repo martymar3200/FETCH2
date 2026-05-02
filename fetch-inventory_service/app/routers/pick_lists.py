@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy.orm import Session 
+from sqlalchemy.orm import Session, selectinload 
 from sqlalchemy import select, func, update, and_, delete
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
@@ -139,7 +139,11 @@ def get_pick_list_list(
     """
     Get a list of pick lists.
     """
-    query = select(PickList)
+    query = select(PickList).options(
+        selectinload(PickList.assigned_user),
+        selectinload(PickList.created_by),
+        selectinload(PickList.building)
+    )
 
     try:
         if params.queue:

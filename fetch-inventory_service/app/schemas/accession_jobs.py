@@ -113,6 +113,8 @@ class AccessionJobListOutput(AccessionJobBaseOutput):
     assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     create_dt: datetime
+    tray_count: int = 0
+    item_count: int = 0
 
     model_config = ConfigDict(
         json_schema_extra={

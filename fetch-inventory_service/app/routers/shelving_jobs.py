@@ -9,8 +9,8 @@ from fastapi_pagination import Page
 # CRITICAL FIX: Changed from .ext.sqlmodel to .ext.sqlalchemy
 from fastapi_pagination.ext.sqlalchemy import paginate
 # CRITICAL FIX: Replaced from sqlmodel import Session, select
-from sqlalchemy.orm import Session # Session is imported from sqlalchemy.orm now
-from sqlalchemy import select, func, update, delete # select/update/delete/func imported from sqlalchemy now
+from sqlalchemy.orm import Session, selectinload # Session and selectinload imported from sqlalchemy.orm now
+from sqlalchemy import select, func, update, delete, or_ # select/update/delete/func/or_ imported from sqlalchemy now
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
@@ -172,8 +172,12 @@ def get_shelving_job_list(
     """
     Retrieve a paginated list of shelving jobs.
     """
-    # Create a query to select all Shelving Job
-    query = select(ShelvingJob)
+    # Create a query to select all Shelving Job with eager loading for dashboard fields
+    query = select(ShelvingJob).options(
+        selectinload(ShelvingJob.assigned_user),
+        selectinload(ShelvingJob.created_by),
+        selectinload(ShelvingJob.building)
+    )
 
     try:
         if params.queue:

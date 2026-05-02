@@ -403,6 +403,8 @@ class RequestListOutput(RequestBaseOutput):
     pick_list: Optional[NestedPickListForRequest] = None
     create_dt: Optional[datetime] = None
     update_dt: Optional[datetime] = None
+    item_barcode: Optional[str] = None
+    item_title: Optional[str] = None
 
     class Config:
         json_schema_extra = {

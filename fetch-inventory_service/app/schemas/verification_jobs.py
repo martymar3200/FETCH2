@@ -230,37 +230,14 @@ class VerificationJobListOutput(VerificationJobBaseOutput):
     container_type_id: Optional[int] = None
     container_type: Optional[ContainerTypeDetailReadOutput] = None
     
-    # CRITICAL FIX: Explicitly typed lists instead of generic 'list'
-    trays: Optional[List[TrayDetailNestedForVerificationJob]] = []
-    items: Optional[List[ItemDetailNestedForVerificationJob]] = []
-    non_tray_items: Optional[List[NonTrayItemDetailNestedForVerificationJob]] = []
-    
     assigned_user_id: Optional[int] = None
     created_by_id: Optional[int] = None
     assigned_user: Optional[UserDetailReadOutput] = None
     created_by: Optional[UserDetailReadOutput] = None
     create_dt: datetime
-
-    @computed_field(title='Tray Count')
-    @property
-    def tray_count(self) -> int:
-        if self.trays is None:
-            return 0
-        return len(self.trays)
-
-    @computed_field(title='Item Count')
-    @property
-    def item_count(self) -> int:
-        if self.items is None:
-            return 0
-        return len(self.items)
-
-    @computed_field(title='NonTray Count')
-    @property
-    def non_tray_item_count(self) -> int:
-        if self.non_tray_items is None:
-            return 0
-        return len(self.non_tray_items)
+    tray_count: int = 0
+    item_count: int = 0
+    non_tray_item_count: int = 0
     
     model_config = ConfigDict(
         from_attributes=True,

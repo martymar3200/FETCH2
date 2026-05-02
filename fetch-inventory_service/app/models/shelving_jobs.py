@@ -2,7 +2,8 @@
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, Boolean, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey
+from sqlalchemy.ext.hybrid import hybrid_property # Added hybrid_property
+from sqlalchemy import Integer, Boolean, Enum as SQLEnum, Interval, TIMESTAMP, ForeignKey, select, func # Added select and func
 
 from enum import Enum
 from typing import Optional, List, TYPE_CHECKING
@@ -111,6 +112,44 @@ class ShelvingJob(Base): # <--- Inherit from Base
     )
 
     # REMOVED: create_dt and update_dt are handled by the Base class.
+
+    # --- RAM EFFICIENT COUNTS (SQL SIDE) ---
+    @hybrid_property
+    def tray_count(self) -> int:
+        return len(self.trays)
+
+    @tray_count.expression
+    @classmethod
+    def tray_count(cls):
+        from app.models.trays import Tray
+        return (
+            select(func.count(Tray.id))
+            .where(Tray.shelving_job_id == cls.id)
+            .label("tray_count")
+        )
+
+    @hybrid_property
+    def non_tray_item_count(self) -> int:
+        return len(self.non_tray_items)
+
+    @non_tray_item_count.expression
+    @classmethod
+    def non_tray_item_count(cls):
+        from app.models.non_tray_items import NonTrayItem
+        return (
+            select(func.count(NonTrayItem.id))
+            .where(NonTrayItem.shelving_job_id == cls.id)
+            .label("non_tray_item_count")
+        )
+
+    @hybrid_property
+    def container_count(self) -> int:
+        return self.tray_count + self.non_tray_item_count
+
+    @container_count.expression
+    @classmethod
+    def container_count(cls):
+        return cls.tray_count + cls.non_tray_item_count
 
     # --- RELATIONSHIPS ---
 

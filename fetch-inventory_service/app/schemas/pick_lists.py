@@ -96,16 +96,11 @@ class PickListBaseOutput(BaseModel):
     status: str
     last_transition: Optional[datetime] = None
     run_time: Optional[timedelta] = None
-    requests: Optional[list[RequestDetailReadOutputNoPickList]] = None
-    withdraw_jobs: Optional[list[WithdrawJobBaseOutput]] = None
+    request_count: int = 0
     building: Optional[BuildingBaseOutput] = None
     create_dt: datetime
     update_dt: datetime
 
-    @computed_field(title='Request Count')
-    @property
-    def request_count(self) -> int:
-        return len(self.requests)
 
     @field_validator("run_time")
     @classmethod

@@ -2,7 +2,8 @@
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, Integer, Enum as SQLEnum, VARCHAR, ForeignKey, Boolean, String, CheckConstraint
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import BigInteger, Integer, Enum as SQLEnum, VARCHAR, ForeignKey, Boolean, String, CheckConstraint, select, func
 
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
@@ -79,6 +80,52 @@ class Request(Base):
     fulfilled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
+    # --- RAM EFFICIENT METADATA (SQL SIDE) ---
+    @hybrid_property
+    def item_barcode(self) -> Optional[str]:
+        if self.item and self.item.barcode:
+            return self.item.barcode.value
+        if self.non_tray_item and self.non_tray_item.barcode:
+            return self.non_tray_item.barcode.value
+        return None
+
+    @item_barcode.expression
+    @classmethod
+    def item_barcode(cls):
+        from app.models.items import Item
+        from app.models.non_tray_items import NonTrayItem
+        from app.models.barcodes import Barcode
+        item_barcode_subq = (
+            select(Barcode.value)
+            .join(Item, Item.barcode_id == Barcode.id)
+            .where(Item.id == cls.item_id)
+            .scalar_subquery()
+        )
+        non_tray_barcode_subq = (
+            select(Barcode.value)
+            .join(NonTrayItem, NonTrayItem.barcode_id == Barcode.id)
+            .where(NonTrayItem.id == cls.non_tray_item_id)
+            .scalar_subquery()
+        )
+        return func.coalesce(item_barcode_subq, non_tray_barcode_subq).label("item_barcode")
+
+    @hybrid_property
+    def item_title(self) -> Optional[str]:
+        if self.item:
+            return self.item.title
+        return None
+
+    @item_title.expression
+    @classmethod
+    def item_title(cls):
+        from app.models.items import Item
+        return (
+            select(Item.title)
+            .where(Item.id == cls.item_id)
+            .scalar_subquery()
+            .label("item_title")
+        )
+
     # --- RELATIONSHIPS ---
     
     # Metadata Relationships
