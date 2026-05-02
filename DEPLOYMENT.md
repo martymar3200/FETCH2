@@ -6,8 +6,6 @@ This guide covers deploying FETCH2 to a production environment. For local develo
 
 ---
 
-## Architecture Overview
-
 A production FETCH2 deployment consists of three services:
 
 ```
@@ -36,6 +34,24 @@ A production FETCH2 deployment consists of three services:
 
 ---
 
+## Recommended Production Architecture (10M+ Items)
+
+For facilities managing millions of items, the architecture should prioritize **database memory** and **I/O throughput** to ensure search and barcode scanning remain instantaneous.
+
+| Component | Recommendation | Why? |
+| :--- | :--- | :--- |
+| **Database vCPUs** | 4 - 8 vCPUs | Handles complex hierarchy joins and report generation. |
+| **Database RAM** | **32GB Minimum** | Allows all hot indexes (10M items + 600k trays) to reside in memory. |
+| **Storage** | 100GB+ **NVMe / SSD** | High-density random I/O is required for fast barcode lookups. |
+| **API Nodes** | 2 Nodes (2 vCPU, 4GB RAM) | Provides high availability and redundancy. |
+| **Load Balancer** | Nginx / HAProxy / Cloud LB | Handles SSL termination and traffic distribution. |
+| **Redis Cache** | 2GB Managed Instance | Offloads session management from the main database. |
+
+### Search Performance
+At this scale, ensure that **B-Tree indexes** are maintained on all barcode columns. For text-based searching (Title/Author), utilize **PostgreSQL GIN indexes** with `pg_trgm` to maintain sub-second response times across 10 million records.
+
+---
+
 ## 1. Environment Variables
 
 ### Backend (Inventory API)
@@ -46,7 +62,7 @@ The backend is configured via environment variables (or a `.env` file). These ar
 |---|---|---|---|
 | `APP_ENVIRONMENT` | Yes | `local` | Deployment environment. Must be one of: `local`, `debug`, `develop`, `test`, `stage`, `production`. Controls SAML config selection, SchemaSpy, and legacy login availability. |
 | `SECRET_KEY` | **Yes** | *(none — will crash if missing)* | Secret key for JWT token signing. Use a strong, random string (e.g., `openssl rand -hex 32`). |
-| `DATABASE_URL` | Yes | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Full SQLAlchemy connection string for the PostgreSQL fetch-database. |
+| `DATABASE_URL` | Yes | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Full SQLAlchemy connection string for the PostgreSQL database. |
 | `MIGRATION_URL` | No | `(Required — e.g. postgresql://user:pass@host:5432/db)` | Database URL used by Alembic for migrations. Only needed if running migrations from outside the container network. |
 | `VUE_HOST` | Yes | `https://localhost:8000` | The base URL of the Vue frontend. Used for SAML redirect after login. Set to your production URL (e.g., `https://fetch.example.com`). |
 | `ALLOWED_ORIGINS` | Yes | localhost variants | Comma-separated list of allowed CORS origins. Must include your production frontend URL. |
@@ -66,7 +82,7 @@ The backend is configured via environment variables (or a `.env` file). These ar
 
 ### Frontend (Vue)
 
-The Vue frontend uses fetch-build-time environment variables defined in an `.env` file at `fetch-vue/env/.env`. These are compiled into the static bundle during the fetch-build step, so they must be set **before fetch-building the image**.
+The Vue frontend uses build-time environment variables defined in an `.env` file at `fetch-vue/env/.env`. These are compiled into the static bundle during the build step, so they must be set **before building the image**.
 
 | Variable | Description | Example (Production) |
 |---|---|---|
@@ -74,7 +90,7 @@ The Vue frontend uses fetch-build-time environment variables defined in an `.env
 | `VITE_API_BASE_URI` | Base URL of the Inventory API | `https://api.fetch.example.com/` |
 | `VITE_INV_SERVCE_API` | Inventory Service API URL (same as above) | `https://api.fetch.example.com/` |
 
-Create your environment file before fetch-building:
+Create your environment file before building:
 ```bash
 cd fetch-vue/env
 cp .env.example .env
@@ -90,7 +106,7 @@ Each service has per-environment Containerfiles. For production, use:
 | Service | Containerfile | Base Image |
 |---|---|---|
 | Inventory API | `fetch-inventory_service/images/api.prod.Containerfile` | `python:3.11.4-slim` → Gunicorn |
-| Web App | `fetch-vue/images/web.prod.Containerfile` | `node:22-alpine` (fetch-build) → `nginx:1.27.2-alpine` (serve) |
+| Web App | `fetch-vue/images/web.prod.Containerfile` | `node:22-alpine` (build) → `nginx:1.27.2-alpine` (serve) |
 | Database | `fetch-database/pgadmin/images/` | PostgreSQL official image |
 
 ### Building Images
@@ -98,12 +114,12 @@ Each service has per-environment Containerfiles. For production, use:
 ```bash
 # Build the Inventory API image
 cd fetch-inventory_service
-podman fetch-build -f images/api.prod.Containerfile -t fetch-inventory-api:latest .
+podman build -f images/api.prod.Containerfile -t fetch-inventory-api:latest .
 
 # Build the Web App image
-# IMPORTANT: Create fetch-vue/env/.env with production values BEFORE fetch-building
+# IMPORTANT: Create fetch-vue/env/.env with production values BEFORE building
 cd fetch-vue
-podman fetch-build -f images/web.prod.Containerfile -t fetch-web-app:latest .
+podman build -f images/web.prod.Containerfile -t fetch-web-app:latest .
 ```
 
 ### Pushing to a Registry
@@ -120,17 +136,17 @@ podman push registry.example.com/fetch/web-app:latest
 ### Production Image Details
 
 **Inventory API (`api.prod.Containerfile`):**
-- Multi-stage fetch-build: Poetry exports `requirements.txt`, then installs in a clean image
+- Multi-stage build: Poetry exports `requirements.txt`, then installs in a clean image
 - Runs Gunicorn with 5 Uvicorn workers (tuned for `2 * CPU + 1`)
 - Secrets are NOT baked in — injected at runtime
 - Alembic migrations run automatically on container startup (with advisory locking for multi-replica safety)
 
 > **⚠️ Gunicorn Workers:** The default worker count of 5 is tuned for a 2-core server using the formula `2 * CPU_CORES + 1`. If your production server has different specifications, adjust the `--workers` value in the Containerfile CMD accordingly. For a 4-core machine, use 9 workers; for an 8-core machine, use 17.
 
-> **⚠️ SAML Signing:** The `xmlsec` fetch-build dependencies are commented out in the Containerfile by default. If your Identity Provider requires signed SAML assertions (common in enterprise/government environments), you must uncomment the `xmlsec` fetch-build dependencies in `api.prod.Containerfile` AND the corresponding `pip install` line. See the comments in the Containerfile for details.
+> **⚠️ SAML Signing:** The `xmlsec` build dependencies are commented out in the Containerfile by default. If your Identity Provider requires signed SAML assertions (common in enterprise/government environments), you must uncomment the `xmlsec` build dependencies in `api.prod.Containerfile` AND the corresponding `pip install` line. See the comments in the Containerfile for details.
 
 **Web App (`web.prod.Containerfile`):**
-- Multi-stage fetch-build: Node fetch-builds the Quasar PWA, then copies static files to NGINX
+- Multi-stage build: Node builds the Quasar PWA, then copies static files to NGINX
 - NGINX serves the compiled PWA with TLS (self-signed by default)
 - TLS certificates are generated at **runtime** via an entrypoint script — if you mount real certificates, the self-signed generation is skipped automatically
 - NGINX config at `fetch-vue/nginx/production.conf` enforces TLS 1.2+, HSTS, and security headers
@@ -145,8 +161,8 @@ podman push registry.example.com/fetch/web-app:latest
 Use your cloud provider's managed PostgreSQL service (e.g., AWS RDS, Azure Database, GCP Cloud SQL).
 
 1. Create a PostgreSQL instance (version 14+)
-2. Create a fetch-database named `fetch-inventory_service`
-3. Create a dedicated user with full privileges on that fetch-database
+2. Create a database named `fetch-inventory_service`
+3. Create a dedicated user with full privileges on that database
 4. Set `DATABASE_URL` on the API container:
    ```
    DATABASE_URL=postgresql://fetch_user:strong_password@db-host.example.com:5432/fetch-inventory_service
@@ -154,11 +170,11 @@ Use your cloud provider's managed PostgreSQL service (e.g., AWS RDS, Azure Datab
 
 ### Option B: Containerized PostgreSQL
 
-Use the fetch-database container image from `fetch-database/` for simpler deployments:
+Use the database container image from `fetch-database/` for simpler deployments:
 
 ```bash
-cd fetch-database
-podman fetch-build -f pgadmin/images/postgres.local.Containerfile -t fetch-postgres:latest .
+cd database
+podman build -f pgadmin/images/postgres.local.Containerfile -t fetch-postgres:latest .
 podman run -d --name fetch-db \
   -e POSTGRES_PASSWORD=strong_password \
   -e POSTGRES_DB=fetch-inventory_service \
@@ -171,15 +187,15 @@ podman run -d --name fetch-db \
 
 ### Schema Initialization
 
-The Inventory API automatically runs Alembic migrations on startup. The first boot against an empty fetch-database will create all tables and indexes. No manual migration step is required.
+The Inventory API automatically runs Alembic migrations on startup. The first boot against an empty database will create all tables and indexes. No manual migration step is required.
 
 > **Multi-Replica Safety:** When running multiple API replicas, migrations are protected by a PostgreSQL advisory lock. Only the first replica to start will run migrations — the others will detect the lock and skip. This prevents race conditions where multiple containers try to alter the schema simultaneously.
 
 ### Bootstrapping the Initial Admin User
 
-In production you will **not** use the fake data seeder (`seed-fake-data`), as it injects thousands of fake library items into the fetch-database. Furthermore, you should **avoid** manually manipulating the raw `fixtures/**/*.json` files to create your facility data, as maintaining raw JSON containing complex foreign key relationships is extremely error-prone.
+In production you will **not** use the fake data seeder (`seed-fake-data`), as it injects thousands of fake library items into the database. Furthermore, you should **avoid** manually manipulating the raw `fixtures/**/*.json` files to create your facility data, as maintaining raw JSON containing complex foreign key relationships is extremely error-prone.
 
-Instead, you will use the **Production Bootstrap Tool**. This script safely injects a single System Administrator account into the fetch-database so you can log in, and then you use the secure frontend Admin UI to configure your facility setup.
+Instead, you will use the **Production Bootstrap Tool**. This script safely injects a single System Administrator account into the database so you can log in, and then you use the secure frontend Admin UI to configure your facility setup.
 
 1. Ensure your API container is running.
 2. From the `fetch-inventory_service/` directory on the host, run the bootstrap command with the email address of the person who will be the administrator (must match their SAML SSO email):
@@ -405,7 +421,7 @@ After deploying all services:
 - [ ] Build out your location hierarchy (Building → Module → Aisle → Shelf)
 - [ ] (Optional) Configure ILS integration via Admin > ILS Integrations
 - [ ] Verify HTTPS is working with valid certificates
-- [ ] Confirm fetch-database backups are scheduled
+- [ ] Confirm database backups are scheduled
 - [ ] Review CORS settings in `ALLOWED_ORIGINS`
 
 ---
@@ -428,12 +444,12 @@ To restore from a backup:
 ./helper.sh pg-restore <filename.dump.xz>
 ```
 
-For production, configure automated backups via your managed fetch-database service or a cron job running `pg_dump`.
+For production, configure automated backups via your managed database service or a cron job running `pg_dump`.
 
 ### Recommended Backup Schedule
 
 | Backup Type | Frequency | Retention |
 |---|---|---|
-| Full fetch-database dump | Daily | 30 days |
+| Full database dump | Daily | 30 days |
 | Point-in-time recovery (WAL) | Continuous | 7 days |
 | Pre-upgrade snapshot | Before each deployment | Until verified |
