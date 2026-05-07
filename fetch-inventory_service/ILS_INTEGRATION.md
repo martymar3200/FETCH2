@@ -58,7 +58,7 @@ graph LR
 
 - **Per-Owner Configuration**: Each `Owner` in FETCH can have its own `ILSConfiguration`. An owner hierarchy supports **inheritance** — if a child owner has no configuration, it walks up the parent chain via `resolved_ils_configuration_id`.
 - **Per-Hook Toggle**: Each integration can selectively enable/disable individual workflow hooks (accession validation, shelving check-in, refile check-in, picklist check-in, request sync, JIT metadata). This means you can onboard an ILS incrementally.
-- **Background Execution**: All ILS calls are executed as **FastAPI `BackgroundTasks`**, never blocking the user's HTTP request. The user scans a barcode → gets an immediate response → the ILS sync happens asynchronously.
+- **Execution Mode**: Most ILS calls are executed as **FastAPI `BackgroundTasks`**, ensuring fast response times (e.g., accessioning a tray). The exception is **Verification Validation**, which runs synchronously to instantly block invalid items from being added to a verification job.
 - **Error Dashboard**: Failed sync operations are logged to the `ils_sync_errors` table with workflow context, enabling staff to review, retry, or resolve errors from the admin UI.
 
 ---
@@ -215,14 +215,17 @@ sequenceDiagram
     end
 ```
 
+*Note: The **Verification Validation** and **Refile Check-In** hooks are exceptions to this async pattern. They execute inline within the FastAPI Routers to intentionally block the HTTP request and prevent the operation if the ILS validation fails.*
+
 ### Hook Reference
 
 | Hook | Task Function | Triggered By | Adapter Method | Expected Status Field |
 |---|---|---|---|---|
-| **Accession Validation** | `validate_accessioned_item_async` | `POST /items/` and `POST /non-tray-items/` (item creation) | `validate_item()` | N/A (bool) |
+| **Accession Validation** | `validate_accessioned_item_async` | `POST /items/` and `POST /non-tray-items/` (item creation during accession) | `validate_item()` | N/A (bool) |
+| **Verification Validation** | *(Inline, synchronous)* | `POST /items/` and `POST /non_tray_items/` (item creation during verification) | `validate_item()` | N/A (bool) |
 | **Shelving Check-In** | `check_in_shelved_item_async` | Shelving job completion (`tasks.py`) | `check_in_item()` | `expected_shelved_status` |
 | **PickList Check-In** | `check_in_picklist_item_async` | PickList scan endpoint | `check_in_item()` | `expected_picklist_status` |
-| **Refile Check-In** | *(Planned — `enable_refile_hook` exists but task is not yet wired)* | — | `check_in_item()` | `expected_refile_status` |
+| **Refile Check-In** | *(Inline, synchronous)* | `PATCH /refile-queue/` (adding item to queue) | `check_in_item()` | `expected_refile_status` |
 | **Request Sync** | `sync_requests_async` | `POST /ils-configurations/sync-requests` (manual trigger) | `fetch_pending_requests()` | N/A |
 | **JIT Metadata** | *(Inline, not async)* | `GET /items/barcode/{value}/metadata` and `GET /items/{barcode_value}/ils-metadata` | `fetch_item_metadata()` | N/A |
 

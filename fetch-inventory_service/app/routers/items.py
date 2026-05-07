@@ -22,7 +22,8 @@ from app.events import update_shelf_space_after_tray
 from app.filter_params import SortParams, ItemFilterParams
 from app.logger import inventory_logger
 from app.models.barcodes import Barcode
-from app.models.items import Item, ItemStatus
+from app.models.items import Item, ItemStatus, ILSSyncState
+from app.models.accession_jobs import AccessionJob
 from app.models.media_types import MediaType
 from app.models.move_discrepancies import MoveDiscrepancy
 from app.models.non_tray_items import NonTrayItem
@@ -292,6 +293,29 @@ def create_item(
         raise ValidationException(
             detail=f"Item with barcode value {barcode.value} already exists"
         )
+    # --- SYNCHRONOUS ILS VALIDATION FOR VERIFICATION JOBS ---
+    ils_sync_state = None
+    if item_input.verification_job_id:
+        verification_job = session.get(VerificationJob, item_input.verification_job_id)
+        if verification_job:
+            owner_id = verification_job.owner_id
+            if not owner_id and verification_job.accession_job_id:
+                accession_job = session.get(AccessionJob, verification_job.accession_job_id)
+                owner_id = accession_job.owner_id if accession_job else None
+            
+            if owner_id:
+                owner = session.get(Owner, owner_id)
+                if owner and owner.resolved_ils_configuration_id:
+                    config = session.get(ILSConfiguration, owner.resolved_ils_configuration_id)
+                    if config and config.is_active and config.enable_accession_hook:
+                        adapter = get_ils_adapter(config)
+                        barcode_obj = session.get(Barcode, item_input.barcode_id)
+                        if barcode_obj:
+                            is_valid = adapter.validate_item(barcode_obj.value)
+                            if not is_valid:
+                                raise ValidationException(detail=f"ILS Validation Failed: Barcode {barcode_obj.value} is invalid or not mapped to this location.")
+                            else:
+                                ils_sync_state = ILSSyncState.IN_SYNC
 
     # Create a new item
     new_item = Item(**item_input.model_dump())
@@ -302,6 +326,9 @@ def create_item(
     
     # Set default status to Accessioned for new items
     new_item.status = ItemStatus.Accessioned
+
+    if ils_sync_state:
+        new_item.ils_sync_state = ils_sync_state
 
     # check if existing withdrawn item with this barcode
     # Query by withdrawn_barcode_id since withdrawn items have barcode_id = None
@@ -373,8 +400,7 @@ def create_item(
         job_id=item_job_id,
     )
     session.commit()
-    
-    if item_job_id and background_tasks:
+    if item_job_id and background_tasks and not ils_sync_state:
         background_tasks.add_task(
             validate_accessioned_item_async,
             barcode_value=item_barcode,
