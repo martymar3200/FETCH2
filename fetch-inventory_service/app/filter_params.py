@@ -596,6 +596,8 @@ class MoveDiscrepancyParams:
             default=None, description="End created date to " "filter by."
         ),
     ):
+        self.assigned_user_id = assigned_user_id
+        self.owner_id = owner_id
         self.size_class_id = size_class_id
         self.container_type_id = container_type_id
         self.from_dt = from_dt
@@ -653,4 +655,44 @@ class WithdrawnItemsReportParams:
         self.owner_id = owner_id
         self.container_type = container_type
         self.include_sub_tiers = include_sub_tiers
+
+
+class WorkerEfficiencyParams:
+    def __init__(
+        self,
+        from_dt: Optional[datetime] = Query(None, description="Start date for efficiency analysis."),
+        to_dt: Optional[datetime] = Query(None, description="End date for efficiency analysis."),
+        user_id: Optional[List[int]] = Query(None, description="Users to include in report."),
+        job_type: Optional[List[str]] = Query(None, description="Job types to include in report (Shelving, Accession, PickList, Verification)."),
+    ):
+        self.from_dt = from_dt
+        self.to_dt = to_dt
+        self.user_id = user_id
+        self.job_type = job_type
+
+
+class InventoryHotZoneParams:
+    def __init__(
+        self,
+        from_dt: Optional[datetime] = Query(None, description="Start date for activity heatmap."),
+        to_dt: Optional[datetime] = Query(None, description="End date for activity heatmap."),
+        building_id: Optional[int] = Query(None, description="Filter by building."),
+    ):
+        self.from_dt = from_dt
+        self.to_dt = to_dt
+        self.building_id = building_id
+
+
+class CapacityForecastParams:
+    def __init__(
+        self,
+        building_id: Optional[int] = Query(None, description="Filter by building."),
+        owner_id: Optional[int] = Query(None, description="Filter by owner."),
+        include_sub_owners: bool = Query(False, description="Include child owners in growth calculation."),
+        lookback_days: int = Query(90, description="Number of days to look back for growth calculation."),
+    ):
+        self.building_id = building_id
+        self.owner_id = owner_id
+        self.include_sub_owners = include_sub_owners
+        self.lookback_days = lookback_days
 

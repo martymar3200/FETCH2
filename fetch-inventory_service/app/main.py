@@ -118,26 +118,9 @@ def alembic_context():
     
     alembic_cfg = Config("alembic.ini")
     try:
-        # Use a PostgreSQL advisory lock to prevent multiple replicas/workers
-        # from running migrations concurrently. Lock ID 1 is reserved for Alembic.
-        from sqlalchemy import create_engine, text
-        engine = create_engine(get_settings().DATABASE_URL)
-        with engine.connect() as conn:
-            # pg_try_advisory_lock returns True if lock acquired, False if another
-            # process already holds it. This is non-blocking.
-            lock_acquired = conn.execute(text("SELECT pg_try_advisory_lock(1)")).scalar()
-            if lock_acquired:
-                try:
-                    print("Migration lock acquired — running Alembic migrations...")
-                    command.upgrade(alembic_cfg, "head")
-                    print("Migrations complete.")
-                finally:
-                    conn.execute(text("SELECT pg_advisory_unlock(1)"))
-                    conn.commit()
-            else:
-                print("Another instance is running migrations — skipping.")
-        engine.dispose()
-
+        print("Running Alembic migrations...")
+        command.upgrade(alembic_cfg, "head")
+        print("Migrations complete.")
     except Exception as e:
         print(f"Startup Error: {e}")
         # Re-raise because if the DB migration fails, the app is broken.
@@ -165,6 +148,18 @@ async def lifespan(app: FastAPI):
     # if os.path.isdir("/code/schema-docs"):
     #     app.mount("/schema", StaticFiles(directory="/code/schema-docs", html=True), name="schema-docs")
             
+    # Start background scheduler
+    try:
+        print("Importing scheduler module...")
+        from app.scheduler import init_scheduler
+        print("Initializing scheduler...")
+        init_scheduler()
+        print("Scheduler initialization complete.")
+    except Exception as e:
+        import traceback
+        print(f"Warning: Scheduler failed to start: {e}")
+        traceback.print_exc()
+
     yield
     print("Shutting down...")
 

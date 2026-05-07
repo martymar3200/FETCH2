@@ -14,45 +14,6 @@
       v-if="generatedTableColumns.length === 0"
       class="row q-col-gutter-lg"
     >
-      <!-- Reports Column -->
-      <div class="col-12 col-md-6">
-        <div class="reports-section">
-          <div class="section-header">
-            <q-icon
-              name="bar_chart"
-              size="24px"
-              class="q-mr-sm"
-            />
-            <span class="text-h6 text-bold">Reports</span>
-          </div>
-          <div class="cards-container">
-            <div
-              v-for="report in reportItems"
-              :key="report.id"
-              class="report-card"
-              @click="selectReport(report.id)"
-              role="button"
-              tabindex="0"
-              @keydown.enter="selectReport(report.id)"
-            >
-              <div class="report-card__content">
-                <div class="report-card__title">
-                  {{ report.label }}
-                </div>
-                <div class="report-card__description">
-                  {{ report.description }}
-                </div>
-              </div>
-              <q-icon
-                name="chevron_right"
-                size="20px"
-                class="report-card__arrow"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Tools Column -->
       <div class="col-12 col-md-6">
         <div class="reports-section">
@@ -89,6 +50,190 @@
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Reports Categories Column -->
+      <div class="col-12 col-md-6">
+        <div
+          v-for="category in reportCategories"
+          :key="category.name"
+          class="reports-section q-mb-lg"
+        >
+          <div class="section-header">
+            <q-icon
+              :name="category.icon"
+              size="24px"
+              class="q-mr-sm"
+            />
+            <span class="text-h6 text-bold">{{ category.label }}</span>
+          </div>
+          <div class="cards-container">
+            <div
+              v-for="report in getReportsByCategory(category.name)"
+              :key="report.id"
+              class="report-card"
+              @click="selectReport(report.id)"
+              role="button"
+              tabindex="0"
+              @keydown.enter="selectReport(report.id)"
+            >
+              <div class="report-card__content">
+                <div class="report-card__title">
+                  {{ report.label }}
+                </div>
+                <div class="report-card__description">
+                  {{ report.description }}
+                </div>
+              </div>
+              <q-icon
+                name="chevron_right"
+                size="20px"
+                class="report-card__arrow"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Managed Server Exports Section (shown when no report is active) -->
+    <div
+      v-if="generatedTableColumns.length === 0"
+      class="row q-mt-xl"
+    >
+      <div class="col-12">
+        <div class="reports-section">
+          <div class="section-header justify-between">
+            <div class="flex items-center">
+              <q-icon
+                name="cloud_download"
+                size="24px"
+                class="q-mr-sm"
+              />
+              <span class="text-h6 text-bold">Managed Server Exports</span>
+            </div>
+            <q-tabs
+              v-model="managedTab"
+              dense
+              class="text-grey"
+              active-color="primary"
+              indicator-color="primary"
+              align="justify"
+              narrow-indicator
+            >
+              <q-tab
+                name="inbox"
+                label="Export Inbox"
+              />
+              <q-tab
+                name="schedules"
+                label="Active Schedules"
+              />
+            </q-tabs>
+          </div>
+
+          <q-tab-panels
+            v-model="managedTab"
+            animated
+          >
+            <q-tab-panel
+              name="inbox"
+              class="q-pa-none"
+            >
+              <EssentialTable
+                v-if="managedTab === 'inbox'"
+                :table-columns="exportHistoryColumns"
+                :table-data="exportHistory"
+                :pagination-loading="historyLoading"
+                :enable-pagination="false"
+                :hide-table-rearrange="true"
+                class="managed-table"
+              >
+                <template #table-td="{ colName, value, props }">
+                  <span v-if="colName === 'actions'">
+                    <BaseButton
+                      flat
+                      round
+                      dense
+                      icon="download"
+                      color="primary"
+                      :disabled="props.row.status !== 'completed'"
+                      @click.stop="downloadHistoricalExport(props.row)"
+                    >
+                      <q-tooltip>Download File</q-tooltip>
+                    </BaseButton>
+                  </span>
+                  <q-chip
+                    v-else-if="colName === 'status'"
+                    dense
+                    :color="value === 'completed' ? 'positive' : value === 'failed' ? 'negative' : 'warning'"
+                    text-color="white"
+                  >
+                    {{ value }}
+                  </q-chip>
+                  <span v-else-if="colName === 'file_size_bytes'">
+                    {{ value ? (value / (1024 * 1024)).toFixed(2) + ' MB' : '-' }}
+                  </span>
+                  <span v-else-if="colName === 'create_dt'">
+                    {{ moment.utc(value).local().format('LLL') }}
+                  </span>
+                  <span v-else-if="colName === 'expires_at'">
+                    {{ moment(value).fromNow() }}
+                  </span>
+                  <span v-else>
+                    {{ value }}
+                  </span>
+                </template>
+              </EssentialTable>
+            </q-tab-panel>
+
+            <q-tab-panel
+              name="schedules"
+              class="q-pa-none"
+            >
+              <EssentialTable
+                v-if="managedTab === 'schedules'"
+                :table-columns="scheduledExportColumns"
+                :table-data="scheduledExports"
+                :pagination-loading="schedulesLoading"
+                :enable-pagination="false"
+                :hide-table-rearrange="true"
+                class="managed-table"
+              >
+                <template #table-td="{ colName, value, props }">
+                  <span v-if="colName === 'actions'">
+                    <BaseButton
+                      flat
+                      round
+                      dense
+                      icon="delete"
+                      color="negative"
+                      @click.stop="handleDeleteSchedule(props.row)"
+                    >
+                      <q-tooltip>Delete Schedule</q-tooltip>
+                    </BaseButton>
+                  </span>
+                  <span v-else-if="colName === 'last_run_at'">
+                    {{ value ? moment.utc(value).local().format('LLL') : 'Never' }}
+                  </span>
+                  <span v-else-if="colName === 'next_run_at'">
+                    {{ value ? moment.utc(value).local().format('LLL') : '-' }}
+                  </span>
+                  <span v-else-if="colName === 'is_active'">
+                    <q-icon
+                      :name="value ? 'check_circle' : 'cancel'"
+                      :color="value ? 'positive' : 'grey-5'"
+                      size="20px"
+                    />
+                  </span>
+                  <span v-else>
+                    {{ value }}
+                  </span>
+                </template>
+              </EssentialTable>
+            </q-tab-panel>
+          </q-tab-panels>
         </div>
       </div>
     </div>
@@ -261,8 +406,6 @@
             @update-pagination="regenerateReport($event)"
             @selected-table-row="null"
           >
-
-
             <!-- Filter row for column filtering - works for all reports -->
             <template #header-filter-row="{ cols }">
               <q-tr
@@ -325,32 +468,27 @@
       @submit="generateReportTableFields($event);"
     />
 
-    <!-- ====================================================== -->
-    <!-- ============== START: ADD NEW SCANNER MODAL ========== -->
-    <!-- ====================================================== -->
     <ItemDetailsScannerModal
       v-if="showScannerModal"
       @hide="showScannerModal = false; resetReport();"
     />
-    <!-- ====================================================== -->
-    <!-- =============== END: ADD NEW SCANNER MODAL =========== -->
-    <!-- ====================================================== -->
-  </div>
 
-  <!-- print component used to handle printing the reports -->
-  <ReportPrintTemplate
-    ref="reportPrintTemplate"
-    :report-details="{
-      type: reportType,
-      data: reportData,
-      headers: generatedTableColumns
-    }"
-  />
+    <!-- print component used to handle printing the reports -->
+    <ReportPrintTemplate
+      ref="reportPrintTemplate"
+      :report-details="{
+        type: reportType,
+        data: reportData,
+        headers: generatedTableColumns
+      }"
+    />
+  </div>
 </template>
 
 <script setup>
 import BaseButton from '@/components/Base/BaseButton.vue'
 import { ref, inject, onBeforeMount, computed, watch } from 'vue'
+import moment from 'moment'
 import { notify } from '@/utils/notify'
 import { useRoute, useRouter } from 'vue-router'
 import { useReportsStore } from '@/stores/reports-store'
@@ -371,13 +509,25 @@ const route = useRoute()
 const router = useRouter()
 
 // Store Data
-const { reportData, reportDataTotal } = storeToRefs(useReportsStore())
-const { getReport } = useReportsStore()
-const { appIsLoadingData } = storeToRefs(useGlobalStore())
-const { appIsOffline } = storeToRefs(useGlobalStore())
-const { downloadReport } = useReportsStore()
+const reportsStore = useReportsStore()
+const globalStore = useGlobalStore()
+const { reportData, reportDataTotal } = storeToRefs(reportsStore)
+const {
+  getReport,
+  downloadReport,
+  getScheduledExports,
+  deleteScheduledExport,
+  getExportHistory,
+  downloadHistoricalExport
+} = reportsStore
+const { appIsLoadingData, appIsOffline } = storeToRefs(globalStore)
 
 // Local Data
+const managedTab = ref('inbox')
+const scheduledExports = ref([])
+const exportHistory = ref([])
+const schedulesLoading = ref(false)
+const historyLoading = ref(false)
 const generatedTableVisibleColumns = ref([])
 const generatedTableColumns = ref([])
 const showReportModal = ref(false)
@@ -391,83 +541,164 @@ const showScannerModal = ref(false)
 const reportFormHistory = ref(null)
 const reportType = ref(null)
 const lastReportType = ref(null)
+const reportCategories = [
+  {
+    name: 'inventory',
+    label: 'Inventory Counts',
+    icon: 'inventory_2'
+  },
+  {
+    name: 'operations',
+    label: 'Operations & Workflow',
+    icon: 'engineering'
+  },
+  {
+    name: 'audit',
+    label: 'Audits & Discrepancies',
+    icon: 'troubleshoot'
+  },
+  {
+    name: 'logistics',
+    label: 'Facility Logistics',
+    icon: 'warehouse'
+  },
+  {
+    name: 'planning',
+    label: 'Forecasting & Dashboard',
+    icon: 'insights'
+  }
+]
+
 const reportItems = ref([
   {
     id: 'Item Accession',
     label: 'Item Accession',
-    description: 'View accessioned items by month, owner, and media type'
+    description: 'View accessioned items by month, owner, and media type',
+    category: 'inventory'
   },
   {
     id: 'Item in Tray',
     label: 'Item in Tray',
-    description: 'Count of trays and items by size class'
+    description: 'Count of trays and items by size class',
+    category: 'inventory'
   },
   {
     id: 'Non-Tray Count',
     label: 'Non-Tray Count',
-    description: 'Count of non-tray items by size class'
+    description: 'Count of non-tray items by size class',
+    category: 'inventory'
   },
   {
-    id: 'Open Locations',
-    label: 'Open Locations',
-    description: 'Available shelf locations with space info'
+    id: 'Daily Pulse',
+    label: 'Daily Pulse',
+    description: 'Real-time dashboard of today\'s throughput',
+    category: 'planning'
   },
   {
-    id: 'Refile Discrepancy',
-    label: 'Refile Discrepancy',
-    description: 'Refile job errors and discrepancies'
-  },
-  {
-    id: 'Shelving Job Discrepancy',
-    label: 'Shelving Job Discrepancy',
-    description: 'Shelving job errors by user and location'
-  },
-  {
-    id: 'Shelving Move Discrepancy',
-    label: 'Shelving Move Discrepancy',
-    description: 'Item location move discrepancies'
-  },
-  {
-    id: 'Shipping Bins',
-    label: 'Shipping Bins',
-    description: 'Active shipping bins by location and date'
-  },
-  {
-    id: 'Total Item Retrieved',
-    label: 'Total Item Retrieved',
-    description: 'Retrieval counts by owner'
-  },
-  {
-    id: 'Tray/Item Count By Aisle',
-    label: 'Tray/Item Count By Aisle',
-    description: 'Inventory counts organized by aisle'
+    id: 'Worker Efficiency (SLA)',
+    label: 'Worker Efficiency (SLA)',
+    description: 'Track items per hour and active time by user',
+    category: 'operations'
   },
   {
     id: 'User Job Summary',
     label: 'User Job Summary',
-    description: 'Job processing totals by user'
+    description: 'Job processing totals by user',
+    category: 'operations'
   },
   {
-    id: 'Verification Change',
-    label: 'Verification Change',
-    description: 'Verification actions and changes'
+    id: 'Shelving Job Discrepancy',
+    label: 'Shelving Job Discrepancy',
+    description: 'Shelving job errors by user and location',
+    category: 'audit'
+  },
+  {
+    id: 'Shelving Move Discrepancy',
+    label: 'Shelving Move Discrepancy',
+    description: 'Item location move discrepancies',
+    category: 'audit'
+  },
+  {
+    id: 'Refile Discrepancy',
+    label: 'Refile Discrepancy',
+    description: 'Refile job errors and discrepancies',
+    category: 'audit'
   },
   {
     id: 'Verification Status',
     label: 'Verification Status',
-    description: 'Verified trays and items by date'
+    description: 'Verified trays and items by date',
+    category: 'audit'
+  },
+  {
+    id: 'Verification Change',
+    label: 'Verification Change',
+    description: 'Verification actions and changes',
+    category: 'audit'
+  },
+  {
+    id: 'Total Item Retrieved',
+    label: 'Total Item Retrieved',
+    description: 'Retrieval counts by owner',
+    category: 'operations'
+  },
+  {
+    id: 'Open Locations',
+    label: 'Open Locations',
+    description: 'Available shelf locations with space info',
+    category: 'logistics'
+  },
+  {
+    id: 'Tray/Item Count By Aisle',
+    label: 'Tray/Item Count By Aisle',
+    description: 'Inventory counts organized by aisle',
+    category: 'logistics'
   },
   {
     id: 'Withdrawn Items',
     label: 'Withdrawn Items',
-    description: 'List of withdrawn items with locations'
+    description: 'List of withdrawn items with locations',
+    category: 'logistics'
+  },
+  {
+    id: 'Shipping Bins',
+    label: 'Shipping Bins',
+    description: 'Active shipping bins by location and date',
+    category: 'logistics'
+  },
+  {
+    id: 'Capacity Forecast',
+    label: 'Capacity Forecast',
+    description: 'Predicted storage runway by size class',
+    category: 'planning'
+  },
+  {
+    id: 'Capacity Forecast (Height)',
+    label: 'Capacity Forecast (Height)',
+    description: 'Predicted storage runway by physical shelf height',
+    category: 'planning'
+  },
+  {
+    id: 'Retrieval Hot Zones',
+    label: 'Retrieval Hot Zones',
+    description: 'Heatmap of retrieval activity by building/aisle',
+    category: 'planning'
   }
 ])
+
+const getReportsByCategory = (categoryName) => {
+  return reportItems.value.filter(item => item.category === categoryName)
+}
 const toolItems = ref([
   {
     id: 'Item Lookup',
     label: 'Item Lookup',
     description: 'Scan or search for item details'
+  },
+  {
+    id: 'Raw Data Export',
+    label: 'Raw Data Export',
+    description: 'Download flat-file datasets for BI tools (Tableau, PowerBI)'
   }
 ])
 const reportPrintTemplate = ref(null)
@@ -570,6 +801,106 @@ watch(
 const formatDateTime = inject('format-date-time')
 const renderItemBarcodeDisplay = inject('render-item-barcode-display')
 
+const exportHistoryColumns = [
+  {
+    name: 'actions',
+    label: 'Actions',
+    align: 'center'
+  },
+  {
+    name: 'filename',
+    field: 'filename',
+    label: 'File Name',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'status',
+    field: 'status',
+    label: 'Status',
+    align: 'center',
+    sortable: true
+  },
+  {
+    name: 'file_size_bytes',
+    field: 'file_size_bytes',
+    label: 'Size',
+    align: 'right',
+    sortable: true
+  },
+  {
+    name: 'create_dt',
+    field: 'create_dt',
+    label: 'Generated',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'expires_at',
+    field: 'expires_at',
+    label: 'Expires',
+    align: 'left',
+    sortable: true
+  }
+]
+
+const scheduledExportColumns = [
+  {
+    name: 'actions',
+    label: 'Actions',
+    align: 'center'
+  },
+  {
+    name: 'name',
+    field: 'name',
+    label: 'Schedule Name',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'dataset',
+    field: 'dataset',
+    label: 'Dataset',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'schedule_type',
+    field: 'schedule_type',
+    label: 'Type',
+    align: 'center',
+    sortable: true
+  },
+  {
+    name: 'frequency',
+    field: 'frequency',
+    label: 'Frequency',
+    align: 'center',
+    sortable: true
+  },
+  {
+    name: 'last_run_at',
+    field: 'last_run_at',
+    label: 'Last Run',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'next_run_at',
+    field: 'next_run_at',
+    label: 'Next Run',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'is_active',
+    field: 'is_active',
+    label: 'Active',
+    align: 'center',
+    sortable: true
+  }
+]
+
 onBeforeMount(() => {
   // when loading the dashboard if the route contains a specific report type we need to preload that table and get the report
   if (route.params.reportType) {
@@ -577,7 +908,48 @@ onBeforeMount(() => {
     generateReportTableFields(route.query)
     regenerateReport(route.query)
   }
+
+  fetchManagedExports()
 })
+
+const fetchManagedExports = async () => {
+  fetchHistory()
+  fetchSchedules()
+}
+
+const fetchHistory = async () => {
+  try {
+    historyLoading.value = true
+    exportHistory.value = await getExportHistory()
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+const fetchSchedules = async () => {
+  try {
+    schedulesLoading.value = true
+    scheduledExports.value = await getScheduledExports()
+  } finally {
+    schedulesLoading.value = false
+  }
+}
+
+const handleDeleteSchedule = async (schedule) => {
+  try {
+    await deleteScheduledExport(schedule.id)
+    notify({
+      type: 'positive',
+      message: 'Schedule deleted'
+    })
+    fetchSchedules()
+  } catch (error) {
+    notify({
+      type: 'negative',
+      message: 'Failed to delete schedule'
+    })
+  }
+}
 
 const resetReport = () => {
   reportType.value = null
@@ -592,6 +964,10 @@ const selectReport = (reportId) => {
   reportType.value = reportId
   if (reportId === 'Item Lookup') {
     showScannerModal.value = true
+  } else if (reportId === 'Daily Pulse') {
+    // Run Daily Pulse immediately without modal
+    generateReportTableFields({})
+    regenerateReport({})
   } else {
     reportFormHistory.value = null
     showReportModal.value = true
@@ -602,6 +978,198 @@ const generateReportTableFields = (qParams) => {
   lastReportType.value = reportType.value
   // creates the report table fields needed based on the selected report type
   switch (reportType.value) {
+    case 'Raw Data Export':
+      reportsStore.downloadRawData(qParams)
+      showReportModal.value = false
+      return
+    case 'Worker Efficiency (SLA)':
+      generatedTableColumns.value = [
+        {
+          name: 'user_name',
+          field: 'user_name',
+          label: 'User',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'job_type',
+          field: 'job_type',
+          label: 'Job Type',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'total_jobs',
+          field: 'total_jobs',
+          label: 'Total Jobs',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'total_items_processed',
+          field: 'total_items_processed',
+          label: 'Items Processed',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'total_active_time',
+          field: 'total_active_time',
+          label: 'Active Time (HH:MM:SS)',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'items_per_hour',
+          field: 'items_per_hour',
+          label: 'Items / Hour',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'user_name',
+        'job_type',
+        'total_jobs',
+        'total_items_processed',
+        'total_active_time',
+        'items_per_hour'
+      ]
+      break
+    case 'Retrieval Hot Zones':
+      generatedTableColumns.value = [
+        {
+          name: 'building_name',
+          field: 'building_name',
+          label: 'Building',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'aisle_number',
+          field: 'aisle_number',
+          label: 'Aisle #',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'retrieval_count',
+          field: 'retrieval_count',
+          label: 'Retrieval Events',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'percent_of_total',
+          field: row => `${row.percent_of_total?.toFixed(2)}%`,
+          label: '% of Facility Activity',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'building_name',
+        'aisle_number',
+        'retrieval_count',
+        'percent_of_total'
+      ]
+      break
+    case 'Capacity Forecast':
+      generatedTableColumns.value = [
+        {
+          name: 'size_class_name',
+          field: 'size_class_name',
+          label: 'Size Class',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'current_available_space',
+          field: 'current_available_space',
+          label: 'Available Space',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'avg_monthly_accession_rate',
+          field: row => row.avg_monthly_accession_rate?.toFixed(2),
+          label: 'Avg Monthly Growth',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'estimated_runway_months',
+          field: row => row.estimated_runway_months >= 99.9 ? 'Infinite' : `${row.estimated_runway_months.toFixed(1)} Mo`,
+          label: 'Runway',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'size_class_name',
+        'current_available_space',
+        'avg_monthly_accession_rate',
+        'estimated_runway_months'
+      ]
+      break
+    case 'Capacity Forecast (Height)':
+      generatedTableColumns.value = [
+        {
+          name: 'shelf_height',
+          field: 'shelf_height',
+          label: 'Shelf Height (in)',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'current_available_space',
+          field: 'current_available_space',
+          label: 'Available Space',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'avg_monthly_accession_rate',
+          field: row => row.avg_monthly_accession_rate?.toFixed(2),
+          label: 'Avg Monthly Growth',
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'estimated_runway_months',
+          field: row => row.estimated_runway_months >= 99.9 ? 'Infinite' : `${row.estimated_runway_months.toFixed(1)} Mo`,
+          label: 'Runway',
+          align: 'left',
+          sortable: true
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'shelf_height',
+        'current_available_space',
+        'avg_monthly_accession_rate',
+        'estimated_runway_months'
+      ]
+      break
+    case 'Daily Pulse':
+      generatedTableColumns.value = [
+        {
+          name: 'metric',
+          field: 'metric',
+          label: 'Metric',
+          align: 'left'
+        },
+        {
+          name: 'value',
+          field: 'value',
+          label: 'Today\'s Total',
+          align: 'left'
+        }
+      ]
+      generatedTableVisibleColumns.value = [
+        'metric',
+        'value'
+      ]
+      break
     case 'Item Accession':
       generatedTableColumns.value = [
         {
@@ -1447,6 +2015,18 @@ const regenerateReport = async (qParams) => {
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .managed-table {
+    border-top: 1px solid $color-gray-light;
+
+    :deep(.q-table__container) {
+      box-shadow: none;
+    }
+  }
+
+  :deep(.q-tab-panel) {
+    padding: 0;
   }
 }
 </style>

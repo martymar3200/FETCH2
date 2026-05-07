@@ -69,6 +69,7 @@ class PickList(Base):
         return (
             select(func.count(Request.id))
             .where(Request.pick_list_id == cls.id)
+            .scalar_subquery()
             .label("request_count")
         )
 

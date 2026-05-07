@@ -123,8 +123,9 @@ class ShelvingJob(Base): # <--- Inherit from Base
     def tray_count(cls):
         from app.models.trays import Tray
         return (
-            select(func.count(Tray.id))
+            select(func.count(sa.text("*")))
             .where(Tray.shelving_job_id == cls.id)
+            .scalar_subquery()
             .label("tray_count")
         )
 
@@ -137,8 +138,9 @@ class ShelvingJob(Base): # <--- Inherit from Base
     def non_tray_item_count(cls):
         from app.models.non_tray_items import NonTrayItem
         return (
-            select(func.count(NonTrayItem.id))
+            select(func.count(sa.text("*")))
             .where(NonTrayItem.shelving_job_id == cls.id)
+            .scalar_subquery()
             .label("non_tray_item_count")
         )
 

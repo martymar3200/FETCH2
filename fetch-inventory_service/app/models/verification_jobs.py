@@ -96,6 +96,7 @@ class VerificationJob(Base):
         return (
             select(func.count(Tray.id))
             .where(Tray.verification_job_id == cls.id)
+            .scalar_subquery()
             .label("tray_count")
         )
 

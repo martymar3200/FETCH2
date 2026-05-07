@@ -270,185 +270,266 @@
             v-for="param in reportParams"
             :key="param.query"
           >
-            <!-- single date range picker with one calendar for both dates -->
-            <div
-              v-if="param.query === 'from_dt'"
-              class="col-12 q-mb-lg"
-            >
-              <div class="form-group">
-                <label class="form-group-label">
-                  Date Range
-                  <q-icon
-                    name="info"
-                    size="14px"
-                    class="q-ml-xs cursor-pointer text-grey-6"
-                  >
-                    <q-tooltip class="text-body2">
-                      Click to select a start and end date
-                    </q-tooltip>
-                  </q-icon>
-                </label>
-                <q-input
-                  :model-value="formatDateRange(reportForm.from_dt, reportForm.to_dt)"
-                  outlined
-                  dense
-                  readonly
-                  placeholder="Select date range"
-                  class="date-range-input"
-                >
-                  <template #append>
+            <!-- wrap in a conditional check for dynamic visibility -->
+            <template v-if="shouldShowParam(param)">
+              <!-- single date range picker with one calendar for both dates -->
+              <div
+                v-if="param.query === 'from_dt'"
+                class="col-12 q-mb-lg"
+              >
+                <div class="form-group">
+                  <label class="form-group-label">
+                    Date Range
                     <q-icon
-                      name="event"
-                      class="cursor-pointer"
+                      name="info"
+                      size="14px"
+                      class="q-ml-xs cursor-pointer text-grey-6"
                     >
-                      <q-popup-proxy
-                        cover
-                        transition-show="scale"
-                        transition-hide="scale"
-                      >
-                        <q-date
-                          :model-value="dateRangeValue"
-                          range
-                          @update:model-value="updateDateRange"
-                        >
-                          <div class="row items-center justify-end q-gutter-sm">
-                            <BaseButton
-                              label="Clear"
-                              flat
-                              @click="clearDateRange"
-                            />
-                            <BaseButton
-                              v-close-popup
-                              label="Done"
-                              color="primary"
-                              flat
-                            />
-                          </div>
-                        </q-date>
-                      </q-popup-proxy>
+                      <q-tooltip class="text-body2">
+                        Click to select a start and end date
+                      </q-tooltip>
                     </q-icon>
-                  </template>
-                </q-input>
-              </div>
-            </div>
-            <!-- skip to_dt field since it's handled in the range picker above -->
-            <div
-              v-else-if="param.query === 'to_dt'"
-              style="display: none;"
-            />
-            <!-- text inputs -->
-            <div
-              v-else-if="param.type == 'text'"
-              class="col-12 q-mb-md"
-            >
-              <div class="form-group">
-                <label class="form-group-label">
-                  {{ param.label }}
-                  <span
-                    v-if="param.required"
-                    class="text-caption text-negative"
+                  </label>
+                  <q-input
+                    :model-value="formatDateRange(reportForm.from_dt, reportForm.to_dt)"
+                    outlined
+                    dense
+                    readonly
+                    placeholder="Select date range"
+                    class="date-range-input"
                   >
-                    (Required)
-                  </span>
-                </label>
-                <TextInput
-                  v-model="reportForm[param.query]"
-                  :placeholder="`Enter ${param.label}`"
-                  :aria-label="`${param.query}_input`"
-                />
+                    <template #append>
+                      <q-icon
+                        name="event"
+                        class="cursor-pointer"
+                      >
+                        <q-popup-proxy
+                          cover
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-date
+                            :model-value="dateRangeValue"
+                            range
+                            @update:model-value="updateDateRange"
+                          >
+                            <div class="row items-center justify-end q-gutter-sm">
+                              <BaseButton
+                                label="Clear"
+                                flat
+                                @click="clearDateRange"
+                              />
+                              <BaseButton
+                                v-close-popup
+                                label="Done"
+                                color="primary"
+                                flat
+                              />
+                            </div>
+                          </q-date>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                </div>
               </div>
-            </div>
-            <!-- numeric inputs -->
-            <div
-              v-else-if="param.type == 'number'"
-              class="col-12 q-mb-md"
-            >
-              <div class="form-group">
-                <label class="form-group-label">
-                  {{ param.label }}
-                  <span
-                    v-if="param.required"
-                    class="text-caption text-negative"
+              <!-- skip to_dt field since it's handled in the range picker above -->
+              <div
+                v-else-if="param.query === 'to_dt'"
+                style="display: none;"
+              />
+              <!-- datetime inputs -->
+              <div
+                v-else-if="param.type == 'datetime'"
+                class="col-12 q-mb-md"
+              >
+                <div class="form-group">
+                  <label class="form-group-label">
+                    {{ param.label }}
+                    <span
+                      v-if="param.required"
+                      class="text-caption text-negative"
+                    >
+                      (Required)
+                    </span>
+                  </label>
+                  <q-input
+                    v-model="reportForm[param.query]"
+                    outlined
+                    dense
+                    mask="####-##-## ##:##"
+                    :placeholder="`YYYY-MM-DD HH:mm`"
                   >
-                    (Required)
-                  </span>
-                </label>
-                <TextInput
-                  v-model="reportForm[param.query]"
-                  :placeholder="`Enter ${param.label}`"
-                  :aria-label="`${param.query}_input`"
-                  type="number"
-                  min="1"
-                />
+                    <template #prepend>
+                      <q-icon
+                        name="event"
+                        class="cursor-pointer"
+                      >
+                        <q-popup-proxy
+                          cover
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-date
+                            v-model="reportForm[param.query]"
+                            mask="YYYY-MM-DD HH:mm"
+                          >
+                            <div class="row items-center justify-end">
+                              <BaseButton
+                                v-close-popup
+                                label="Close"
+                                color="primary"
+                                flat
+                              />
+                            </div>
+                          </q-date>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                    <template #append>
+                      <q-icon
+                        name="access_time"
+                        class="cursor-pointer"
+                      >
+                        <q-popup-proxy
+                          cover
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-time
+                            v-model="reportForm[param.query]"
+                            mask="YYYY-MM-DD HH:mm"
+                            format24h
+                          >
+                            <div class="row items-center justify-end">
+                              <BaseButton
+                                v-close-popup
+                                label="Close"
+                                color="primary"
+                                flat
+                              />
+                            </div>
+                          </q-time>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                </div>
               </div>
-            </div>
-            <!-- checkbox inputs (only render if not grouped with another field) -->
-            <div
-              v-else-if="param.type == 'checkbox' && !param.groupWith"
-              class="col-12 q-mb-md"
-            >
-              <div class="form-group">
-                <q-checkbox
-                  v-model="reportForm[param.query]"
-                  :label="param.label"
-                  :disable="param.dependsOn && !reportForm[param.dependsOn]?.length"
-                  :aria-label="`${param.query}_checkbox`"
-                />
-              </div>
-            </div>
-            <!-- select inputs -->
-            <div
-              v-else-if="!param.type || param.type === 'select'"
-              class="col-12 q-mb-lg"
-            >
-              <div class="form-group">
-                <label class="form-group-label">
-                  {{ param.label }}
-                  <q-icon
-                    name="info"
-                    size="14px"
-                    class="q-ml-xs cursor-pointer text-grey-6"
-                  >
-                    <q-tooltip class="text-body2">
-                      {{ param.tooltip || `Filter by ${param.label.toLowerCase()}` }}
-                    </q-tooltip>
-                  </q-icon>
-                  <span
-                    v-if="param.required"
-                    class="text-caption text-negative"
-                  >
-                    (Required)
-                  </span>
-                </label>
-                <SelectInput
-                  v-model="reportForm[param.query]"
-                  :multiple="param.multiple"
-                  :hide-selected="!param.multiple"
-                  :options="param.options"
-                  :option-type="param.optionType"
-                  :option-query="param.optionQuery"
-                  :option-value="param.optionValue ?? 'id'"
-                  :option-label="param.optionLabel ?? 'name'"
-                  :placeholder="`Select ${param.label}`"
-                  :disabled="param.disabled"
-                  @update:model-value="param.onUpdate ? param.onUpdate() : null"
-                  :aria-label="`${param.query}Select`"
-                />
-                <!-- Render any checkbox grouped with this field -->
-                <template
-                  v-for="groupedParam in reportParams.filter(p => p.groupWith === param.query)"
-                  :key="groupedParam.query"
-                >
-                  <q-checkbox
-                    v-model="reportForm[groupedParam.query]"
-                    :label="groupedParam.label"
-                    :disable="groupedParam.dependsOn && !reportForm[groupedParam.dependsOn]?.length"
-                    :aria-label="`${groupedParam.query}_checkbox`"
-                    class="q-mt-sm"
+              <!-- text inputs -->
+              <div
+                v-else-if="param.type == 'text'"
+                class="col-12 q-mb-md"
+              >
+                <div class="form-group">
+                  <label class="form-group-label">
+                    {{ param.label }}
+                    <span
+                      v-if="param.required"
+                      class="text-caption text-negative"
+                    >
+                      (Required)
+                    </span>
+                  </label>
+                  <TextInput
+                    v-model="reportForm[param.query]"
+                    :placeholder="`Enter ${param.label}`"
+                    :aria-label="`${param.query}_input`"
                   />
-                </template>
+                </div>
               </div>
-            </div>
+              <!-- numeric inputs -->
+              <div
+                v-else-if="param.type == 'number'"
+                class="col-12 q-mb-md"
+              >
+                <div class="form-group">
+                  <label class="form-group-label">
+                    {{ param.label }}
+                    <span
+                      v-if="param.required"
+                      class="text-caption text-negative"
+                    >
+                      (Required)
+                    </span>
+                  </label>
+                  <TextInput
+                    v-model="reportForm[param.query]"
+                    :placeholder="`Enter ${param.label}`"
+                    :aria-label="`${param.query}_input`"
+                    type="number"
+                    min="1"
+                  />
+                </div>
+              </div>
+              <!-- checkbox inputs (only render if not grouped with another field) -->
+              <div
+                v-else-if="param.type == 'checkbox' && !param.groupWith"
+                class="col-12 q-mb-md"
+              >
+                <div class="form-group">
+                  <q-checkbox
+                    v-model="reportForm[param.query]"
+                    :label="param.label"
+                    :disable="param.dependsOn && !reportForm[param.dependsOn]?.length"
+                    :aria-label="`${param.query}_checkbox`"
+                  />
+                </div>
+              </div>
+              <!-- select inputs -->
+              <div
+                v-else-if="!param.type || param.type === 'select'"
+                class="col-12 q-mb-lg"
+              >
+                <div class="form-group">
+                  <label class="form-group-label">
+                    {{ param.label }}
+                    <q-icon
+                      name="info"
+                      size="14px"
+                      class="q-ml-xs cursor-pointer text-grey-6"
+                    >
+                      <q-tooltip class="text-body2">
+                        {{ param.tooltip || `Filter by ${param.label.toLowerCase()}` }}
+                      </q-tooltip>
+                    </q-icon>
+                    <span
+                      v-if="param.required"
+                      class="text-caption text-negative"
+                    >
+                      (Required)
+                    </span>
+                  </label>
+                  <SelectInput
+                    v-model="reportForm[param.query]"
+                    :multiple="param.multiple"
+                    :hide-selected="!param.multiple"
+                    :options="param.options"
+                    :option-type="param.optionType"
+                    :option-query="param.optionQuery"
+                    :option-value="param.optionValue ?? 'id'"
+                    :option-label="param.optionLabel ?? 'name'"
+                    :placeholder="`Select ${param.label}`"
+                    :disabled="param.disabled"
+                    @update:model-value="param.onUpdate ? param.onUpdate() : null"
+                    :aria-label="`${param.query}Select`"
+                  />
+                  <!-- Render any checkbox grouped with this field -->
+                  <template
+                    v-for="groupedParam in reportParams.filter(p => p.groupWith === param.query)"
+                    :key="groupedParam.query"
+                  >
+                    <q-checkbox
+                      v-model="reportForm[groupedParam.query]"
+                      :label="groupedParam.label"
+                      :disable="groupedParam.dependsOn && !reportForm[groupedParam.dependsOn]?.length"
+                      :aria-label="`${groupedParam.query}_checkbox`"
+                      class="q-mt-sm"
+                    />
+                  </template>
+                </div>
+              </div>
+            </template>
           </template>
         </div>
       </q-card-section>
@@ -491,6 +572,7 @@ import { useOptionStore } from '@/stores/option-store'
 import { useBuildingStore } from '@/stores/building-store'
 import { useReportsStore } from '@/stores/reports-store'
 import { storeToRefs } from 'pinia'
+import moment from 'moment'
 import SelectInput from '@/components/SelectInput.vue'
 import ToggleButtonInput from '@/components/ToggleButtonInput.vue'
 import TextInput from '@/components/TextInput.vue'
@@ -538,7 +620,7 @@ const {
   resetSideChildren
 } = useBuildingStore()
 const { sides } = storeToRefs(useBuildingStore())
-const { getReport } = useReportsStore()
+const { getReport, createScheduledExport } = useReportsStore()
 const { getDeliveryLocations } = useOptionStore()
 
 // Local Data
@@ -680,6 +762,114 @@ const clearFilters = () => {
 const generateReportModal = () => {
   // creates the report modal params needed based on the selected report type
   switch (mainProps.reportType) {
+    case 'Worker Efficiency (SLA)':
+      reportForm.value = {
+        from_dt: null,
+        to_dt: null,
+        user_id: null,
+        job_type: null
+      }
+      reportParams.value = [
+        {
+          query: 'from_dt',
+          label: 'Analysis Date (From)'
+        },
+        {
+          query: 'to_dt',
+          label: 'Analysis Date (To)'
+        },
+        {
+          query: 'user_id',
+          multiple: true,
+          label: 'Users',
+          options: users,
+          optionType: 'users'
+        },
+        {
+          query: 'job_type',
+          multiple: true,
+          label: 'Job Types',
+          options: [
+            {
+              label: 'Shelving',
+              value: 'Shelving'
+            },
+            {
+              label: 'Accession',
+              value: 'Accession'
+            },
+            {
+              label: 'Pick List',
+              value: 'PickList'
+            },
+            {
+              label: 'Verification',
+              value: 'Verification'
+            }
+          ],
+          optionValue: 'value',
+          optionLabel: 'label'
+        }
+      ]
+      break
+    case 'Retrieval Hot Zones':
+      reportForm.value = {
+        from_dt: null,
+        to_dt: null,
+        building_id: null
+      }
+      reportParams.value = [
+        {
+          query: 'from_dt',
+          label: 'Activity Date (From)'
+        },
+        {
+          query: 'to_dt',
+          label: 'Activity Date (To)'
+        },
+        {
+          query: 'building_id',
+          label: 'Building',
+          options: buildings,
+          optionType: 'buildings'
+        }
+      ]
+      break
+    case 'Capacity Forecast':
+    case 'Capacity Forecast (Height)':
+      reportForm.value = {
+        building_id: null,
+        owner_id: null,
+        include_sub_owners: false,
+        lookback_days: 90
+      }
+      reportParams.value = [
+        {
+          query: 'building_id',
+          label: 'Building',
+          options: buildings,
+          optionType: 'buildings'
+        },
+        {
+          query: 'owner_id',
+          label: 'Owner',
+          options: owners,
+          optionType: 'owners'
+        },
+        {
+          query: 'include_sub_owners',
+          type: 'checkbox',
+          label: 'Include Sub-Owners in Growth Hierarchy',
+          dependsOn: 'owner_id'
+        },
+        {
+          query: 'lookback_days',
+          label: 'Lookback Period (Days)',
+          type: 'number',
+          tooltip: 'Number of days to analyze historical growth (e.g. 30, 90, 180)'
+        }
+      ]
+      break
     case 'Item Accession':
       reportForm.value = {
         from_dt: null,
@@ -1068,6 +1258,159 @@ const generateReportModal = () => {
         }
       ]
       break
+    case 'Raw Data Export':
+      reportForm.value = {
+        dataset: null,
+        from_dt: null,
+        to_dt: null,
+        date_range_type: null,
+        dynamic_range: null,
+        is_scheduled: true, // Forced for Raw Data Export
+        schedule_type: null,
+        frequency: null,
+        retention_days: 7,
+        start_at: moment().add(1, 'minute').format('YYYY-MM-DD HH:mm')
+      }
+      reportParams.value = [
+        {
+          query: 'dataset',
+          label: 'Select Dataset',
+          type: 'select',
+          options: [
+            {
+              label: 'Items Master (Full Inventory)',
+              value: 'items_master'
+            },
+            {
+              label: 'Inventory Activity (Accessions/Retrievals)',
+              value: 'inventory_activity'
+            },
+            {
+              label: 'Facility Footprint (Shelf Utilization)',
+              value: 'facility_footprint'
+            }
+          ],
+          required: true,
+          optionLabel: 'label',
+          optionValue: 'value'
+        },
+        {
+          query: 'date_range_type',
+          label: 'Date Range Type',
+          type: 'select',
+          options: [
+            {
+              label: 'Static (Specific Dates)',
+              value: 'static'
+            },
+            {
+              label: 'Dynamic (Rolling Window)',
+              value: 'dynamic'
+            }
+          ],
+          optionLabel: 'label',
+          optionValue: 'value',
+          required: true
+        },
+        {
+          query: 'from_dt',
+          label: 'Date From',
+          showIf: (form) => form.date_range_type === 'static'
+        },
+        {
+          query: 'to_dt',
+          label: 'Date To',
+          showIf: (form) => form.date_range_type === 'static'
+        },
+        {
+          query: 'dynamic_range',
+          label: 'Reporting Window',
+          type: 'select',
+          options: [
+            {
+              label: 'Last 24 Hours',
+              value: 'last_24h'
+            },
+            {
+              label: 'Yesterday (Full Day)',
+              value: 'yesterday'
+            },
+            {
+              label: 'Last 7 Days',
+              value: 'last_7d'
+            },
+            {
+              label: 'Last 30 Days',
+              value: 'last_30d'
+            }
+          ],
+          optionLabel: 'label',
+          optionValue: 'value',
+          showIf: (form) => form.date_range_type === 'dynamic',
+          required: true
+        },
+        {
+          query: 'is_scheduled',
+          label: 'Schedule this export?',
+          type: 'checkbox',
+          showIf: () => mainProps.reportType !== 'Raw Data Export'
+        },
+        {
+          query: 'schedule_type',
+          label: 'Schedule Type',
+          type: 'select',
+          options: [
+            {
+              label: 'One-Time',
+              value: 'once'
+            },
+            {
+              label: 'Recurring',
+              value: 'recurring'
+            }
+          ],
+          showIf: 'is_scheduled',
+          optionLabel: 'label',
+          optionValue: 'value'
+        },
+        {
+          query: 'frequency',
+          label: 'Frequency',
+          type: 'select',
+          options: [
+            {
+              label: 'Daily',
+              value: 'daily'
+            },
+            {
+              label: 'Weekly',
+              value: 'weekly'
+            },
+            {
+              label: 'Monthly',
+              value: 'monthly'
+            }
+          ],
+          showIf: (form) => form.is_scheduled && form.schedule_type === 'recurring',
+          optionLabel: 'label',
+          optionValue: 'value'
+        },
+        {
+          query: 'start_at',
+          label: 'Start Date & Time',
+          type: 'datetime',
+          showIf: 'is_scheduled',
+          required: true
+        },
+        {
+          query: 'retention_days',
+          label: 'Retention (Days to keep file)',
+          type: 'number',
+          showIf: 'is_scheduled',
+          required: true
+        }
+      ]
+      break
     case 'Tray/Item Count By Aisle':
       reportForm.value = {
         building_id: null, // required
@@ -1216,16 +1559,30 @@ const generateReportModal = () => {
   }
 }
 
+const shouldShowParam = (param) => {
+  if (!param.showIf) {
+    return true
+  }
+  if (typeof param.showIf === 'string') {
+    return reportForm.value[param.showIf]
+  }
+  if (typeof param.showIf === 'function') {
+    return param.showIf(reportForm.value)
+  }
+  return true
+}
+
 const generateReport = async () => {
   try {
     appActionIsLoadingData.value = true
     let queryParams = JSON.parse(JSON.stringify(reportForm.value))
+
     // convert any form date values to iso format along with removing any empty query params
     Object.entries(queryParams).forEach(([
       key,
       value
     ]) => {
-      if (key.includes('_dt') && value) {
+      if (key.includes('_dt') && value && typeof value === 'string' && value.includes('/')) {
         const [
           month,
           day,
@@ -1239,14 +1596,51 @@ const generateReport = async () => {
           queryParams[key] = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999)).toISOString()
         }
       } else if ((Array.isArray(value) && value.length == 0) || !value) {
-        delete queryParams[key]
+        if (key !== 'is_scheduled') { // don't delete is_scheduled
+          delete queryParams[key]
+        }
       }
     })
 
-    await getReport(queryParams, mainProps.reportType)
+    if (queryParams.is_scheduled) {
+      // Handle scheduling
+      const schedulePayload = {
+        name: `${mainProps.reportType} - ${queryParams.dataset} (${moment().format('LLL')})`,
+        dataset: queryParams.dataset,
+        schedule_type: queryParams.schedule_type,
+        frequency: queryParams.frequency,
+        retention_days: queryParams.retention_days,
+        start_at: moment(queryParams.start_at).utc().toISOString(),
+        filters: { ...queryParams }
+      }
+      // Clean up filters so we don't store scheduling meta in the data filter
+      delete schedulePayload.filters.is_scheduled
+      delete schedulePayload.filters.schedule_type
+      delete schedulePayload.filters.frequency
+      delete schedulePayload.filters.retention_days
+      delete schedulePayload.filters.start_at
 
-    //emit to main report dashboard and pass query params so we can store them in the route
-    emit('submit', queryParams)
+      // If dynamic, remove the static from_dt/to_dt if they were somehow set
+      if (queryParams.date_range_type === 'dynamic') {
+        delete schedulePayload.filters.from_dt
+        delete schedulePayload.filters.to_dt
+      } else {
+        delete schedulePayload.filters.dynamic_range
+      }
+
+      await createScheduledExport(schedulePayload)
+      notify({
+        type: 'positive',
+        message: mainProps.reportType === 'Raw Data Export'
+          ? 'Export started in background. Please check the Export Inbox in a few moments.'
+          : 'Export scheduled successfully'
+      })
+    } else {
+      // Normal report generation
+      await getReport(queryParams, mainProps.reportType)
+      //emit to main report dashboard and pass query params so we can store them in the route
+      emit('submit', queryParams)
+    }
   } catch (error) {
     notify({
       type: 'negative',

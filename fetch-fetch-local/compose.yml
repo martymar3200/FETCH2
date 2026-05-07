@@ -75,6 +75,7 @@ services:
             - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@inventory-database:5432/inventory_service}
             - MIGRATION_URL=${MIGRATION_URL:-postgresql://postgres:postgres@inventory-database:5432/inventory_service}
         volumes:
+            - ../fetch-inventory_service:/code:rw
             - /var/log/fetch:/code/app/logs:rw
             - ./.certs:/code/certs:ro
         networks:

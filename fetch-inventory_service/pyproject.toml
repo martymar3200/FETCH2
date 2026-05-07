@@ -38,6 +38,7 @@ gunicorn = "^23.0.0"
 httptools = "^0.6.4"
 pydantic = "^2.8.2"
 sqlalchemy = "^2.0.30"
+apscheduler = "^3.10.4"
 
 
 [build-system]

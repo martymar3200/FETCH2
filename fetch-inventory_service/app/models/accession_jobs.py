@@ -91,6 +91,7 @@ class AccessionJob(Base):
         return (
             select(func.count(Tray.id))
             .where(Tray.accession_job_id == cls.id)
+            .scalar_subquery()
             .label("tray_count")
         )
 

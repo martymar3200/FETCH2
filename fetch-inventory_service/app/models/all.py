@@ -40,6 +40,8 @@ from app.models.shelves import Shelf
 from app.models.shelving_job_containers import ShelvingJobContainer
 from app.models.shelving_job_discrepancies import ShelvingJobDiscrepancy
 from app.models.shelving_jobs import ShelvingJob
+from app.models.shipping_bins import ShippingBin
+from app.models.shipping_jobs import ShippingJob
 from app.models.side_orientations import SideOrientation
 from app.models.sides import Side
 from app.models.size_class import SizeClass
@@ -53,3 +55,4 @@ from app.models.verification_changes import VerificationChange
 from app.models.verification_jobs import VerificationJob
 from app.models.withdraw_jobs import WithdrawJob
 from app.models.workflows import Workflow
+from app.models.scheduled_exports import ScheduledExport, ExportHistory

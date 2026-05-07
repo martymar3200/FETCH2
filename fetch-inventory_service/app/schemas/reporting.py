@@ -1,6 +1,41 @@
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime, timezone
+
+class ScheduledExportCreate(BaseModel):
+    name: str
+    dataset: str
+    filters: Dict[str, Any]
+    schedule_type: str = "once" # once, recurring
+    frequency: Optional[str] = None # daily, weekly, monthly
+    retention_days: int = 7
+    start_at: datetime
+
+class ScheduledExportRead(BaseModel):
+    id: int
+    name: str
+    dataset: str
+    filters: Dict[str, Any]
+    schedule_type: str
+    frequency: Optional[str]
+    retention_days: int
+    is_active: bool
+    last_run_at: Optional[datetime]
+    next_run_at: Optional[datetime]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ExportHistoryRead(BaseModel):
+    id: int
+    scheduled_export_id: Optional[int]
+    filename: str
+    status: str
+    error_message: Optional[str]
+    file_size_bytes: Optional[int]
+    expires_at: datetime
+    create_dt: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 from app.schemas.barcodes import BarcodeDetailReadOutput
 from app.schemas.size_class import SizeClassDetailReadOutput
@@ -459,4 +494,56 @@ class ShippingBinsReportOutput(BaseModel):
             }
         }
     )
+
+
+# --- FACILITY INTELLIGENCE SCHEMAS ---
+
+class WorkerEfficiencyOutput(BaseModel):
+    user_id: int
+    user_name: str
+    job_type: str
+    total_jobs: int
+    total_items_processed: int
+    total_active_time: str  # Formatted HH:MM:SS
+    items_per_hour: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InventoryHotZoneOutput(BaseModel):
+    building_name: str
+    aisle_number: int
+    retrieval_count: int
+    percent_of_total: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CapacityForecastOutput(BaseModel):
+    size_class_name: str
+    current_available_space: int
+    avg_monthly_accession_rate: float
+    estimated_runway_months: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CapacityForecastHeightOutput(BaseModel):
+    shelf_height: float
+    current_available_space: int
+    avg_monthly_accession_rate: float
+    estimated_runway_months: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DailyPulseOutput(BaseModel):
+    accessioned_today: int
+    shelved_today: int
+    retrieved_today: int
+    verified_today: int
+    pending_requests: int
+    backlog_verification_jobs: int
+
+    model_config = ConfigDict(from_attributes=True)
 
