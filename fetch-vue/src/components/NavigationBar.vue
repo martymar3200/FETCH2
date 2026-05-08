@@ -114,7 +114,7 @@
         >
           <q-item-section class="flex flex-center">
             <div class="nav-logo-text">
-              FETCH<span>2</span>
+              FETCH
             </div>
           </q-item-section>
         </q-item>
@@ -451,16 +451,11 @@ const displayRouteGuardAlert = (pathName) => {
 .nav-logo-text {
   font-size: 2.25rem;
   font-weight: 800;
-  color: #fff;
+  color: #F45D01; /* LC Orange */
   letter-spacing: -0.05em;
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  span {
-    color: #1d4ed8; /* Blue 700 Accent */
-    margin-left: 2px;
-  }
 }
 </style>
