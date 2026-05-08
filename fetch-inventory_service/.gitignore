@@ -245,3 +245,6 @@ key.pem
 
 # App data and exports
 app/data/
+
+# Generated seed fixtures
+app/seed/fixtures/entities/gen_*.json

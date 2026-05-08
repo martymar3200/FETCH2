@@ -11,7 +11,7 @@ This is the starting point for working with FETCH2 locally as a developer. After
 3. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Podman Desktop](https://podman-desktop.io/)
 4. Configure your container runtime to allow 8g of memory, and 200g of disk space.
 
-> **Note:** The `fetch-local` compose file and helper scripts use `docker compose` commands. If you are using Podman, the `podman compose` command is a drop-in replacement — both tools use the same compose file format. The standalone build scripts in `inventory_service/` and `vue/` reference `podman` directly for deployed environment builds.
+> **Note:** The `fetch-local` compose file and helper scripts use `docker compose` commands. If you are using Podman, the `podman compose` command is a drop-in replacement — both tools use the same compose file format. The standalone build scripts in `fetch-inventory_service/` and `fetch-vue/` reference `podman` directly for deployed environment builds.
 
 ## Getting Started
 
@@ -28,13 +28,13 @@ Before starting the containers, you must create local environment files from the
 
 ```bash
 # Backend configuration
-cp inventory_service/.env.example inventory_service/.env
+cp fetch-inventory_service/.env.example fetch-inventory_service/.env
 
 # Infrastructure configuration
-cp fetch-local/.env.example fetch-local/.env
+cp fetch-fetch-local/.env.example fetch-fetch-local/.env
 
 # Frontend configuration
-cp vue/env/.env.example vue/env/.env.local
+cp fetch-vue/env/.env.example fetch-vue/env/.env.local
 ```
 
 ### 3. Start the Application
@@ -45,7 +45,7 @@ docker compose up --build -d
 ```
 
 > [!IMPORTANT]  
-> **Rebuilding the Web App**: If you ever change the values in `vue/env/.env.local`, you **must** run `docker compose build web` for the changes to take effect, as the Quasar PWA is compiled into static files at build-time.
+> **Rebuilding the Web App**: If you ever change the values in `fetch-vue/env/.env.local`, you **must** run `docker compose build web` for the changes to take effect, as the Quasar PWA is compiled into static files at build-time.
 
 On first boot, the Inventory Service container will automatically run Alembic database migrations to create the schema. Watch the `inventory-api` container logs for `"Migrating..."` and `"Application startup complete"` to confirm it's ready.
 
@@ -127,7 +127,7 @@ sleep 5
 ./helper.sh build-inventory-api
 ```
 
-Or use the `refresh-db` command from the `inventory_service/` or `vue/` helper scripts, which automate this sequence.
+Or use the `refresh-db` command from the `fetch-inventory_service/` or `fetch-vue/` helper scripts, which automate this sequence.
 
 ## Services
 

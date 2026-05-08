@@ -30,7 +30,7 @@ Each folder has its own `README.md` with detailed documentation. **Start with `f
 - [Homebrew](https://brew.sh/) (macOS)
 - Git
 
-### 2. Configure Environment Variables
+### 1. Configure Environment Variables
 
 The application requires environment variables to manage secrets and connections. **You must perform these steps before running the system for the first time:**
 
@@ -62,7 +62,7 @@ cp .env.example .env
 > [!WARNING]  
 > **Security Notice:** The default credentials in `.env.example` files are for **local development only**. In production, all secrets must be generated uniquely and injected securely (e.g., via K8s Secrets).
 
-### 3. Setup SSL (Optional but Recommended)
+### 2. Setup SSL (Optional but Recommended)
 To avoid "Insecure Connection" warnings in your browser, install `mkcert` and generate trusted certificates:
 ```bash
 brew install mkcert
@@ -71,7 +71,7 @@ cd fetch-fetch-local/.certs
 mkcert localhost 127.0.0.1 ::1
 ```
 
-### 4. Build and Run
+### 3. Build and Run
 
 ```bash
 git clone <your-repository-url> FETCH2
@@ -81,7 +81,7 @@ docker compose up --build
 
 > **First run:** The Inventory Service container will automatically run database migrations (Alembic) to create the schema. This may take a moment on the first boot.
 
-### 2. Seed Test Data
+### 4. Seed Test Data
 
 After the containers are running, seed the database with sample data (buildings, locations, shelves, and test users):
 
@@ -91,7 +91,7 @@ After the containers are running, seed the database with sample data (buildings,
 
 This rebuilds the API container and seeds the database with fake data, including three test users.
 
-### 3. Open the Application
+### 5. Open the Application
 
 Navigate to **https://127.0.0.1:8000** in your browser.
 
@@ -102,7 +102,7 @@ Navigate to **https://127.0.0.1:8000** in your browser.
 >
 > Optionally, on macOS, you can add the generated cert from `fetch-fetch-local/.certs/` to your Keychain to suppress the warning permanently.
 
-### 4. Log In
+### 6. Log In
 
 In local/debug environments, a **legacy login** is available (no SSO identity provider needed). Use the login form with any of the seeded test user emails:
 

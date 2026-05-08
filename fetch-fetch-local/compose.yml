@@ -16,7 +16,7 @@ services:
             dockerfile: images/inventory.db.local.Containerfile
         container_name: inventory-database
         volumes:
-            - inventory-database-volume:${HOME}/workspace/fetch/data/postgres
+            - inventory-database-volume:/var/lib/postgresql/data
         networks:
             - fetch
         ports: 
@@ -64,7 +64,7 @@ services:
         ports:
             - "5050:80"
         volumes:
-          - fetch-pgadmin-volume:${HOME}/workspace/fetch/data/pgadmin
+          - fetch-pgadmin-volume:/var/lib/pgadmin
     inventory-api:
         build:
             context: ../fetch-inventory_service
@@ -76,7 +76,7 @@ services:
             - MIGRATION_URL=${MIGRATION_URL:-postgresql://postgres:postgres@inventory-database:5432/inventory_service}
         volumes:
             - ../fetch-inventory_service:/code:rw
-            - /var/log/fetch:/code/app/logs:rw
+            - ./logs:/code/app/logs:rw
             - ./.certs:/code/certs:ro
         networks:
             - fetch
