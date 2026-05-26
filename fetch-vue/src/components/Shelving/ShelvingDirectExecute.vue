@@ -11,7 +11,7 @@
     >
       <template #actions>
         <JobActionButtons
-          v-if="job?.status !== 'Completed'"
+          v-if="job?.status !== 'Completed' && currentScreenSize !== 'xs'"
           :status="job?.status || 'Created'"
           :can-complete="allContainersShelved"
           :loading="actionLoading"
@@ -21,11 +21,39 @@
       </template>
     </JobPageHeader>
 
-    <!-- Progress Bar -->
-    <JobProgressBar
-      :completed="shelvedCount"
-      :total="totalCount"
-    />
+    <!-- Minimal Progress Bar -->
+    <div
+      v-if="job"
+      class="q-mb-md row items-center no-wrap bg-white border-all rounded-borders q-px-sm q-py-xs shadow-1"
+    >
+      <div
+        class="text-grey-7 text-weight-bold text-uppercase q-mr-sm"
+        style="font-size: 0.65rem; letter-spacing: 0.05em; min-width: max-content;"
+      >
+        PROGRESS
+      </div>
+      <div
+        class="text-body2 text-weight-bold text-primary q-mr-sm"
+        style="font-family: 'JetBrains Mono', monospace;"
+      >
+        {{ shelvedCount }}/{{ totalCount }}
+      </div>
+      <div class="col">
+        <q-linear-progress
+          :value="totalCount > 0 ? shelvedCount / totalCount : 0"
+          color="accent"
+          track-color="grey-3"
+          rounded
+          size="8px"
+        />
+      </div>
+      <div
+        class="text-caption text-weight-bold text-accent q-ml-sm"
+        style="font-size: 0.75rem;"
+      >
+        {{ totalCount > 0 ? Math.round((shelvedCount / totalCount) * 100) : 0 }}%
+      </div>
+    </div>
 
     <!-- Quick User Assign Card -->
     <q-card
@@ -95,175 +123,256 @@
       </q-card-section>
     </q-card>
 
-    <!-- Current Shelf Card (only when job is Running) -->
-    <q-card
-      v-if="job?.status === 'Running'"
-      class="q-mb-lg"
-    >
-      <q-card-section>
-        <div class="row q-col-gutter-md">
-          <!-- Shelf Scan Section -->
-          <div class="col-12 col-md-6">
-            <label class="form-group-label">Current Shelf</label>
-            <div
-              v-if="currentShelf"
-              class="text-h5 text-weight-bold text-accent"
-            >
-              {{ currentShelf }}
+    <!-- Scanning & Targeting Section -->
+    <template v-if="job?.status === 'Running'">
+      <!-- Current Shelf Card -->
+      <q-card
+        class="industrial-card current-target-card q-mb-md shadow-1"
+        style="border-left: 4px solid var(--q-accent);"
+      >
+        <div
+          class="bg-grey-1 q-px-md q-py-sm flex justify-between items-center"
+          style="border-bottom: 1px solid #e2e8f0;"
+        >
+          <span
+            class="text-weight-bold text-accent text-uppercase"
+            style="font-size: 0.65rem; letter-spacing: 0.05em;"
+          >CURRENT SHELF</span>
+          <q-icon
+            name="shelves"
+            color="accent"
+            size="sm"
+          />
+        </div>
+        <q-card-section class="q-pa-md q-gutter-y-md">
+          <template v-if="currentShelf">
+            <div>
+              <div
+                class="text-grey-7 text-uppercase text-weight-bold"
+                style="font-size: 0.65rem; letter-spacing: 0.05em;"
+              >
+                LOCATION
+              </div>
+              <div class="text-h5 text-primary text-weight-bold tracking-tight q-mt-xs">
+                {{ currentShelf }}
+              </div>
             </div>
-            <q-input
-              v-else
-              v-model="shelfBarcodeInput"
-              outlined
-              dense
-              placeholder="Scan shelf barcode"
-              @keyup.enter="scanShelf"
-              ref="shelfInput"
-              autofocus
-            >
-              <template #append>
-                <q-icon name="shelves" />
-              </template>
-            </q-input>
-          </div>
 
-          <!-- Shelf Details -->
-          <div
-            v-if="currentShelf"
-            class="col-12 col-md-6"
-          >
-            <div class="row q-gutter-md">
-              <div class="col">
-                <div class="text-caption text-grey-6">
-                  Owner
+            <div class="row q-col-gutter-md">
+              <div class="col-6">
+                <div
+                  class="text-grey-7 text-uppercase text-weight-bold"
+                  style="font-size: 0.65rem; letter-spacing: 0.05em;"
+                >
+                  OWNER
                 </div>
-                <div class="text-body1">
+                <div class="text-body2 text-primary text-weight-medium q-mt-xs">
                   {{ job?.owner?.name || '-' }}
                 </div>
               </div>
-              <div class="col">
-                <div class="text-caption text-grey-6">
-                  Size Class
+              <div class="col-6">
+                <div
+                  class="text-grey-7 text-uppercase text-weight-bold"
+                  style="font-size: 0.65rem; letter-spacing: 0.05em;"
+                >
+                  SIZE CLASS
                 </div>
-                <div class="text-body1">
+                <div class="text-body2 text-primary text-weight-medium q-mt-xs">
                   {{ job?.size_class?.name || '-' }}
                 </div>
               </div>
-              <div class="col-auto">
-                <BaseButton
-                  flat
-                  no-caps
-                  color="grey-7"
-                  label="Change Shelf"
-                  icon="refresh"
-                  @click="clearShelf"
-                />
-              </div>
             </div>
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
 
-    <!-- Container Scan Section (only when shelf is selected) -->
-    <q-card
-      v-if="currentShelf && job?.status === 'Running'"
-      class="q-mb-lg bg-accent-1"
-    >
-      <q-card-section>
-        <div class="row q-col-gutter-md items-end">
-          <div class="col-12 col-md-6">
-            <label class="form-group-label">Scan Container Barcode</label>
+            <div
+              class="q-mt-sm q-pt-sm"
+              style="border-top: 1px dashed #e2e8f0;"
+            >
+              <BaseButton
+                flat
+                no-caps
+                color="grey-7"
+                label="Change Shelf"
+                icon="refresh"
+                dense
+                size="sm"
+                @click="clearShelf"
+              />
+            </div>
+          </template>
+          <template v-else>
+            <div
+              class="text-grey-7 text-weight-bold q-mb-sm"
+              style="font-size: 0.75rem;"
+            >
+              SCAN SHELF BARCODE
+            </div>
             <q-input
-              v-model="containerBarcodeInput"
+              v-model="shelfBarcodeInput"
               outlined
               dense
-              placeholder="Scan container barcode"
-              @keyup.enter="scanContainer"
-              ref="containerInput"
+              bg-color="white"
+              placeholder="Focus here to scan..."
+              @keyup.enter="scanShelf"
+              ref="shelfInput"
+              autofocus
+              color="accent"
+              class="scan-input-modern"
             >
-              <template #append>
-                <q-icon name="qr_code_scanner" />
+              <template #prepend>
+                <q-icon
+                  name="qr_code_scanner"
+                  color="accent"
+                />
               </template>
             </q-input>
-          </div>
-          <div class="col-12 col-md-3">
-            <label class="form-group-label">Position #</label>
-            <q-input
-              v-model.number="positionNumber"
-              type="number"
-              outlined
-              dense
-              min="1"
-              :placeholder="nextPosition ? `Next: ${nextPosition}` : 'Position'"
-            />
-          </div>
-          <div class="col-12 col-md-3">
-            <BaseButton
-              no-caps
-              unelevated
-              color="accent"
-              label="Shelve"
-              class="full-width"
-              :loading="scanning"
-              :disable="!containerBarcodeInput || !positionNumber"
-              @click="shelveContainer"
-            />
-          </div>
-        </div>
+          </template>
+        </q-card-section>
+      </q-card>
 
-        <!-- Scan Error -->
-        <div
-          v-if="scanError"
-          class="text-negative q-mt-sm"
-        >
-          {{ scanError }}
-        </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Container List -->
-    <q-card>
-      <q-card-section>
-        <div class="row items-center q-mb-md">
-          <div class="col">
-            <div class="text-h6">
-              Containers Shelved
+      <!-- Container Scanning Card -->
+      <q-card
+        v-if="currentShelf"
+        class="bg-grey-2 q-mb-md"
+        style="border: 1px solid #e2e8f0;"
+        flat
+      >
+        <q-card-section class="q-pa-md">
+          <div
+            class="text-grey-7 text-weight-bold q-mb-sm"
+            style="font-size: 0.75rem;"
+          >
+            SCAN CONTAINER BARCODE TO SHELVE
+          </div>
+          <div class="row q-col-gutter-sm items-end">
+            <div class="col-12 col-sm-8">
+              <q-input
+                v-model="containerBarcodeInput"
+                outlined
+                dense
+                bg-color="white"
+                placeholder="Scan container..."
+                @keyup.enter="scanContainer"
+                ref="containerInput"
+                color="accent"
+                class="scan-input-modern"
+              >
+                <template #prepend>
+                  <q-icon
+                    name="qr_code_scanner"
+                    color="accent"
+                  />
+                </template>
+              </q-input>
+            </div>
+            <div class="col-12 col-sm-4">
+              <q-input
+                v-model.number="positionNumber"
+                type="number"
+                outlined
+                dense
+                bg-color="white"
+                min="1"
+                :placeholder="nextPosition ? `Next: ${nextPosition}` : 'Pos'"
+                color="accent"
+                class="scan-input-modern"
+              />
+            </div>
+            <div class="col-12">
+              <BaseButton
+                no-caps
+                unelevated
+                color="accent"
+                label="Shelve Container"
+                class="full-width q-mt-sm"
+                :loading="scanning"
+                :disable="!containerBarcodeInput || !positionNumber"
+                @click="shelveContainer"
+              />
             </div>
           </div>
-          <div class="col-auto">
-            <q-badge
-              color="accent"
-              :label="`${shelvedCount}/${totalCount}`"
+
+          <div
+            v-if="scanError"
+            class="text-negative text-caption q-mt-sm text-weight-bold"
+          >
+            <q-icon name="error" /> {{ scanError }}
+          </div>
+        </q-card-section>
+      </q-card>
+    </template>
+
+    <!-- Container List Collapsible -->
+    <q-expansion-item
+      class="industrial-card q-mb-xl rounded-borders overflow-hidden"
+      header-class="q-pa-md"
+      expand-icon="expand_more"
+      expanded-icon="expand_less"
+      default-opened
+    >
+      <template #header>
+        <div
+          class="row w-full items-center justify-between"
+          style="width: 100%"
+        >
+          <div class="col flex items-center q-gutter-x-sm">
+            <q-icon
+              name="list_alt"
+              color="grey-6"
+              size="sm"
             />
+            <div
+              class="text-weight-bold text-uppercase"
+              style="font-size: 0.65rem; letter-spacing: 0.05em;"
+            >
+              SHELVED CONTAINERS ({{ shelvedCount }}/{{ totalCount }})
+            </div>
           </div>
         </div>
+      </template>
 
-        <q-table
-          :rows="containers"
-          :columns="containerColumns"
-          row-key="id"
-          flat
-          dense
-          :pagination="{ rowsPerPage: 15 }"
-          class="essential-table"
-        >
-          <template #body-cell-barcode="props">
-            <q-td :props="props">
-              <span class="text-weight-medium">{{ props.row.barcode?.value || '-' }}</span>
-            </q-td>
-          </template>
-          <template #body-cell-status="props">
-            <q-td :props="props">
-              <q-badge
-                :color="props.row.scanned_for_shelving ? 'positive' : 'grey'"
-                :label="props.row.scanned_for_shelving ? 'Shelved' : 'Pending'"
-              />
-            </q-td>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
+      <q-card>
+        <q-card-section class="q-pa-none border-top">
+          <q-table
+            :rows="containers"
+            :columns="containerColumns"
+            row-key="id"
+            flat
+            dense
+            :pagination="{ rowsPerPage: 0 }"
+            hide-pagination
+            class="job-table"
+          >
+            <template #body-cell-barcode="props">
+              <q-td :props="props">
+                <span class="text-weight-medium">{{ props.row.barcode?.value || '-' }}</span>
+              </q-td>
+            </template>
+            <template #body-cell-status="props">
+              <q-td
+                :props="props"
+                class="text-center"
+              >
+                <q-chip
+                  v-if="props.row.scanned_for_shelving"
+                  color="positive"
+                  text-color="white"
+                  icon="check_circle"
+                  label="Shelved"
+                  dense
+                />
+                <q-chip
+                  v-else
+                  color="grey-4"
+                  text-color="grey-9"
+                  label="Pending"
+                  dense
+                />
+              </q-td>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </q-expansion-item>
 
     <!-- Complete Job Dialog -->
     <JobConfirmDialog
@@ -302,6 +411,20 @@
       ref="batchSheetComponent"
       :shelving-job-details="job"
     />
+
+    <!-- Mobile Action Bar -->
+    <MobileActionBar
+      v-if="currentScreenSize == 'xs' && job?.status !== 'Completed'"
+      :button-one-color="'accent'"
+      :button-one-label="job?.status === 'Created' || job?.status === 'Assigned' ? 'Start Job' : ''"
+      :button-one-outline="false"
+      @button-one-click="startJob"
+      button-two-color="positive"
+      :button-two-label="job?.status === 'Running' ? 'Complete Job' : ''"
+      :button-two-disabled="!allContainersShelved"
+      :button-two-loading="actionLoading"
+      @button-two-click="showCompleteDialog = true"
+    />
   </div>
 </template>
 
@@ -320,18 +443,19 @@ import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 
 // Shared Job Components
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
-import JobProgressBar from '@/components/Job/JobProgressBar.vue'
 import JobActionButtons from '@/components/Job/JobActionButtons.vue'
 import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
 import SelectInput from '@/components/SelectInput.vue'
 import ShelvingBatchSheet from '@/components/Shelving/ShelvingBatchSheet.vue'
+import MobileActionBar from '@/components/MobileActionBar.vue'
+import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 const router = useRouter()
 const shelvingStore = useShelvingStore()
 
-
 // Composables
+const { currentScreenSize } = useCurrentScreenSize()
 const { compiledBarCode } = useBarcodeScanHandler()
 const { checkUserPermission } = usePermissionHandler()
 const { addDataToIndexDb, getDataInIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
@@ -723,4 +847,47 @@ onMounted(async () => {
 })
 </script>
 
+<style scoped lang="scss">
+.table-header-filters {
+  @media (max-width: 599px) {
+    width: 100%;
+    margin-top: 12px;
+    flex-direction: column;
+    margin-left: 0 !important;
 
+    .q-btn-toggle {
+      width: 100%;
+      margin-left: 0;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.industrial-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+.border-all {
+  border: 1px solid #e2e8f0;
+}
+.border-top {
+  border-top: 1px solid #e2e8f0;
+}
+.border-bottom {
+  border-bottom: 1px solid #e2e8f0;
+}
+.job-table.q-table__card {
+  box-shadow: none;
+  background: transparent;
+}
+.job-table th {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.scan-input-modern .q-field__control {
+  background-color: white !important;
+}
+</style>

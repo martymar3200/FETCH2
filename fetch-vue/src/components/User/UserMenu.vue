@@ -162,6 +162,16 @@ const logoutUser = async () => {
     &:hover {
       cursor: pointer;
     }
+
+    @media (max-width: 599px) {
+      width: 32px;
+      height: 32px;
+      font-size: 10px;
+
+      :deep(.q-icon) {
+        font-size: 20px;
+      }
+    }
   }
 }
 </style>

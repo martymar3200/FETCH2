@@ -34,7 +34,7 @@
           />
         </div>
         <JobActionButtons
-          v-else-if="job?.status !== 'Completed'"
+          v-else-if="job?.status !== 'Completed' && currentScreenSize !== 'xs'"
           :status="job?.status || 'Created'"
           :can-complete="allItemsRetrieved"
           :loading="actionLoading"
@@ -72,136 +72,291 @@
       </q-card-section>
     </q-card>
 
-    <!-- Progress Bar -->
-    <JobProgressBar
-      :completed="retrievedCount"
-      :total="totalCount"
-    />
+    <!-- Minimal Progress Bar -->
+    <div
+      v-if="job"
+      class="q-mb-md row items-center no-wrap bg-white border-all rounded-borders q-px-sm q-py-xs shadow-1"
+    >
+      <div
+        class="text-grey-7 text-weight-bold text-uppercase q-mr-sm"
+        style="font-size: 0.65rem; letter-spacing: 0.05em; min-width: max-content;"
+      >
+        PROGRESS
+      </div>
+      <div
+        class="text-body2 text-weight-bold text-primary q-mr-sm"
+        style="font-family: 'JetBrains Mono', monospace;"
+      >
+        {{ retrievedCount }}/{{ totalCount }}
+      </div>
+      <div class="col">
+        <q-linear-progress
+          :value="totalCount > 0 ? retrievedCount / totalCount : 0"
+          color="accent"
+          track-color="grey-3"
+          rounded
+          size="8px"
+        />
+      </div>
+      <div
+        class="text-caption text-weight-bold text-accent q-ml-sm"
+        style="font-size: 0.75rem;"
+      >
+        {{ totalCount > 0 ? Math.round((retrievedCount / totalCount) * 100) : 0 }}%
+      </div>
+    </div>
 
     <!-- Scan Section -->
-    <q-card
-      v-if="job?.status === 'Running'"
-      class="q-mb-lg bg-accent-1"
-    >
-      <q-card-section>
-        <div class="row q-col-gutter-md items-end">
-          <div class="col-grow">
-            <label class="form-group-label">Scan Item Barcode to Retrieve</label>
-            <q-input
-              v-model="barcodeInput"
-              outlined
-              dense
-              placeholder="Scan item barcode"
-              @keyup.enter="handleManualScan"
-              ref="scanInput"
-              autofocus
-            >
-              <template #append>
-                <q-icon name="qr_code_scanner" />
-              </template>
-            </q-input>
-          </div>
-          <div class="col-auto">
-            <BaseButton
-              no-caps
-              unelevated
-              color="accent"
-              label="Retrieve"
-
-              :loading="scanning"
-              @click="handleManualScan"
-            />
-          </div>
+    <template v-if="job?.status === 'Running'">
+      <!-- Current Target Card -->
+      <q-card
+        v-if="currentTarget"
+        class="industrial-card current-target-card q-mb-md shadow-1"
+        style="border-left: 4px solid var(--q-accent);"
+      >
+        <div
+          class="bg-grey-1 q-px-md q-py-sm flex justify-between items-center"
+          style="border-bottom: 1px solid #e2e8f0;"
+        >
+          <span
+            class="text-weight-bold text-accent text-uppercase"
+            style="font-size: 0.65rem; letter-spacing: 0.05em;"
+          >CURRENT TARGET</span>
+          <q-icon
+            name="my_location"
+            color="accent"
+            size="sm"
+          />
         </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Item List -->
-    <q-card>
-      <q-card-section>
-        <div class="row items-center q-mb-md">
-          <div class="col">
-            <div class="text-h6">
-              Items to Pick
+        <q-card-section class="q-pa-md q-gutter-y-md">
+          <div>
+            <div
+              class="text-grey-7 text-uppercase text-weight-bold"
+              style="font-size: 0.65rem; letter-spacing: 0.05em;"
+            >
+              LOCATION
+            </div>
+            <div class="text-h5 text-primary text-weight-bold tracking-tight q-mt-xs">
+              {{ currentTarget.item ? getItemLocation(currentTarget.item.tray) : getItemLocation(currentTarget.non_tray_item) || 'Unknown' }}
             </div>
           </div>
-          <div class="col-auto">
-            <q-btn-toggle
-              v-model="filter"
-              no-caps
-              rounded
-              unelevated
-              toggle-color="accent"
-              :options="[
-                { label: 'All', value: 'all' },
-                { label: 'Pending', value: 'PickList' },
-                { label: 'Retrieved', value: 'Out' }
-              ]"
-            />
-          </div>
-        </div>
 
-        <q-table
-          :rows="filteredItems"
-          :columns="columns"
-          row-key="id"
-          flat
-          dense
-          :pagination="{ rowsPerPage: 15 }"
-          class="essential-table"
-        >
-          <template #body-cell-barcode="props">
-            <q-td :props="props">
-              <span
-                class="text-weight-medium cursor-pointer text-primary"
-                @click="viewItemDetails(props.row)"
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <div
+                class="text-grey-7 text-uppercase text-weight-bold"
+                style="font-size: 0.65rem; letter-spacing: 0.05em;"
               >
-                {{ renderItemBarcodeDisplay(props.row.item || props.row.non_tray_item) }}
-              </span>
-            </q-td>
-          </template>
+                TRAY BARCODE
+              </div>
+              <div
+                class="text-body2 text-weight-bold bg-grey-1 q-pa-sm rounded-borders q-mt-xs inline-block"
+                style="font-family: 'JetBrains Mono', monospace; border: 1px solid #e2e8f0;"
+              >
+                {{ currentTarget.item?.tray?.barcode?.value || 'N/A' }}
+              </div>
+            </div>
+            <div class="col-6">
+              <div
+                class="text-grey-7 text-uppercase text-weight-bold"
+                style="font-size: 0.65rem; letter-spacing: 0.05em;"
+              >
+                OWNER
+              </div>
+              <div class="text-body2 text-primary text-weight-medium q-mt-xs">
+                {{ currentTarget.item?.owner?.name || currentTarget.non_tray_item?.owner?.name || 'Unknown' }}
+              </div>
+            </div>
+          </div>
 
-          <template #body-cell-status="props">
-            <q-td
-              :props="props"
-              class="text-center"
+          <div
+            class="q-mt-md q-pt-md"
+            style="border-top: 1px dashed #e2e8f0;"
+          >
+            <div
+              class="text-grey-7 text-uppercase text-weight-bold"
+              style="font-size: 0.65rem; letter-spacing: 0.05em;"
             >
-              <q-badge
-                :color="props.row.status === 'PickList' ? 'grey' : 'positive'"
-                :label="props.row.status === 'PickList' ? 'Pending' : 'Retrieved'"
-              />
-              <q-icon
-                v-if="props.row.status !== 'PickList'"
-                name="check_circle"
-                color="positive"
-                size="xs"
-                class="q-ml-xs"
-              />
-            </q-td>
-          </template>
+              ITEM BARCODE
+            </div>
+            <div class="text-h6 text-primary text-weight-bold q-mt-xs">
+              {{ currentTarget.item?.barcode?.value || currentTarget.non_tray_item?.barcode?.value || 'Unknown' }}
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
 
-          <template #body-cell-actions="props">
-            <q-td
-              :props="props"
-              class="text-right"
+      <!-- Scanning Card -->
+      <q-card
+        class="bg-grey-2 q-mb-md"
+        style="border: 1px solid #e2e8f0;"
+        flat
+      >
+        <q-card-section class="q-pa-md">
+          <div
+            class="text-grey-7 text-weight-bold q-mb-sm"
+            style="font-size: 0.75rem;"
+          >
+            SCAN ITEM BARCODE TO RETRIEVE
+          </div>
+          <q-input
+            v-model="barcodeInput"
+            outlined
+            dense
+            bg-color="white"
+            placeholder="Focus here to scan..."
+            @keyup.enter="handleManualScan"
+            ref="scanInput"
+            autofocus
+            color="accent"
+            class="scan-input-modern"
+            :loading="scanning"
+          >
+            <template #prepend>
+              <q-icon
+                name="qr_code_scanner"
+                color="accent"
+              />
+            </template>
+            <template
+              #append
+              v-if="currentScreenSize !== 'xs'"
             >
               <BaseButton
-                v-if="props.row.status === 'PickList' && job?.status !== 'Completed'"
-                flat
-                round
+                no-caps
+                unelevated
+                color="accent"
+                label="Retrieve"
                 dense
+                class="q-px-sm"
+                :loading="scanning"
+                @click="handleManualScan"
+              />
+            </template>
+          </q-input>
+        </q-card-section>
+      </q-card>
+    </template>
+
+    <!-- Item List Collapsible -->
+    <q-expansion-item
+      class="industrial-card q-mb-xl rounded-borders overflow-hidden"
+      header-class="q-pa-md"
+      expand-icon="expand_more"
+      expanded-icon="expand_less"
+      default-opened
+    >
+      <template #header>
+        <div
+          class="row w-full items-center justify-between"
+          style="width: 100%"
+        >
+          <div class="col flex items-center q-gutter-x-sm">
+            <q-icon
+              name="list_alt"
+              color="grey-6"
+              size="sm"
+            />
+            <div
+              class="text-weight-bold text-uppercase"
+              style="font-size: 0.65rem; letter-spacing: 0.05em;"
+            >
+              PICKLIST ({{ totalCount - retrievedCount }} REMAINING)
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <q-card>
+        <q-card-section class="q-pa-none border-top">
+          <div class="table-header-row row items-center justify-end q-pa-sm bg-grey-1 border-bottom">
+            <div class="table-header-filters col-auto flex q-gutter-x-sm">
+              <q-btn-toggle
+                v-model="filter"
+                no-caps
+                rounded
+                unelevated
+                toggle-color="accent"
+                color="white"
+                text-color="grey-7"
+                class="toggle-modern-rounded"
                 size="sm"
-                icon="undo"
-                color="negative"
-                @click="revertItem(props.row)"
+                :options="[
+                  { label: 'All', value: 'all' },
+                  { label: 'Pending', value: 'PickList' },
+                  { label: 'Retrieved', value: 'Out' }
+                ]"
+              />
+            </div>
+          </div>
+
+          <q-table
+            :rows="filteredItems"
+            :columns="columns"
+            row-key="id"
+            flat
+            dense
+            :pagination="{ rowsPerPage: 0 }"
+            hide-pagination
+            class="job-table"
+          >
+            <template #body-cell-barcode="props">
+              <q-td :props="props">
+                <span
+                  class="text-weight-medium cursor-pointer text-primary"
+                  @click="viewItemDetails(props.row)"
+                >
+                  {{ renderItemBarcodeDisplay(props.row.item || props.row.non_tray_item) }}
+                </span>
+              </q-td>
+            </template>
+
+            <template #body-cell-status="props">
+              <q-td
+                :props="props"
+                class="text-center"
               >
-                <q-tooltip>Revert Item to Queue</q-tooltip>
-              </BaseButton>
-            </q-td>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
+                <q-chip
+                  v-if="props.row.status !== 'PickList'"
+                  color="positive"
+                  text-color="white"
+                  icon="check_circle"
+                  label="Retrieved"
+                  dense
+                />
+                <q-chip
+                  v-else
+                  color="grey-4"
+                  text-color="grey-9"
+                  label="Pending"
+                  dense
+                />
+              </q-td>
+            </template>
+
+            <template #body-cell-actions="props">
+              <q-td
+                :props="props"
+                class="text-right"
+              >
+                <BaseButton
+                  v-if="props.row.status === 'PickList' && job?.status !== 'Completed'"
+                  flat
+                  round
+                  dense
+                  size="sm"
+                  icon="undo"
+                  color="negative"
+                  @click="revertItem(props.row)"
+                >
+                  <q-tooltip>Revert Item to Queue</q-tooltip>
+                </BaseButton>
+              </q-td>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </q-expansion-item>
 
     <JobConfirmDialog
       v-model="showCompleteDialog"
@@ -242,6 +397,20 @@
       v-if="showItemDetailModal"
       @hide="showItemDetailModal = false"
     />
+
+    <!-- Mobile Action Bar -->
+    <MobileActionBar
+      v-if="currentScreenSize == 'xs' && job?.status !== 'Completed'"
+      :button-one-color="job?.status === 'Running' ? 'primary' : 'accent'"
+      :button-one-label="job?.status === 'Created' || job?.status === 'Assigned' ? 'Start Job' : (job?.status === 'Running' ? 'Pause' : 'Resume')"
+      :button-one-outline="job?.status === 'Running'"
+      @button-one-click="job?.status === 'Created' || job?.status === 'Assigned' ? startJob() : (job?.status === 'Running' ? pauseJob() : resumeJob())"
+      button-two-color="positive"
+      :button-two-label="job?.status === 'Created' || job?.status === 'Assigned' ? '' : 'Complete Job'"
+      :button-two-disabled="!allItemsRetrieved"
+      :button-two-loading="actionLoading"
+      @button-two-click="showCompleteDialog = true"
+    />
   </div>
 </template>
 
@@ -260,20 +429,21 @@ import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
 
 // Shared Components
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
-import JobProgressBar from '@/components/Job/JobProgressBar.vue'
 import JobActionButtons from '@/components/Job/JobActionButtons.vue'
 import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
 import PicklistBatchSheet from '@/components/Picklist/PicklistBatchSheet.vue'
 import SelectInput from '@/components/SelectInput.vue'
 import PicklistItemDetailModal from '@/components/Picklist/PicklistItemDetailModal.vue'
+import MobileActionBar from '@/components/MobileActionBar.vue'
+import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 const route = useRoute()
 const router = useRouter()
 const picklistStore = usePicklistStore()
 
-
 // Composables
+const { currentScreenSize } = useCurrentScreenSize()
 const { compiledBarCode } = useBarcodeScanHandler()
 const { checkUserPermission } = usePermissionHandler()
 const { addDataToIndexDb, deleteDataInIndexDb } = useIndexDbHandler()
@@ -321,6 +491,10 @@ const filteredItems = computed(() => {
     return picklistItems.value
   }
   return picklistItems.value.filter(i => i.status === filter.value)
+})
+
+const currentTarget = computed(() => {
+  return picklistItems.value.find(i => i.status === 'PickList')
 })
 
 const menuOptions = computed(() => [
@@ -682,5 +856,48 @@ onMounted(async () => {
   :deep(.q-table__container) {
     border-radius: 8px;
   }
+}
+
+.table-header-filters {
+  @media (max-width: 599px) {
+    width: 100%;
+    margin-top: 12px;
+    flex-direction: column;
+    margin-left: 0 !important;
+
+    .q-btn-toggle {
+      width: 100%;
+      margin-left: 0;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.industrial-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+.border-all {
+  border: 1px solid #e2e8f0;
+}
+.border-top {
+  border-top: 1px solid #e2e8f0;
+}
+.border-bottom {
+  border-bottom: 1px solid #e2e8f0;
+}
+.job-table.q-table__card {
+  box-shadow: none;
+  background: transparent;
+}
+.job-table th {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.scan-input-modern .q-field__control {
+  background-color: white !important;
 }
 </style>

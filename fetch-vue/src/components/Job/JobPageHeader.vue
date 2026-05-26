@@ -1,5 +1,5 @@
 <template>
-  <div class="row q-mb-lg items-center">
+  <div class="job-header row q-mb-lg items-center">
     <div class="col">
       <div class="row items-center">
         <!-- Three-dot menu -->
@@ -9,7 +9,7 @@
           round
           dense
           icon="more_vert"
-          class="q-mr-sm"
+          class="job-header__menu q-mr-sm"
         >
           <q-menu>
             <q-list style="min-width: 150px">
@@ -39,7 +39,7 @@
         </BaseButton>
 
         <!-- Title + Badge -->
-        <h1 class="text-h4 text-bold q-mb-none">
+        <h1 class="job-header__title text-h4 text-bold q-mb-none">
           {{ title }}
           <template v-if="jobId">
             #{{ jobId }}
@@ -59,7 +59,7 @@
         {{ subtitle }}
       </p>
     </div>
-    <div class="col-auto">
+    <div class="job-header__actions col-auto">
       <slot name="actions" />
     </div>
   </div>
@@ -116,3 +116,39 @@ defineProps({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.job-header {
+  @media (max-width: 599px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &__title {
+    @media (max-width: 599px) {
+      font-size: 1.25rem;
+      line-height: 1.4;
+    }
+  }
+
+  &__actions {
+    @media (max-width: 599px) {
+      width: 100%;
+      margin-top: 8px;
+    }
+  }
+
+  &__menu {
+    @media (max-width: 599px) {
+      padding: 4px;
+      min-height: unset;
+      font-size: 10px;
+
+      :deep(.q-icon) {
+        font-size: 20px;
+      }
+    }
+  }
+}
+</style>
+

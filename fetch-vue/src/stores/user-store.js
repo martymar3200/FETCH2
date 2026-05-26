@@ -71,7 +71,11 @@ export const useUserStore = defineStore('user-store', {
     async patchLogout (reauthenticate = false) {
       try {
         // Ping backend to delete the HttpOnly cookie
-        await this.$api.post('/auth/sso/logout/')
+        try {
+          await this.$api.post('/auth/sso/logout/')
+        } catch (logoutError) {
+          console.warn('Backend logout ping failed (session may already be expired)', logoutError)
+        }
 
         this.resetUserStore()
 

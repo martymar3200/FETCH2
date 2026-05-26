@@ -39,7 +39,7 @@ router = APIRouter(
 )
 
 
-@router.get("/locations", response_model=Page[DeliveryLocationListOutput])
+@router.get("/locations/", response_model=Page[DeliveryLocationListOutput])
 def get_delivery_location_list(
     session: Session = Depends(get_session),
     sort_params: SortParams = Depends(),
@@ -88,7 +88,7 @@ def get_delivery_location_detail(id: int, session: Session = Depends(get_session
 
 
 @router.post(
-    "/locations", response_model=DeliveryLocationDetailWriteOutput, status_code=201
+    "/locations/", response_model=DeliveryLocationDetailWriteOutput, status_code=201
 )
 def create_delivery_location(
     delivery_location_input: DeliveryLocationInput,

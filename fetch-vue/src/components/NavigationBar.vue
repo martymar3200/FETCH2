@@ -4,7 +4,7 @@
     <q-header
       class="nav-top bg-white text-primary bordered"
     >
-      <q-toolbar class="justify-between q-py-xs">
+      <q-toolbar class="nav-toolbar justify-between q-py-xs">
         <!-- MODIFIED: This button now calls the global store action -->
         <BaseButton
           v-if="userData.user_id"
@@ -100,43 +100,45 @@
       overlay
       class="nav-side bg-sidebar-theme"
     >
-      <q-list
-        class="nav-list"
-        role="group"
-        @click.capture="setMainNavDrawerOpen(false)"
-      >
-        <q-item
-          class="q-mt-xl q-mb-lg"
-          clickable
-          tag="a"
-          role="link"
-          :to="'/'"
+      <q-scroll-area style="height: 100%;">
+        <q-list
+          class="nav-list"
+          role="group"
+          @click.capture="setMainNavDrawerOpen(false)"
         >
-          <q-item-section class="flex flex-center">
-            <div class="nav-logo-text">
-              FETCH
-            </div>
-          </q-item-section>
-        </q-item>
+          <q-item
+            class="q-mt-xl q-mb-lg"
+            clickable
+            tag="a"
+            role="link"
+            :to="'/'"
+          >
+            <q-item-section class="flex flex-center">
+              <div class="nav-logo-text">
+                FETCH
+              </div>
+            </q-item-section>
+          </q-item>
 
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-          :icon-size="'28px'"
-          class="nav-list-link text-white"
-          :class="isActiveLink(link) ? 'bg-accent' : ''"
-        />
+          <EssentialLink
+            v-for="link in essentialLinks"
+            :key="link.title"
+            v-bind="link"
+            :icon-size="'28px'"
+            class="nav-list-link text-white"
+            :class="isActiveLink(link) ? 'bg-accent' : ''"
+          />
 
-        <!-- admin level link -->
-        <EssentialLink
-          v-if="checkUserPermission('can_access_admin')"
-          v-bind="adminLink"
-          :icon-size="'28px'"
-          class="nav-list-link-admin text-white"
-          :class="isActiveLink(adminLink) ? 'bg-accent' : ''"
-        />
-      </q-list>
+          <!-- admin level link -->
+          <EssentialLink
+            v-if="checkUserPermission('can_access_admin')"
+            v-bind="adminLink"
+            :icon-size="'28px'"
+            class="nav-list-link-admin text-white"
+            :class="isActiveLink(adminLink) ? 'bg-accent' : ''"
+          />
+        </q-list>
+      </q-scroll-area>
     </q-drawer>
 
     <!-- sync navigation guard modal-->
@@ -407,11 +409,30 @@ const displayRouteGuardAlert = (pathName) => {
     z-index: 6000;
   }
 
+  &-toolbar {
+    @media (max-width: $breakpoint-sm-min) {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      min-height: 40px;
+    }
+  }
+
   &-search {
     width: 60%;
 
     @media (max-width: $breakpoint-sm-min) {
-      width: 75%;
+      width: 55%;
+    }
+  }
+
+  // Scale hamburger and action buttons on mobile
+  @media (max-width: $breakpoint-sm-min) {
+    :deep(.q-toolbar > .q-btn) {
+      padding: 4px;
+
+      .q-icon {
+        font-size: 20px;
+      }
     }
   }
 
@@ -440,11 +461,9 @@ const displayRouteGuardAlert = (pathName) => {
 .nav-side {
   border-radius: 0 24px 24px 0 !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
-  overflow: hidden !important;
 
   .q-drawer__content {
     border-radius: 0 24px 24px 0 !important;
-    overflow: hidden !important;
   }
 }
 

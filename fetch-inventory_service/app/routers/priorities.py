@@ -39,7 +39,7 @@ router = APIRouter(
 )
 
 
-@router.get("/priorities", response_model=Page[PriorityListOutput])
+@router.get("/priorities/", response_model=Page[PriorityListOutput])
 def get_priority_list(
     session: Session = Depends(get_session),
     sort_params: SortParams = Depends(),
@@ -74,7 +74,7 @@ def get_priority_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Priority ID {id} Not Found")
 
 
-@router.post("/priorities", response_model=PriorityDetailWriteOutput, status_code=201)
+@router.post("/priorities/", response_model=PriorityDetailWriteOutput, status_code=201)
 def create_priority(
     priority_input: PriorityInput, session: Session = Depends(get_session)
 ) -> Priority:

@@ -284,7 +284,7 @@
       :button-one-label="
         accessionJob.status == 'Paused' ? 'Resume' : 'Pause'
       "
-      :button-one-outline="accessionJob.status !== 'Paused'"
+      :button-one-outline="false"
       :button-one-disabled="accessionJob.status == 'Completed'"
       @button-one-click="
         accessionJob.status == 'Paused'

@@ -1,5 +1,5 @@
 <template>
-  <div class="row q-gutter-sm">
+  <div class="job-actions row q-gutter-x-sm">
     <!-- Start button -->
     <BaseButton
       v-if="showStart"
@@ -7,7 +7,7 @@
       unelevated
       color="accent"
       label="Start Job"
-
+      class="job-actions__btn"
       :loading="loading"
       @click="$emit('start')"
     />
@@ -19,6 +19,7 @@
       flat
       color="warning"
       label="Pause"
+      class="job-actions__btn"
       :loading="loading"
       @click="$emit('pause')"
     />
@@ -30,7 +31,7 @@
       unelevated
       color="accent"
       label="Resume"
-
+      class="job-actions__btn"
       :loading="loading"
       @click="$emit('resume')"
     />
@@ -42,7 +43,7 @@
       unelevated
       color="positive"
       label="Complete Job"
-
+      class="job-actions__btn"
       :loading="loading"
       @click="$emit('complete')"
     />
@@ -96,3 +97,22 @@ const showPause = computed(() => props.status === 'Running')
 const showResume = computed(() => props.status === 'Paused')
 const showComplete = computed(() => props.status === 'Running' && props.canComplete)
 </script>
+
+<style lang="scss" scoped>
+.job-actions {
+  @media (max-width: 599px) {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+
+    :deep(.q-btn) {
+      flex: 1;
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      margin: 0;
+    }
+  }
+}
+</style>
+

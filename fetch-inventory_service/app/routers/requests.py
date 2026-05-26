@@ -65,13 +65,25 @@ def get_request_list(
     """
     # Create a query to select all Request from the database with eager loading
     query = select(Request).where(Request.deleted == False).options(
-        selectinload(Request.item),
-        selectinload(Request.non_tray_item),
+        selectinload(Request.item).selectinload(Item.size_class),
+        selectinload(Request.item).selectinload(Item.owner),
+        selectinload(Request.item).selectinload(Item.media_type),
+        selectinload(Request.item).selectinload(Item.barcode).selectinload(Barcode.type),
+        selectinload(Request.item).selectinload(Item.withdrawn_barcode).selectinload(Barcode.type),
+        selectinload(Request.item).selectinload(Item.tray).selectinload(Tray.barcode).selectinload(Barcode.type),
+        selectinload(Request.item).selectinload(Item.tray).selectinload(Tray.shelf_position).selectinload(ShelfPosition.shelf),
+        selectinload(Request.non_tray_item).selectinload(NonTrayItem.size_class),
+        selectinload(Request.non_tray_item).selectinload(NonTrayItem.owner),
+        selectinload(Request.non_tray_item).selectinload(NonTrayItem.media_type),
+        selectinload(Request.non_tray_item).selectinload(NonTrayItem.barcode).selectinload(Barcode.type),
+        selectinload(Request.non_tray_item).selectinload(NonTrayItem.withdrawn_barcode).selectinload(Barcode.type),
+        selectinload(Request.non_tray_item).selectinload(NonTrayItem.shelf_position).selectinload(ShelfPosition.shelf),
         selectinload(Request.building),
         selectinload(Request.delivery_location),
         selectinload(Request.request_type),
         selectinload(Request.priority),
-        selectinload(Request.requested_by)
+        selectinload(Request.requested_by),
+        selectinload(Request.pick_list)
     )
 
     if params.queue:

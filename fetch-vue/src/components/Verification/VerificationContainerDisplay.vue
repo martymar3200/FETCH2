@@ -360,7 +360,7 @@
       :button-one-label="
         verificationJob.status == 'Paused' ? 'Resume' : 'Pause'
       "
-      :button-one-outline="verificationJob.status !== 'Paused'"
+      :button-one-outline="false"
       :button-one-disabled="verificationJob.status == 'Completed'"
       @button-one-click="
         verificationJob.status == 'Paused'

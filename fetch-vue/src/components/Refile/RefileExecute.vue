@@ -35,7 +35,7 @@
           />
         </div>
         <JobActionButtons
-          v-else-if="job?.status !== 'Completed'"
+          v-else-if="job?.status !== 'Completed' && currentScreenSize !== 'xs'"
           :status="job?.status || 'Created'"
           :can-complete="allItemsRefiled"
           :loading="actionLoading"
@@ -73,11 +73,39 @@
       </q-card-section>
     </q-card>
 
-    <!-- Progress Bar -->
-    <JobProgressBar
-      :completed="refiledCount"
-      :total="totalCount"
-    />
+    <!-- Minimal Progress Bar -->
+    <div
+      v-if="job"
+      class="q-mb-md row items-center no-wrap bg-white border-all rounded-borders q-px-sm q-py-xs shadow-1"
+    >
+      <div
+        class="text-grey-7 text-weight-bold text-uppercase q-mr-sm"
+        style="font-size: 0.65rem; letter-spacing: 0.05em; min-width: max-content;"
+      >
+        PROGRESS
+      </div>
+      <div
+        class="text-body2 text-weight-bold text-primary q-mr-sm"
+        style="font-family: 'JetBrains Mono', monospace;"
+      >
+        {{ refiledCount }}/{{ totalCount }}
+      </div>
+      <div class="col">
+        <q-linear-progress
+          :value="totalCount > 0 ? refiledCount / totalCount : 0"
+          color="accent"
+          track-color="grey-3"
+          rounded
+          size="8px"
+        />
+      </div>
+      <div
+        class="text-caption text-weight-bold text-accent q-ml-sm"
+        style="font-size: 0.75rem;"
+      >
+        {{ totalCount > 0 ? Math.round((refiledCount / totalCount) * 100) : 0 }}%
+      </div>
+    </div>
 
     <!-- Not Started Message -->
     <q-card
@@ -100,132 +128,235 @@
     </q-card>
 
     <template v-else>
-      <!-- Scanning Card (Top for ergonomics) -->
+      <!-- Current Target Card -->
       <q-card
-        v-if="job?.status === 'Running'"
-        class="q-mt-lg q-mb-lg bg-accent-1"
+        v-if="job?.status === 'Running' && currentTarget"
+        class="industrial-card current-target-card q-mb-md shadow-1"
+        style="border-left: 4px solid var(--q-accent);"
       >
-        <q-card-section>
-          <div class="row q-col-gutter-md items-end">
-            <div class="col-12 col-md-8">
-              <label class="form-group-label">Scan Item Barcode</label>
-              <q-input
-                v-model="barcodeInput"
-                outlined
-                dense
-                placeholder="Scan item barcode to refile"
-                @keyup.enter="handleManualScan"
-                ref="barcodeInputRef"
-                autofocus
-              >
-                <template #append>
-                  <q-icon name="qr_code_scanner" />
-                </template>
-              </q-input>
+        <div
+          class="bg-grey-1 q-px-md q-py-sm flex justify-between items-center"
+          style="border-bottom: 1px solid #e2e8f0;"
+        >
+          <span
+            class="text-weight-bold text-accent text-uppercase"
+            style="font-size: 0.65rem; letter-spacing: 0.05em;"
+          >CURRENT TARGET</span>
+          <q-icon
+            name="my_location"
+            color="accent"
+            size="sm"
+          />
+        </div>
+        <q-card-section class="q-pa-md q-gutter-y-md">
+          <div>
+            <div
+              class="text-grey-7 text-uppercase text-weight-bold"
+              style="font-size: 0.65rem; letter-spacing: 0.05em;"
+            >
+              LOCATION
+            </div>
+            <div class="text-h5 text-primary text-weight-bold tracking-tight q-mt-xs">
+              {{ currentTarget.tray?.shelf_position?.location || currentTarget.shelf_position?.location || 'Unknown' }}
             </div>
           </div>
-        </q-card-section>
-      </q-card>
 
-      <!-- Item Table -->
-      <q-card class="q-mt-md">
-        <q-card-section>
-          <div class="row items-center q-mb-md">
-            <div class="col">
-              <div class="text-h6">
-                Items to Refile
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <div
+                class="text-grey-7 text-uppercase text-weight-bold"
+                style="font-size: 0.65rem; letter-spacing: 0.05em;"
+              >
+                TRAY BARCODE
               </div>
               <div
-                v-if="editItems"
-                class="text-caption text-negative"
+                class="text-body2 text-weight-bold bg-grey-1 q-pa-sm rounded-borders q-mt-xs inline-block"
+                style="font-family: 'JetBrains Mono', monospace; border: 1px solid #e2e8f0;"
               >
-                Select items to revert to the refile queue
+                {{ currentTarget.tray?.barcode?.value || 'N/A' }}
               </div>
             </div>
-            <div class="col-auto flex q-gutter-x-sm">
-              <q-btn-toggle
-                v-model="statusFilter"
-                no-caps
-                rounded
-                unelevated
-                toggle-color="accent"
-                color="white"
-                text-color="grey-7"
-                class="toggle-modern-rounded"
-                :options="[
-                  { label: 'All', value: 'all' },
-                  { label: 'Pending', value: 'Out' },
-                  { label: 'Refiled', value: 'In' }
-                ]"
-              />
-              <q-input
-                v-model="tableFilter"
-                dense
-                outlined
-                placeholder="Filter table..."
+            <div class="col-6">
+              <div
+                class="text-grey-7 text-uppercase text-weight-bold"
+                style="font-size: 0.65rem; letter-spacing: 0.05em;"
               >
-                <template #append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
+                OWNER
+              </div>
+              <div class="text-body2 text-primary text-weight-medium q-mt-xs">
+                {{ currentTarget.owner?.name || 'Unknown' }}
+              </div>
             </div>
           </div>
 
-          <q-table
-            :rows="jobItems"
-            :columns="columns"
-            row-key="id"
-            flat
-            bordered
-            :filter="tableFilter"
-            :pagination="{ rowsPerPage: 0 }"
-            hide-pagination
-            :selection="editItems ? 'multiple' : 'none'"
-            v-model:selected="selectedItems"
+          <div
+            class="q-mt-md q-pt-md"
+            style="border-top: 1px dashed #e2e8f0;"
           >
-            <!-- Custom Cell for Status -->
-            <template #body-cell-status="cellProps">
-              <q-td :props="cellProps">
-                <q-chip
-                  v-if="cellProps.row.status === 'In'"
-                  color="positive"
-                  text-color="white"
-                  icon="check_circle"
-                  label="Refiled"
-                  dense
-                />
-                <q-chip
-                  v-else
-                  color="grey-4"
-                  text-color="grey-9"
-                  label="Pending"
-                  dense
-                />
-              </q-td>
-            </template>
-
-            <!-- Custom Cell for Actions -->
-            <template #body-cell-actions="cellProps">
-              <q-td
-                :props="cellProps"
-                class="text-right"
-              >
-                <BaseButton
-                  v-if="cellProps.row.status === 'Out'"
-                  flat
-                  round
-                  dense
-                  color="negative"
-                  icon="undo"
-                  @click="confirmRevert(cellProps.row)"
-                >
-                  <q-tooltip>Revert to Queue</q-tooltip>
-                </BaseButton>
-              </q-td>
-            </template>
-          </q-table>
+            <div
+              class="text-grey-7 text-uppercase text-weight-bold"
+              style="font-size: 0.65rem; letter-spacing: 0.05em;"
+            >
+              ITEM BARCODE
+            </div>
+            <div class="text-h6 text-primary text-weight-bold q-mt-xs">
+              {{ currentTarget.barcode?.value || 'Unknown' }}
+            </div>
+          </div>
         </q-card-section>
       </q-card>
+
+      <!-- Scanning Card -->
+      <q-card
+        v-if="job?.status === 'Running'"
+        class="bg-grey-2 q-mb-md"
+        style="border: 1px solid #e2e8f0;"
+        flat
+      >
+        <q-card-section class="q-pa-md">
+          <div
+            class="text-grey-7 text-weight-bold q-mb-sm"
+            style="font-size: 0.75rem;"
+          >
+            SCAN ITEM BARCODE
+          </div>
+          <q-input
+            v-model="barcodeInput"
+            outlined
+            dense
+            bg-color="white"
+            placeholder="Focus here to scan..."
+            @keyup.enter="handleManualScan"
+            ref="barcodeInputRef"
+            autofocus
+            color="accent"
+            class="scan-input-modern"
+          >
+            <template #prepend>
+              <q-icon
+                name="qr_code_scanner"
+                color="accent"
+              />
+            </template>
+          </q-input>
+        </q-card-section>
+      </q-card>
+
+      <!-- Item Table Collapsible -->
+      <q-expansion-item
+        class="industrial-card q-mb-xl rounded-borders overflow-hidden"
+        header-class="q-pa-md"
+        expand-icon="expand_more"
+        expanded-icon="expand_less"
+        default-opened
+      >
+        <template #header>
+          <div
+            class="row w-full items-center justify-between"
+            style="width: 100%"
+          >
+            <div class="col flex items-center q-gutter-x-sm">
+              <q-icon
+                name="list_alt"
+                color="grey-6"
+                size="sm"
+              />
+              <div
+                class="text-weight-bold text-uppercase"
+                style="font-size: 0.65rem; letter-spacing: 0.05em;"
+              >
+                REFILE LIST ({{ totalCount - refiledCount }} REMAINING)
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <q-card>
+          <q-card-section class="q-pa-none border-top">
+            <div class="table-header-row row items-center q-pa-sm bg-grey-1 border-bottom">
+              <div class="col">
+                <div
+                  v-if="editItems"
+                  class="text-caption text-negative q-ml-sm"
+                >
+                  Select items to revert to the refile queue
+                </div>
+              </div>
+              <div class="table-header-filters col-auto flex q-gutter-x-sm">
+                <q-btn-toggle
+                  v-model="statusFilter"
+                  no-caps
+                  rounded
+                  unelevated
+                  toggle-color="accent"
+                  color="white"
+                  text-color="grey-7"
+                  class="toggle-modern-rounded"
+                  size="sm"
+                  :options="[
+                    { label: 'All', value: 'all' },
+                    { label: 'Pending', value: 'Out' },
+                    { label: 'Refiled', value: 'In' }
+                  ]"
+                />
+              </div>
+            </div>
+
+            <q-table
+              :rows="jobItems"
+              :columns="columns"
+              row-key="id"
+              flat
+              :pagination="{ rowsPerPage: 0 }"
+              hide-pagination
+              :selection="editItems ? 'multiple' : 'none'"
+              v-model:selected="selectedItems"
+              class="refile-table"
+            >
+              <!-- Custom Cell for Status -->
+              <template #body-cell-status="cellProps">
+                <q-td :props="cellProps">
+                  <q-chip
+                    v-if="cellProps.row.status === 'In'"
+                    color="positive"
+                    text-color="white"
+                    icon="check_circle"
+                    label="Refiled"
+                    dense
+                  />
+                  <q-chip
+                    v-else
+                    color="grey-4"
+                    text-color="grey-9"
+                    label="Pending"
+                    dense
+                  />
+                </q-td>
+              </template>
+
+              <!-- Custom Cell for Actions -->
+              <template #body-cell-actions="cellProps">
+                <q-td
+                  :props="cellProps"
+                  class="text-right"
+                >
+                  <BaseButton
+                    v-if="cellProps.row.status === 'Out'"
+                    flat
+                    round
+                    dense
+                    color="negative"
+                    icon="undo"
+                    @click="confirmRevert(cellProps.row)"
+                  >
+                    <q-tooltip>Revert to Queue</q-tooltip>
+                  </BaseButton>
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+        </q-card>
+      </q-expansion-item>
     </template>
 
     <!-- Complete Dialog -->
@@ -321,6 +452,20 @@
       job-type="refile_jobs"
       :job-id="job?.id"
     />
+
+    <!-- Mobile Action Bar -->
+    <MobileActionBar
+      v-if="currentScreenSize == 'xs' && job?.status !== 'Completed'"
+      :button-one-color="job?.status === 'Running' ? 'primary' : 'accent'"
+      :button-one-label="job?.status === 'Created' || job?.status === 'Assigned' ? 'Start Job' : (job?.status === 'Running' ? 'Pause' : 'Resume')"
+      :button-one-outline="job?.status === 'Running'"
+      @button-one-click="job?.status === 'Created' || job?.status === 'Assigned' ? startJob() : (job?.status === 'Running' ? pauseJob() : resumeJob())"
+      button-two-color="positive"
+      :button-two-label="job?.status === 'Created' || job?.status === 'Assigned' ? '' : 'Complete Job'"
+      :button-two-disabled="!allItemsRefiled"
+      :button-two-loading="actionLoading"
+      @button-two-click="showCompleteDialog = true"
+    />
   </div>
 </template>
 
@@ -340,7 +485,6 @@ import { usePermissionHandler } from '@/composables/usePermissionHandler'
 
 // Components
 import JobPageHeader from '@/components/Job/JobPageHeader.vue'
-import JobProgressBar from '@/components/Job/JobProgressBar.vue'
 import JobActionButtons from '@/components/Job/JobActionButtons.vue'
 import JobConfirmDialog from '@/components/Job/JobConfirmDialog.vue'
 import RefileBatchSheet from '@/components/Refile/RefileBatchSheet.vue'
@@ -348,6 +492,8 @@ import RefileVerifyModal from '@/components/Refile/RefileVerifyModal.vue'
 import AuditTrail from '@/components/AuditTrail.vue'
 import PopupModal from '@/components/PopupModal.vue'
 import SelectInput from '@/components/SelectInput.vue'
+import MobileActionBar from '@/components/MobileActionBar.vue'
+import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 const props = defineProps({
   jobId: {
@@ -378,14 +524,19 @@ const editItems = ref(false)
 const selectedItems = ref([])
 const showConfirmationModal = ref(null)
 
+// Components Refs
+const batchSheetRef = ref(null)
+
 // Scanning logic
 const barcodeInput = ref('')
 const barcodeInputRef = ref(null)
 const scanLock = ref(false)
+
+// Composables
+const { currentScreenSize } = useCurrentScreenSize()
 const { compiledBarCode } = useBarcodeScanHandler()
 
 // Table logic
-const tableFilter = ref('')
 const statusFilter = ref('all')
 
 // Dialogs & Loading
@@ -393,7 +544,6 @@ const actionLoading = ref(false)
 const showCompleteDialog = ref(false)
 const showRevertDialog = ref(false)
 const pendingRevertItem = ref(null)
-const batchSheetRef = ref(null)
 
 // Verification State
 const showVerifyModal = ref(false)
@@ -433,6 +583,11 @@ const jobItems = computed(() => {
 
 const totalCount = computed(() => jobItems.value.length)
 const refiledCount = computed(() => jobItems.value.filter(i => i.status === 'In').length)
+
+const currentTarget = computed(() => {
+  const items = job.value?.refile_job_items || []
+  return items.find(i => i.status === 'Out')
+})
 
 const menuOptions = computed(() => [
   {
@@ -863,5 +1018,55 @@ const revertItem = async () => {
 .btn-modern-outline {
   border-radius: 8px;
   padding: 8px 24px;
+}
+
+.table-header-row {
+  @media (max-width: 599px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.table-header-filters {
+  @media (max-width: 599px) {
+    width: 100%;
+    margin-top: 12px;
+    flex-direction: column;
+    margin-left: 0 !important;
+
+    .q-btn-toggle {
+      width: 100%;
+      margin-left: 0;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.industrial-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+.border-all {
+  border: 1px solid #e2e8f0;
+}
+.border-top {
+  border-top: 1px solid #e2e8f0;
+}
+.border-bottom {
+  border-bottom: 1px solid #e2e8f0;
+}
+.refile-table.q-table__card {
+  box-shadow: none;
+  background: transparent;
+}
+.refile-table th {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.scan-input-modern .q-field__control {
+  background-color: white !important;
 }
 </style>

@@ -40,7 +40,7 @@ router = APIRouter(
 )
 
 
-@router.get("/types", response_model=Page[RequestTypeListOutput])
+@router.get("/types/", response_model=Page[RequestTypeListOutput])
 def get_request_type_list(
     session: Session = Depends(get_session),
     sort_params: SortParams = Depends(),
@@ -76,7 +76,7 @@ def get_request_type_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Request Type ID {id} Not Found")
 
 
-@router.post("/types", response_model=RequestTypeDetailWriteOutput, status_code=201)
+@router.post("/types/", response_model=RequestTypeDetailWriteOutput, status_code=201)
 def create_request_type(
     request_type_input: RequestTypeInput, session: Session = Depends(get_session)
 ) -> RequestType:
