@@ -7,7 +7,10 @@
     @update:model-value="updateModelValue"
     :placeholder="placeholder"
     :disable="disabled"
+    :inputmode="scanMode ? (keyboardEnabled ? 'numeric' : 'none') : inputmode"
     class="custom-text full-width"
+    @click="scanMode && handleInputClick()"
+    @blur="scanMode && handleInputBlur()"
   >
     <template #append>
       <slot name="append" />
@@ -16,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 // Props
@@ -27,6 +30,14 @@ defineProps({
     default: ''
   },
   disabled: {
+    type: Boolean,
+    default: false
+  },
+  inputmode: {
+    type: String,
+    default: 'text'
+  },
+  scanMode: {
     type: Boolean,
     default: false
   }
@@ -44,6 +55,21 @@ const updateModelValue = (value) => {
 }
 
 const inputRef = ref(null)
+const keyboardEnabled = ref(false)
+
+const handleInputClick = () => {
+  if (!keyboardEnabled.value) {
+    keyboardEnabled.value = true
+    nextTick(() => {
+      inputRef.value?.focus()
+    })
+  }
+}
+
+const handleInputBlur = () => {
+  keyboardEnabled.value = false
+}
+
 const focus = () => {
   inputRef.value?.focus()
 }

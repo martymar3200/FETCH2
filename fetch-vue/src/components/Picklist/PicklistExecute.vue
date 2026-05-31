@@ -208,6 +208,9 @@
             @keyup.enter="handleManualScan"
             ref="scanInput"
             autofocus
+            :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+            @click="handleInputClick"
+            @blur="handleInputBlur"
             color="accent"
             class="scan-input-modern"
             :loading="scanning"
@@ -468,6 +471,7 @@ const editJob = ref(false)
 const showItemDetailModal = ref(false)
 const batchSheetComponent = ref(null)
 const scanInput = ref(null)
+const keyboardEnabled = ref(false)
 
 // Injected helpers
 const currentIsoDate = inject('current-iso-date')
@@ -643,6 +647,19 @@ const resumeJob = async () => {
   } finally {
     actionLoading.value = false
   }
+}
+
+const handleInputClick = () => {
+  if (!keyboardEnabled.value) {
+    keyboardEnabled.value = true
+    nextTick(() => {
+      scanInput.value?.focus()
+    })
+  }
+}
+
+const handleInputBlur = () => {
+  keyboardEnabled.value = false
 }
 
 const handleManualScan = () => {

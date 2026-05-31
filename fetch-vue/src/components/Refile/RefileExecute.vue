@@ -229,6 +229,9 @@
             @keyup.enter="handleManualScan"
             ref="barcodeInputRef"
             autofocus
+            :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+            @click="handleInputClick"
+            @blur="handleInputBlur"
             color="accent"
             class="scan-input-modern"
           >
@@ -531,6 +534,7 @@ const batchSheetRef = ref(null)
 const barcodeInput = ref('')
 const barcodeInputRef = ref(null)
 const scanLock = ref(false)
+const keyboardEnabled = ref(false)
 
 // Composables
 const { currentScreenSize } = useCurrentScreenSize()
@@ -778,6 +782,19 @@ const getStatusColor = (status) => {
     case 'Completed': return 'positive'
     default: return 'grey'
   }
+}
+
+const handleInputClick = () => {
+  if (!keyboardEnabled.value) {
+    keyboardEnabled.value = true
+    nextTick(() => {
+      barcodeInputRef.value?.focus()
+    })
+  }
+}
+
+const handleInputBlur = () => {
+  keyboardEnabled.value = false
 }
 
 const handleManualScan = () => {

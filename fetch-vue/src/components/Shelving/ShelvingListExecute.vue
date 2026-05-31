@@ -124,6 +124,9 @@
                 placeholder="Scan shelf barcode"
                 @keyup.enter="scanShelf"
                 ref="shelfInput"
+                :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+                @click="handleInputClick(shelfInput)"
+                @blur="handleInputBlur"
               >
                 <template #append>
                   <q-icon name="shelves" />
@@ -157,6 +160,9 @@
               placeholder="Scan container barcode"
               @keyup.enter="scanAndShelve"
               ref="containerInput"
+              :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+              @click="handleInputClick(containerInput)"
+              @blur="handleInputBlur"
             >
               <template #append>
                 <q-icon name="qr_code_scanner" />
@@ -230,6 +236,9 @@
                   @keyup.enter="confirmShelveWithScan"
                   ref="confirmShelfInput"
                   autofocus
+                  :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+                  @click="handleInputClick(confirmShelfInput)"
+                  @blur="handleInputBlur"
                 >
                   <template #append>
                     <q-icon name="shelves" />
@@ -501,6 +510,7 @@ const showAuditTrailModal = ref(false)
 const batchSheetComponent = ref(null)
 const editJob = ref(false)
 const actionLoading = ref(false)
+const keyboardEnabled = ref(false)
 
 // Computed
 const filteredContainers = computed(() => {
@@ -607,6 +617,19 @@ const containerColumns = [
 ]
 
 // Methods
+const handleInputClick = (inputRef) => {
+  if (!keyboardEnabled.value) {
+    keyboardEnabled.value = true
+    nextTick(() => {
+      inputRef?.focus()
+    })
+  }
+}
+
+const handleInputBlur = () => {
+  keyboardEnabled.value = false
+}
+
 const getStatusColor = (status) => {
   const colors = {
     Created: 'grey',

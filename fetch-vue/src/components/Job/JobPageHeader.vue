@@ -1,5 +1,114 @@
 <template>
-  <div class="job-header row q-mb-lg items-center">
+  <!-- Mobile Collapsible Header Card -->
+  <q-card
+    v-if="isMobile"
+    flat
+    bordered
+    class="q-mb-md header-card-mobile bg-white"
+  >
+    <q-card-section class="q-pa-sm row items-center justify-between no-wrap">
+      <div class="row items-center q-gutter-x-sm">
+        <q-icon
+          name="assignment"
+          color="accent"
+          size="sm"
+        />
+        <span class="text-weight-bold text-primary font-mono">
+          Job <template v-if="jobId">#{{ jobId }}</template>
+        </span>
+        <q-badge
+          v-if="status && isCollapsed"
+          :color="statusColor"
+          :label="status"
+          size="xs"
+        />
+      </div>
+      <div class="row items-center q-gutter-x-xs">
+        <!-- Inline Menu on Mobile -->
+        <BaseButton
+          v-if="menuOptions.length > 0"
+          flat
+          round
+          dense
+          size="xs"
+          icon="more_vert"
+          color="grey-7"
+        >
+          <q-menu>
+            <q-list style="min-width: 150px">
+              <q-item
+                v-for="opt in menuOptions"
+                :key="opt.label"
+                clickable
+                v-close-popup
+                :disable="opt.disabled"
+                @click="opt.action"
+              >
+                <q-item-section
+                  v-if="opt.icon"
+                  avatar
+                >
+                  <q-icon
+                    :name="opt.icon"
+                    :color="opt.color || 'grey'"
+                  />
+                </q-item-section>
+                <q-item-section :class="opt.disabled ? 'text-grey' : ''">
+                  {{ opt.label }}
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </BaseButton>
+        <q-btn
+          flat
+          round
+          dense
+          size="sm"
+          :icon="isCollapsed ? 'expand_more' : 'expand_less'"
+          color="grey-7"
+          @click="isCollapsed = !isCollapsed"
+        />
+      </div>
+    </q-card-section>
+
+    <!-- Expanded content on mobile -->
+    <q-slide-transition>
+      <div v-show="!isCollapsed">
+        <q-separator />
+        <q-card-section class="q-pa-md q-gutter-y-sm">
+          <div class="row items-center justify-between no-wrap">
+            <h2 class="text-h6 text-bold q-mb-none text-primary">
+              {{ title }}
+            </h2>
+            <q-badge
+              v-if="status"
+              :color="statusColor"
+              :label="status"
+            />
+          </div>
+          <p
+            v-if="subtitle"
+            class="text-caption text-grey-7 q-mb-none"
+          >
+            {{ subtitle }}
+          </p>
+          <div
+            v-if="$slots.actions"
+            class="q-mt-sm row justify-end"
+          >
+            <slot name="actions" />
+          </div>
+        </q-card-section>
+      </div>
+    </q-slide-transition>
+  </q-card>
+
+  <!-- Desktop Header (Always Expanded) -->
+  <div
+    v-else
+    class="job-header row q-mb-lg items-center"
+  >
     <div class="col">
       <div class="row items-center">
         <!-- Three-dot menu -->
@@ -66,7 +175,9 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
 import BaseButton from '@/components/Base/BaseButton.vue'
+import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 /**
  * JobPageHeader - Reusable header component for all job pages
  *
@@ -84,6 +195,10 @@ import BaseButton from '@/components/Base/BaseButton.vue'
  *   </template>
  * </JobPageHeader>
  */
+
+const { currentScreenSize } = useCurrentScreenSize()
+const isMobile = computed(() => currentScreenSize.value === 'xs')
+const isCollapsed = ref(true)
 
 defineProps({
   title: {

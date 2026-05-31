@@ -215,6 +215,9 @@
               @keyup.enter="scanShelf"
               ref="shelfInput"
               autofocus
+              :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+              @click="handleInputClick(shelfInput)"
+              @blur="handleInputBlur"
               color="accent"
               class="scan-input-modern"
             >
@@ -253,6 +256,9 @@
                 placeholder="Scan container..."
                 @keyup.enter="scanContainer"
                 ref="containerInput"
+                :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+                @click="handleInputClick(containerInput)"
+                @blur="handleInputBlur"
                 color="accent"
                 class="scan-input-modern"
               >
@@ -486,6 +492,7 @@ const showCancelDialog = ref(false)
 const showAuditTrailModal = ref(false)
 const batchSheetComponent = ref(null)
 const editJob = ref(false)
+const keyboardEnabled = ref(false)
 
 // Input refs
 const shelfInput = ref(null)
@@ -612,6 +619,19 @@ const containerColumns = [
 ]
 
 // Methods
+const handleInputClick = (inputRef) => {
+  if (!keyboardEnabled.value) {
+    keyboardEnabled.value = true
+    nextTick(() => {
+      inputRef?.focus()
+    })
+  }
+}
+
+const handleInputBlur = () => {
+  keyboardEnabled.value = false
+}
+
 const getStatusColor = (status) => {
   const colors = {
     Created: 'grey',

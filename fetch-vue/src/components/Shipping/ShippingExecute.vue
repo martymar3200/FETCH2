@@ -46,6 +46,7 @@
                 v-model="binBarcode"
                 :disable="isBinLocked"
                 placeholder="Scan Bin"
+                scan-mode
                 @keydown.enter="handleBinScan"
               >
                 <template #append>
@@ -112,6 +113,7 @@
                 ref="itemInputRef"
                 v-model="itemBarcode"
                 placeholder="Scan Item (finds bin)"
+                scan-mode
                 @keydown.enter="handleItemScan"
               >
                 <template #append>

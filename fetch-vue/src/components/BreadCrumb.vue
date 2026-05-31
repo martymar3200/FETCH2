@@ -1,29 +1,48 @@
 <template>
   <div class="breadcrumb row items-center">
-    <div
-      class="col-auto"
-      v-for="(breadCrumb, i) in breadcrumbList"
-      :key="i"
-    >
-      <div class="breadcrumb-items">
+    <!-- Mobile View: Compact Back Button -->
+    <template v-if="currentScreenSize === 'xs'">
+      <div
+        v-if="parentBreadcrumb"
+        class="breadcrumb-items q-py-xs"
+      >
         <EssentialLink
-          :title="breadCrumb.text"
-          :icon="currentScreenSize !== 'xs' ? breadCrumb.icon : null"
-          :icon-size="'25px'"
-          :icon-padding="'0px 4px 0px 0px'"
-          @click="router.push(breadCrumb.to)"
-          :disabled="!breadCrumb.to"
-          :dense="currentScreenSize == 'xs'"
-        />
-
-        <q-icon
-          v-if="i !== (breadcrumbList.length - 1)"
-          name="arrow_right"
-          color="primary"
-          size="25px"
+          :title="parentBreadcrumb.text"
+          icon="chevron_left"
+          icon-size="25px"
+          icon-padding="0px 4px 0px 0px"
+          dense
+          @click="router.push(parentBreadcrumb.to)"
         />
       </div>
-    </div>
+    </template>
+
+    <!-- Desktop View: Full Breadcrumbs -->
+    <template v-else>
+      <div
+        class="col-auto"
+        v-for="(breadCrumb, i) in breadcrumbList"
+        :key="i"
+      >
+        <div class="breadcrumb-items">
+          <EssentialLink
+            :title="breadCrumb.text"
+            :icon="breadCrumb.icon"
+            :icon-size="'25px'"
+            :icon-padding="'0px 4px 0px 0px'"
+            :disabled="!breadCrumb.to"
+            @click="router.push(breadCrumb.to)"
+          />
+
+          <q-icon
+            v-if="i !== (breadcrumbList.length - 1)"
+            name="arrow_right"
+            color="primary"
+            size="25px"
+          />
+        </div>
+      </div>
+    </template>
 
     <q-space class="divider" />
   </div>
@@ -446,6 +465,18 @@ const breadcrumbList = computed(() => {
 
   return breadCrumbs
 })
+
+const parentBreadcrumb = computed(() => {
+  const list = breadcrumbList.value
+  if (list && list.length > 1) {
+    for (let i = list.length - 2; i >= 0; i--) {
+      if (list[i].to) {
+        return list[i]
+      }
+    }
+  }
+  return null
+})
 </script>
 
 <style lang="scss" scoped>
@@ -454,13 +485,17 @@ const breadcrumbList = computed(() => {
   top: 50px; // this offsets the main nav
   background-color: $color-white;
   z-index: 1500;
+  padding: 2px 8px;
 
   &-items {
     display: flex;
     align-items: center;
 
-    :deep(.essential-link.q-item--dense) {
-      padding: 2px 3px;
+    :deep(.essential-link) {
+      min-height: unset !important;
+      margin: 0px 2px !important;
+      padding: 2px 4px !important;
+      font-size: 0.85rem;
     }
   }
 }

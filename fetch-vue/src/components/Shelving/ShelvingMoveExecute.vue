@@ -75,6 +75,9 @@
               @keyup.enter="scanDestination"
               ref="destinationInput"
               autofocus
+              :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+              @click="handleInputClick(destinationInput)"
+              @blur="handleInputBlur"
             >
               <template #append>
                 <q-icon :name="moveType === 'tray-item' ? 'inbox' : 'shelves'" />
@@ -138,6 +141,9 @@
               :placeholder="moveType === 'tray-item' ? 'Scan item barcode' : 'Scan tray or non-tray barcode'"
               @keyup.enter="scanContainer"
               ref="containerInput"
+              :inputmode="keyboardEnabled ? 'numeric' : 'none'"
+              @click="handleInputClick(containerInput)"
+              @blur="handleInputBlur"
             >
               <template #append>
                 <q-icon name="qr_code_scanner" />
@@ -353,6 +359,7 @@ const scanError = ref('')
 const showCompleteDialog = ref(false)
 const showCancelDialog = ref(false)
 const showAuditTrailModal = ref(false)
+const keyboardEnabled = ref(false)
 
 // Destination state
 const currentDestination = ref('')
@@ -448,6 +455,19 @@ const containerColumns = computed(() => {
 })
 
 // Methods
+const handleInputClick = (inputRef) => {
+  if (!keyboardEnabled.value) {
+    keyboardEnabled.value = true
+    nextTick(() => {
+      inputRef?.focus()
+    })
+  }
+}
+
+const handleInputBlur = () => {
+  keyboardEnabled.value = false
+}
+
 const getStatusColor = (status) => {
   const colors = {
     Created: 'grey',

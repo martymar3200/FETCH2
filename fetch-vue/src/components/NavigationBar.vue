@@ -5,25 +5,57 @@
       class="nav-top bg-white text-primary bordered"
     >
       <q-toolbar class="nav-toolbar justify-between q-py-xs">
-        <!-- MODIFIED: This button now calls the global store action -->
-        <BaseButton
-          v-if="userData.user_id"
-          color="primary"
-          flat
-          dense
-          icon="menu"
-          aria-label="Menu Button"
-          @click="setMainNavDrawerOpen(!mainNavDrawerOpen)"
-        />
+        <!-- Mobile Search Mode Header -->
+        <template v-if="currentScreenSize === 'xs' && mobileSearchOpen">
+          <q-btn
+            flat
+            round
+            dense
+            icon="arrow_back"
+            color="primary"
+            @click="mobileSearchOpen = false"
+          />
+          <div class="col q-pl-xs">
+            <SearchBar v-if="checkUserPermission('can_access_search')" />
+          </div>
+        </template>
 
-        <div class="nav-search">
-          <SearchBar v-if="checkUserPermission('can_access_search')" />
-        </div>
+        <!-- Normal Header Mode -->
+        <template v-else>
+          <!-- MODIFIED: This button now calls the global store action -->
+          <BaseButton
+            v-if="userData.user_id"
+            color="primary"
+            flat
+            dense
+            icon="menu"
+            aria-label="Menu Button"
+            @click="setMainNavDrawerOpen(!mainNavDrawerOpen)"
+          />
 
-        <div class="nav-actions">
-          <UserLogin v-if="!userData.user_id" />
-          <UserMenu v-else />
-        </div>
+          <!-- Mobile Search Icon Button in the Center -->
+          <q-btn
+            v-if="currentScreenSize === 'xs' && checkUserPermission('can_access_search')"
+            flat
+            round
+            dense
+            icon="search"
+            color="primary"
+            @click="mobileSearchOpen = true"
+          />
+
+          <div
+            v-if="currentScreenSize !== 'xs'"
+            class="nav-search"
+          >
+            <SearchBar v-if="checkUserPermission('can_access_search')" />
+          </div>
+
+          <div class="nav-actions row items-center no-wrap q-gutter-x-xs">
+            <UserLogin v-if="!userData.user_id" />
+            <UserMenu v-else />
+          </div>
+        </template>
       </q-toolbar>
 
       <!-- barcode scan banner -->
@@ -183,6 +215,7 @@ import { useBarcodeStore } from '@/stores/barcode-store'
 import { useUserStore } from '@/stores/user-store'
 import { useOfflineSync } from '@/composables/useOfflineSync.js'
 import { usePermissionHandler } from '@/composables/usePermissionHandler.js'
+import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import EssentialLink from '@/components/EssentialLink.vue'
 import SearchBar from '@/components/Search/SearchBar.vue'
 import PopupModal from '@/components/PopupModal.vue'
@@ -295,10 +328,13 @@ const adminLink = ref({
 const showOfflineBanner = ref(false)
 
 // Logic
+const { currentScreenSize } = useCurrentScreenSize()
+const mobileSearchOpen = ref(false)
 
 // Auto-close the navigation drawer when the route changes
 watch(route, () => {
   setMainNavDrawerOpen(false)
+  mobileSearchOpen.value = false
 })
 
 
@@ -420,9 +456,16 @@ const displayRouteGuardAlert = (pathName) => {
   &-search {
     width: 60%;
 
-    @media (max-width: $breakpoint-sm-min) {
+    @media (max-width: $breakpoint-sm-max) {
       width: 55%;
     }
+  }
+
+  &-title-mobile {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #F45D01; /* LC Orange */
   }
 
   // Scale hamburger and action buttons on mobile

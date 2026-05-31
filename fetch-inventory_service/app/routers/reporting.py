@@ -2443,44 +2443,92 @@ def get_worker_efficiency(
     from app.models.non_tray_items import NonTrayItem
     from app.models.requests import Request
 
+    # Pre-aggregating counts grouped by job_id to resolve SQL-level N+1 subqueries
+    shelving_trays_subq = select(
+        Tray.shelving_job_id.label("job_id"),
+        func.count(Tray.id).label("tray_count")
+    ).group_by(Tray.shelving_job_id).subquery()
+
+    shelving_nontrays_subq = select(
+        NonTrayItem.shelving_job_id.label("job_id"),
+        func.count(NonTrayItem.id).label("nontray_count")
+    ).group_by(NonTrayItem.shelving_job_id).subquery()
+
+    accession_items_subq = select(
+        Item.accession_job_id.label("job_id"),
+        func.count(Item.id).label("item_count")
+    ).group_by(Item.accession_job_id).subquery()
+
+    accession_nontrays_subq = select(
+        NonTrayItem.accession_job_id.label("job_id"),
+        func.count(NonTrayItem.id).label("nontray_count")
+    ).group_by(NonTrayItem.accession_job_id).subquery()
+
+    picklist_requests_subq = select(
+        Request.pick_list_id.label("job_id"),
+        func.count(Request.id).label("request_count")
+    ).group_by(Request.pick_list_id).subquery()
+
+    verification_items_subq = select(
+        Item.verification_job_id.label("job_id"),
+        func.count(Item.id).label("item_count")
+    ).group_by(Item.verification_job_id).subquery()
+
+    verification_nontrays_subq = select(
+        NonTrayItem.verification_job_id.label("job_id"),
+        func.count(NonTrayItem.id).label("nontray_count")
+    ).group_by(NonTrayItem.verification_job_id).subquery()
+
+    # Build the main job queries with pre-aggregated counts joined
     shelving_subq = select(
         ShelvingJob.assigned_user_id.label("user_id"),
         ShelvingJob.run_time.label("run_time"),
         (
-            select(func.count(Tray.id)).where(Tray.shelving_job_id == ShelvingJob.id).scalar_subquery() +
-            select(func.count(NonTrayItem.id)).where(NonTrayItem.shelving_job_id == ShelvingJob.id).scalar_subquery()
+            func.coalesce(shelving_trays_subq.c.tray_count, 0) +
+            func.coalesce(shelving_nontrays_subq.c.nontray_count, 0)
         ).label("items"),
         literal("Shelving").label("job_type")
-    ).where(ShelvingJob.assigned_user_id != None)
+    ).select_from(ShelvingJob)\
+     .outerjoin(shelving_trays_subq, ShelvingJob.id == shelving_trays_subq.c.job_id)\
+     .outerjoin(shelving_nontrays_subq, ShelvingJob.id == shelving_nontrays_subq.c.job_id)\
+     .where(ShelvingJob.assigned_user_id != None)
 
+    # Note: Tray count is removed from Accession total to avoid double counting
     accession_subq = select(
         AccessionJob.assigned_user_id.label("user_id"),
         AccessionJob.run_time.label("run_time"),
         (
-            select(func.count(Item.id)).where(Item.accession_job_id == AccessionJob.id).scalar_subquery() +
-            select(func.count(NonTrayItem.id)).where(NonTrayItem.accession_job_id == AccessionJob.id).scalar_subquery() +
-            select(func.count(Tray.id)).where(Tray.accession_job_id == AccessionJob.id).scalar_subquery()
+            func.coalesce(accession_items_subq.c.item_count, 0) +
+            func.coalesce(accession_nontrays_subq.c.nontray_count, 0)
         ).label("items"),
         literal("Accession").label("job_type")
-    ).where(AccessionJob.assigned_user_id != None)
+    ).select_from(AccessionJob)\
+     .outerjoin(accession_items_subq, AccessionJob.id == accession_items_subq.c.job_id)\
+     .outerjoin(accession_nontrays_subq, AccessionJob.id == accession_nontrays_subq.c.job_id)\
+     .where(AccessionJob.assigned_user_id != None)
 
     pick_list_subq = select(
         PickList.assigned_user_id.label("user_id"),
         PickList.run_time.label("run_time"),
-        select(func.count(Request.id)).where(Request.pick_list_id == PickList.id).scalar_subquery().label("items"),
+        func.coalesce(picklist_requests_subq.c.request_count, 0).label("items"),
         literal("PickList").label("job_type")
-    ).where(PickList.assigned_user_id != None)
+    ).select_from(PickList)\
+     .outerjoin(picklist_requests_subq, PickList.id == picklist_requests_subq.c.job_id)\
+     .where(PickList.assigned_user_id != None)
 
+    # Note: Tray count is removed from Verification total to avoid double counting
     verification_subq = select(
         VerificationJob.assigned_user_id.label("user_id"),
         VerificationJob.run_time.label("run_time"),
         (
-            select(func.count(Item.id)).where(Item.verification_job_id == VerificationJob.id).scalar_subquery() +
-            select(func.count(NonTrayItem.id)).where(NonTrayItem.verification_job_id == VerificationJob.id).scalar_subquery() +
-            select(func.count(Tray.id)).where(Tray.verification_job_id == VerificationJob.id).scalar_subquery()
+            func.coalesce(verification_items_subq.c.item_count, 0) +
+            func.coalesce(verification_nontrays_subq.c.nontray_count, 0)
         ).label("items"),
         literal("Verification").label("job_type")
-    ).where(VerificationJob.assigned_user_id != None)
+    ).select_from(VerificationJob)\
+     .outerjoin(verification_items_subq, VerificationJob.id == verification_items_subq.c.job_id)\
+     .outerjoin(verification_nontrays_subq, VerificationJob.id == verification_nontrays_subq.c.job_id)\
+     .where(VerificationJob.assigned_user_id != None)
 
     # Filter by user if provided
     if params.user_id:
@@ -2488,6 +2536,19 @@ def get_worker_efficiency(
         accession_subq = accession_subq.where(AccessionJob.assigned_user_id.in_(params.user_id))
         pick_list_subq = pick_list_subq.where(PickList.assigned_user_id.in_(params.user_id))
         verification_subq = verification_subq.where(VerificationJob.assigned_user_id.in_(params.user_id))
+
+    # Filter by date range if provided
+    if params.from_dt:
+        shelving_subq = shelving_subq.where(ShelvingJob.create_dt >= params.from_dt)
+        accession_subq = accession_subq.where(AccessionJob.create_dt >= params.from_dt)
+        pick_list_subq = pick_list_subq.where(PickList.create_dt >= params.from_dt)
+        verification_subq = verification_subq.where(VerificationJob.create_dt >= params.from_dt)
+
+    if params.to_dt:
+        shelving_subq = shelving_subq.where(ShelvingJob.create_dt <= params.to_dt)
+        accession_subq = accession_subq.where(AccessionJob.create_dt <= params.to_dt)
+        pick_list_subq = pick_list_subq.where(PickList.create_dt <= params.to_dt)
+        verification_subq = verification_subq.where(VerificationJob.create_dt <= params.to_dt)
 
     # Collect active subqueries based on job_type filter
     active_subqs = []

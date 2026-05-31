@@ -62,8 +62,6 @@ export const useUserStore = defineStore('user-store', {
 
         // resave user credentials in local storage with the merged profile data (safe, non-sensitive)
         localStorage.setItem('user', JSON.stringify(this.userData))
-
-        await this.getUserPermissions()
       } catch (error) {
         throw error
       }
@@ -99,7 +97,7 @@ export const useUserStore = defineStore('user-store', {
     },
     async getUserPermissions () {
       try {
-        const res = await this.$api.get(`${inventoryServiceApi.users}${this.userData.user_id}/permissions`)
+        const res = await this.$api.get('/auth/me')
         this.userData.permissions = res.data.permissions
         // update user credentials in local storage
         localStorage.setItem('user', JSON.stringify(this.userData))

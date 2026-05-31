@@ -1,0 +1,7 @@
+File,Line,Method,Frontend API Call String,Backend Expected Path,Backend Router File,Backend Line
+fetch-vue/src/stores/building-store.js,462,POST,`${inventoryServiceApi.batchUploadLocationManagement}`,/batch-upload/location-management,fetch-inventory_service/app/routers/batch_upload.py,785
+fetch-vue/src/stores/building-store.js,478,PATCH,`${inventoryServiceApi.batchUploadLocationManagement}`,/batch-upload/location-management,fetch-inventory_service/app/routers/batch_upload.py,201
+fetch-vue/src/stores/user-store.js,75,POST,'/auth/sso/logout/',/auth/sso/logout,fetch-inventory_service/app/routers/auth.py,247
+fetch-vue/src/stores/user-store.js,118,PATCH,`${inventoryServiceApi.users}${id}/`,/users/{id},fetch-inventory_service/app/routers/users.py,114
+fetch-vue/src/stores/search-store.js,60,GET,`${inventoryServiceApi[jobEndpoint]}${searchInput}`,/reporting/exports/{dataset}/,fetch-inventory_service/app/routers/reporting.py,2841
+fetch-vue/src/stores/option-store.js,103,GET,`${inventoryServiceApi[optionType]}${id}`,/reporting/exports/{dataset}/,fetch-inventory_service/app/routers/reporting.py,2841
