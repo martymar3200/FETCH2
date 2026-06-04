@@ -149,7 +149,7 @@ def complete_accession_job(accession_job_id: int, original_status: str, audit_in
         inventory_logger.error(f"Error completing accession job {accession_job_id}: {e}")
 
 
-def complete_verification_job(verification_job_id: int, audit_info: dict):
+def complete_verification_job(verification_job_id: int, original_status: str, audit_info: dict):
     # Updated to accept ID for safety, though VJ completion is less complex usually
     try:
         with session_manager() as session:
@@ -159,11 +159,15 @@ def complete_verification_job(verification_job_id: int, audit_info: dict):
             if not verification_job:
                  return
 
-            session.execute(
-                update(VerificationJob)
-                .where(VerificationJob.id == verification_job.id)
-                .values(last_transition=datetime.now(timezone.utc))
-            )
+            if original_status == "Running":
+                if verification_job.last_transition:
+                    time_difference = datetime.now(timezone.utc) - verification_job.last_transition
+                    if verification_job.run_time is None:
+                        verification_job.run_time = timedelta(0)
+                    verification_job.run_time += time_difference
+
+            verification_job.last_transition = datetime.now(timezone.utc)
+            session.add(verification_job)
             
             tray_query = select(Tray).where(Tray.verification_job_id == verification_job.id)
             trays = session.execute(tray_query).scalars().all()

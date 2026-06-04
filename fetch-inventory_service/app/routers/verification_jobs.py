@@ -379,6 +379,7 @@ def update_verification_job(
             background_tasks.add_task(
                 complete_verification_job,
                 existing_verification_job.id,
+                original_status,
                 audit_info=audit_info
             )
             session.refresh(existing_verification_job)

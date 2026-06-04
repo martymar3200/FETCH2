@@ -113,7 +113,7 @@ export const useUserStore = defineStore('user-store', {
     },
     async updateUserProfile (id, payload) {
       try {
-        const res = await this.$api.patch(`${inventoryServiceApi.users}${id}/`, payload)
+        const res = await this.$api.patch(`${inventoryServiceApi.users}${id}`, payload)
         this.userData = {
           ...this.userData,
           ...res.data

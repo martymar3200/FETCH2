@@ -2704,8 +2704,7 @@ def get_capacity_forecast(
     divisor = max(params.lookback_days, 1) / 30.0
     
     item_growth = (
-        select(Item.id, Item.size_class_id, Item.owner_id, Item.accession_dt)
-        .join(Tray, Item.tray_id == Tray.id)
+        select(Tray.id, Tray.size_class_id, Tray.owner_id, Tray.accession_dt)
         .join(ShelfPosition, Tray.shelf_position_id == ShelfPosition.id)
         .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
         .join(Ladder, Shelf.ladder_id == Ladder.id)
@@ -2713,7 +2712,7 @@ def get_capacity_forecast(
         .join(Aisle, Side.aisle_id == Aisle.id)
         .join(Module, Aisle.module_id == Module.id)
         .join(Building, Module.building_id == Building.id)
-        .where(Item.accession_dt >= lookback_dt)
+        .where(Tray.accession_dt >= lookback_dt)
     )
     
     non_tray_growth = (
@@ -2729,7 +2728,7 @@ def get_capacity_forecast(
     )
     
     if owner_ids:
-        item_growth = item_growth.where(Item.owner_id.in_(owner_ids))
+        item_growth = item_growth.where(Tray.owner_id.in_(owner_ids))
         non_tray_growth = non_tray_growth.where(NonTrayItem.owner_id.in_(owner_ids))
     
     if params.building_id:
@@ -2809,11 +2808,10 @@ def get_capacity_forecast_height(
     
     # Growth joins from items to shelves to get height
     item_growth_stmt = (
-        select(Item.id, sa.cast(Shelf.height, sa.Float).label("shelf_height"), Item.owner_id)
-        .join(Tray, Item.tray_id == Tray.id)
+        select(Tray.id, sa.cast(Shelf.height, sa.Float).label("shelf_height"), Tray.owner_id)
         .join(ShelfPosition, Tray.shelf_position_id == ShelfPosition.id)
         .join(Shelf, ShelfPosition.shelf_id == Shelf.id)
-        .where(Item.accession_dt >= lookback_dt)
+        .where(Tray.accession_dt >= lookback_dt)
     )
     
     non_tray_growth_stmt = (
@@ -2824,7 +2822,7 @@ def get_capacity_forecast_height(
     )
     
     if owner_ids:
-        item_growth_stmt = item_growth_stmt.where(Item.owner_id.in_(owner_ids))
+        item_growth_stmt = item_growth_stmt.where(Tray.owner_id.in_(owner_ids))
         non_tray_growth_stmt = non_tray_growth_stmt.where(NonTrayItem.owner_id.in_(owner_ids))
     
     if params.building_id:
