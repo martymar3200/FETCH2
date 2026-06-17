@@ -1,9 +1,10 @@
 # /app/models/shelf_positions.py - REFACTORED: Removed ShelfPositionNumber lookup table dependency
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from sqlalchemy import BigInteger, Integer, SmallInteger, String, VARCHAR, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session, aliased
+from sqlalchemy import BigInteger, Integer, SmallInteger, String, VARCHAR, ForeignKey, cast, select, func
 from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
@@ -59,7 +60,7 @@ class ShelfPosition(Base):
     )
 
     # --- CUSTOM METHOD ---
-    @property
+    @hybrid_property
     def location(self) -> str: 
         shelf = self.shelf
         if not shelf: return "Unknown"
@@ -79,7 +80,42 @@ class ShelfPosition(Base):
             f"{side.side_orientation.name[0]}-{ladder.ladder_number}-{shelf.shelf_number}-{self.position_number}"
         )
 
-    @property
+    @location.expression
+    def location(cls):
+        from app.models.shelves import Shelf
+        from app.models.ladders import Ladder
+        from app.models.sides import Side
+        from app.models.side_orientations import SideOrientation
+        from app.models.aisles import Aisle
+        from app.models.modules import Module
+        from app.models.buildings import Building
+
+        sp_alias = aliased(cls)
+        return (
+            select(
+                func.concat(
+                    Building.name, "-",
+                    Module.module_number, "-",
+                    Aisle.aisle_number, "-",
+                    func.substr(cast(SideOrientation.name, String), 1, 1), "-",
+                    Ladder.ladder_number, "-",
+                    Shelf.shelf_number, "-",
+                    sp_alias.position_number
+                )
+            )
+            .select_from(sp_alias)
+            .join(Shelf, sp_alias.shelf_id == Shelf.id)
+            .join(Ladder, Shelf.ladder_id == Ladder.id)
+            .join(Side, Ladder.side_id == Side.id)
+            .join(SideOrientation, Side.side_orientation_id == SideOrientation.id)
+            .join(Aisle, Side.aisle_id == Aisle.id)
+            .join(Module, Aisle.module_id == Module.id)
+            .join(Building, Module.building_id == Building.id)
+            .where(sp_alias.id == cls.id)
+            .scalar_subquery()
+        )
+
+    @hybrid_property
     def internal_location(self) -> str:
         shelf = self.shelf
         if not shelf: return "Unknown"
@@ -97,4 +133,37 @@ class ShelfPosition(Base):
         return (
             f"{building.id}-{module.id}-{aisle.id}-{side.id}"
             f"-{ladder.id}-{shelf.id}-{self.id}"
+        )
+
+    @internal_location.expression
+    def internal_location(cls):
+        from app.models.shelves import Shelf
+        from app.models.ladders import Ladder
+        from app.models.sides import Side
+        from app.models.aisles import Aisle
+        from app.models.modules import Module
+        from app.models.buildings import Building
+
+        sp_alias = aliased(cls)
+        return (
+            select(
+                func.concat(
+                    cast(Building.id, String), "-",
+                    cast(Module.id, String), "-",
+                    cast(Aisle.id, String), "-",
+                    cast(Side.id, String), "-",
+                    cast(Ladder.id, String), "-",
+                    cast(Shelf.id, String), "-",
+                    cast(sp_alias.id, String)
+                )
+            )
+            .select_from(sp_alias)
+            .join(Shelf, sp_alias.shelf_id == Shelf.id)
+            .join(Ladder, Shelf.ladder_id == Ladder.id)
+            .join(Side, Ladder.side_id == Side.id)
+            .join(Aisle, Side.aisle_id == Aisle.id)
+            .join(Module, Aisle.module_id == Module.id)
+            .join(Building, Module.building_id == Building.id)
+            .where(sp_alias.id == cls.id)
+            .scalar_subquery()
         )

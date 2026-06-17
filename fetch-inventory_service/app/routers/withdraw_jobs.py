@@ -35,7 +35,7 @@ from app.utilities import (
     validate_item_not_shelved,
     validate_container_not_shelved, start_session_with_audit_info,
 )
-from app.events import update_shelf_space_after_non_tray
+from app.events import update_shelf_space_after_non_tray, update_shelf_space_after_tray
 from starlette import status
 from app.schemas.withdraw_jobs import (
     WithdrawJobInput,
@@ -222,17 +222,26 @@ def update_withdraw_job(
     audit_info = getattr(session, "audit_info", {"name": "System", "id": "0"})
     if withdraw_job_input.create_pick_list or withdraw_job_input.add_to_picklist:
         if withdraw_job_input.create_pick_list:
-            pick_list = PickList(
-                create_dt=updated_dt,
-                update_dt=updated_dt,
-                last_transition=updated_dt,
-            )
-            session.add(pick_list)
-            session.commit()
-            session.refresh(pick_list)
-            # Set the pick_list_id on the withdraw job
-            existing_withdraw_job.pick_list_id = pick_list.id
-            session.commit()
+            if existing_withdraw_job.pick_list_id:
+                pick_list = session.get(PickList, existing_withdraw_job.pick_list_id)
+                if not pick_list:
+                    raise NotFound(
+                        detail=f"Pick list id {existing_withdraw_job.pick_list_id} not found"
+                    )
+                if pick_list.status == "Completed":
+                    raise BadRequest(detail="Pick List Already Completed")
+            else:
+                pick_list = PickList(
+                    create_dt=updated_dt,
+                    update_dt=updated_dt,
+                    last_transition=updated_dt,
+                )
+                session.add(pick_list)
+                session.commit()
+                session.refresh(pick_list)
+                # Set the pick_list_id on the withdraw job
+                existing_withdraw_job.pick_list_id = pick_list.id
+                session.commit()
 
         elif withdraw_job_input.add_to_picklist:
             pick_list = session.get(PickList, existing_withdraw_job.pick_list_id)
@@ -341,19 +350,18 @@ def update_withdraw_job(
                 select(
                     Item.id,
                     Item.barcode_id,
-                    ShelfPosition.location,
-                    ShelfPosition.internal_location,
+                    ShelfPosition,
                     ShelfBarcodeAlias.value.label("shelf_barcode_value"),
                     TrayBarcodeAlias.value.label("tray_barcode_value"),
-                ).join(
+                                ).select_from(Item).join(
                     Tray, Item.tray_id == Tray.id
                 ).join(
                     ShelfPosition, Tray.shelf_position_id == ShelfPosition.id
                 ).join(
                     Shelf, ShelfPosition.shelf_id == Shelf.id
-                ).join(
+                ).outerjoin(
                     ShelfBarcodeAlias, Shelf.barcode_id == ShelfBarcodeAlias.id
-                ).join(
+                ).outerjoin(
                     TrayBarcodeAlias, Tray.barcode_id == TrayBarcodeAlias.id
                 ).filter(
                     Item.id.in_(item_ids)
@@ -363,11 +371,12 @@ def update_withdraw_job(
             for (
                 item_id,
                 barcode_id,
-                location,
-                internal_location,
+                shelf_position,
                 shelf_barcode_value,
                 tray_barcode_value,
             ) in items_to_update:
+                location = shelf_position.location if shelf_position else None
+                internal_location = shelf_position.internal_location if shelf_position else None
                 session.execute(update(Item).filter(Item.id == item_id).values(
                     withdrawal_dt=updated_dt,
                     withdrawn_barcode_id=barcode_id,
@@ -407,17 +416,16 @@ def update_withdraw_job(
                             Tray.id,
                             Tray.barcode_id,
                             Tray.shelf_position_id,
-                            ShelfPosition.location,
-                            ShelfPosition.internal_location,
+                            ShelfPosition,
                             ShelfBarcodeAlias.value.label("shelf_barcode_value"),
                             TrayBarcodeAlias.value.label("tray_barcode_value"),
-                        ).join(
+                                                ).select_from(Tray).join(
                             ShelfPosition, Tray.shelf_position_id == ShelfPosition.id
                         ).join(
                             Shelf, ShelfPosition.shelf_id == Shelf.id
-                        ).join(
+                        ).outerjoin(
                             ShelfBarcodeAlias, Shelf.barcode_id == ShelfBarcodeAlias.id
-                        ).join(
+                        ).outerjoin(
                             TrayBarcodeAlias, Tray.barcode_id == TrayBarcodeAlias.id
                         ).filter(
                             Tray.id.in_(tray_ids)
@@ -428,11 +436,12 @@ def update_withdraw_job(
                         tray_id,
                         barcode_id,
                         shelf_position_id,
-                        location,
-                        internal_location,
+                        shelf_position,
                         shelf_barcode_value,
                         tray_barcode_value,
                     ) in trays_to_update:
+                        location = shelf_position.location if shelf_position else None
+                        internal_location = shelf_position.internal_location if shelf_position else None
                         session.execute(update(Tray).filter(Tray.id == tray_id).values(
                             shelf_position_id=None,
                             shelf_position_proposed_id=None,
@@ -453,14 +462,13 @@ def update_withdraw_job(
                     NonTrayItem.id,
                     NonTrayItem.barcode_id,
                     NonTrayItem.shelf_position_id,
-                    ShelfPosition.location,
-                    ShelfPosition.internal_location,
+                    ShelfPosition,
                     ShelfBarcodeAlias.value.label("shelf_barcode_value"),
-                ).join(
+                                ).select_from(NonTrayItem).join(
                     ShelfPosition, ShelfPosition.id == NonTrayItem.shelf_position_id
                 ).join(
                     Shelf, Shelf.id == ShelfPosition.shelf_id
-                ).join(
+                ).outerjoin(
                     ShelfBarcodeAlias, ShelfBarcodeAlias.id == Shelf.barcode_id
                 ).filter(
                     NonTrayItem.id.in_(non_tray_item_ids)
@@ -471,10 +479,11 @@ def update_withdraw_job(
                 item_id,
                 barcode_id,
                 shelf_position_id,
-                location,
-                internal_location,
+                shelf_position,
                 shelf_barcode_value
             ) in non_tray_items_to_update:
+                location = shelf_position.location if shelf_position else None
+                internal_location = shelf_position.internal_location if shelf_position else None
                 session.execute(update(NonTrayItem).filter(NonTrayItem.id == item_id).values(
                     withdrawal_dt=updated_dt,
                     withdrawn_barcode_id=barcode_id,
@@ -487,9 +496,9 @@ def update_withdraw_job(
                     shelf_position_id=None,
                     shelf_position_proposed_id=None,
                 ))
-            non_tray_item_barcodes = [item.barcode_id for item in non_tray_items_to_update]
+            non_tray_item_barcodes = [row.barcode_id for row in non_tray_items_to_update]
             # Store shelf_position_ids before updating (they get set to None in the update)
-            shelf_position_ids_to_update = [item.shelf_position_id for item in non_tray_items_to_update]
+            shelf_position_ids_to_update = [row.shelf_position_id for row in non_tray_items_to_update]
             
             session.execute(
                 update(Barcode).filter(Barcode.id.in_(non_tray_item_barcodes)).values(

@@ -93,38 +93,23 @@ def get_module_shelf_position(session, shelf_position):
 def get_location(session: Session, shelf_position):
     """
     Retrieves the related location data for a given shelf position.
-    REFACTORED: Removed separate queries for lookup tables (AisleNumber, LadderNumber, ShelfNumber).
-    Numbers are now direct fields on the entity models.
+    Optimized to use ORM attributes to leverage preloaded models.
     """
-    shelf_query = select(Shelf).filter(Shelf.id == shelf_position.shelf_id)
-
-    ladder_query = (
-        select(Ladder)
-        .join(Shelf)
-        .where(Ladder.id == shelf_query.subquery().c.ladder_id)
-    )
-
-    aisle_query = (
-        select(Aisle)
-        .join(Side)
-        .join(Ladder)
-        .where(Side.id == ladder_query.subquery().c.side_id)
-        .where(Aisle.id == Side.aisle_id)
-    )
-
-    # --- EXECUTION ---
-    shelf = session.execute(shelf_query).scalars().first()
-    ladder = session.execute(ladder_query).scalars().first()
-    aisle = session.execute(aisle_query).scalars().first()
-
+    shelf = shelf_position.shelf
     if not shelf:
         raise NotFound(detail=f"Shelf ID {shelf_position.shelf_id} Not Found")
 
+    ladder = shelf.ladder
     if not ladder:
         raise NotFound(detail=f"Ladder ID {shelf.ladder_id} Not Found")
 
+    side = ladder.side
+    if not side:
+        raise NotFound(detail=f"Side ID {ladder.side_id} Not Found")
+
+    aisle = side.aisle
     if not aisle:
-        raise NotFound(detail=f"Aisle ID {ladder.aisle_id} Not Found")
+        raise NotFound(detail=f"Aisle ID {side.aisle_id} Not Found")
 
     # Numbers are now direct fields on the entity objects — no separate lookup queries needed
     return {

@@ -359,6 +359,8 @@ def create_item(
         previous_item.volume = new_item.volume
         previous_item.condition = new_item.condition
         previous_item.arbitrary_data = new_item.arbitrary_data
+        previous_item.tray_id = new_item.tray_id
+        previous_item.container_type_id = new_item.container_type_id
         
         # Clear verification (needs to be re-verified)
         previous_item.verification_job_id = None

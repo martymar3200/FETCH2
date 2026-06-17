@@ -887,3 +887,343 @@ def test_full_retrieval_return_lifecycle(
     session.expire_all()
     item = session.get(Item, item.id)
     assert item.status == ItemStatus.In, "Step 5: status = In (refiled)"
+
+
+def test_withdraw_completion_via_patch_api(
+    client: TestClient, session: Session, test_database
+):
+    """
+    Test that PATCHing a withdraw job to Completed correctly:
+    1. Updates linked items' status to Withdrawn, populating withdrawn properties and setting barcode_id/tray_id to None.
+    2. Marks item barcodes as withdrawn.
+    3. Handles empty trays (marking them withdrawn and clearing shelf positions).
+    4. Handles non-tray items correctly (marking status Withdrawn and clearing shelf position).
+    """
+    # 1. Setup a shelved item (trayed)
+    item, tray, shelf, building, barcode_value = _setup_shelved_item(
+        client, session, suffix="WAP1"
+    )
+    assert item.status == ItemStatus.In
+
+    # Manually mark tray as scanned for shelving since test helper bypasses scan phase
+    tray = session.get(Tray, tray.id)
+    tray.scanned_for_shelving = True
+    session.commit()
+
+    # 2. Setup a shelved non-tray item
+    owner = session.query(Owner).first()
+    size_class = session.query(SizeClass).first()
+    nti_bc = _make_barcode(session, "NTI-WITHDRAW-API", type_name="Item")
+    pos = session.query(ShelfPosition).filter(ShelfPosition.shelf_id == shelf.id, ShelfPosition.non_tray_item == None).first()
+
+    non_tray_item = NonTrayItem(
+        barcode_id=nti_bc.id,
+        owner_id=owner.id,
+        size_class_id=size_class.id,
+        status=NonTrayItemStatus.In,
+        shelf_position_id=pos.id,
+        scanned_for_shelving=True,
+    )
+    session.add(non_tray_item)
+    session.commit()
+
+    # 3. Create a withdraw job via ORM (status Running)
+    user = _get_or_create_user(session)
+    wj = WithdrawJob(
+        assigned_user_id=user.id,
+        created_by_id=user.id,
+        status="Running",
+        last_transition=datetime.now(timezone.utc),
+    )
+    session.add(wj)
+    session.commit()
+
+    # 4. Add the items to the withdraw job via the add_items API
+    _override_auth()
+    resp_item = client.post(
+        f"/withdraw-jobs/{wj.id}/add_items",
+        json={"barcode_value": barcode_value},
+    )
+    assert resp_item.status_code == 200, f"Failed to add item to withdraw job: {resp_item.text}"
+
+    resp_nti = client.post(
+        f"/withdraw-jobs/{wj.id}/add_items",
+        json={"barcode_value": "NTI-WITHDRAW-API"},
+    )
+    assert resp_nti.status_code == 200, f"Failed to add non-tray item to withdraw job: {resp_nti.text}"
+
+    # 5. Patch the withdraw job to Completed
+    resp_patch = client.patch(
+        f"/withdraw-jobs/{wj.id}",
+        json={"status": "Completed"}
+    )
+    assert resp_patch.status_code == 200, f"Failed to complete withdraw job: {resp_patch.text}"
+
+    # 6. Verify changes
+    session.expire_all()
+
+    db_item = session.get(Item, item.id)
+    db_nti = session.get(NonTrayItem, non_tray_item.id)
+    db_tray = session.get(Tray, tray.id)
+
+    # Verify Item
+    assert db_item.status == ItemStatus.Withdrawn
+    assert db_item.barcode_id is None
+    assert db_item.withdrawn_barcode_id is not None
+    assert db_item.tray_id is None
+
+    # Verify NonTrayItem
+    assert db_nti.status == NonTrayItemStatus.Withdrawn
+    assert db_nti.barcode_id is None
+    assert db_nti.withdrawn_barcode_id is not None
+    assert db_nti.shelf_position_id is None
+
+    # Verify Tray (should be empty and therefore withdrawn)
+    assert db_tray.barcode_id is None
+    assert db_tray.withdrawn_barcode_id is not None
+    assert db_tray.shelf_position_id is None
+
+
+def test_withdraw_create_picklist_idempotent(
+    client: TestClient, session: Session, test_database
+):
+    """
+    Test that PATCHing create_pick_list=True twice sequentially:
+    1. Only creates one PickList.
+    2. Keeps the pick_list_id on the WithdrawJob identical across both calls.
+    """
+    # 1. Setup a shelved item (trayed)
+    item, tray, shelf, building, barcode_value = _setup_shelved_item(
+        client, session, suffix="WPLI1"
+    )
+    assert item.status == ItemStatus.In
+
+    # Manually mark tray as scanned for shelving since test helper bypasses scan phase
+    tray = session.get(Tray, tray.id)
+    tray.scanned_for_shelving = True
+    session.commit()
+
+    # 2. Create a withdraw job via ORM (status Running)
+    user = _get_or_create_user(session)
+    wj = WithdrawJob(
+        assigned_user_id=user.id,
+        created_by_id=user.id,
+        status="Running",
+        last_transition=datetime.now(timezone.utc),
+    )
+    session.add(wj)
+    session.commit()
+
+    # 3. Add the item to the withdraw job via the add_items API
+    _override_auth()
+    resp_item = client.post(
+        f"/withdraw-jobs/{wj.id}/add_items",
+        json={"barcode_value": barcode_value},
+    )
+    assert resp_item.status_code == 200
+
+    # 4. PATCH create_pick_list: True first time
+    resp_patch1 = client.patch(
+        f"/withdraw-jobs/{wj.id}",
+        json={"create_pick_list": True}
+    )
+    assert resp_patch1.status_code == 200
+    res_data1 = resp_patch1.json()
+    first_picklist_id = res_data1["pick_list_id"]
+    assert first_picklist_id is not None
+
+    # 5. PATCH create_pick_list: True second time
+    resp_patch2 = client.patch(
+        f"/withdraw-jobs/{wj.id}",
+        json={"create_pick_list": True}
+    )
+    assert resp_patch2.status_code == 200
+    res_data2 = resp_patch2.json()
+    second_picklist_id = res_data2["pick_list_id"]
+
+    # 6. Verify that it was idempotent
+    assert first_picklist_id == second_picklist_id, "Should not create a second PickList"
+
+
+def test_list_shelving_completion_flow(
+    client: TestClient, session: Session, test_database
+):
+    """
+    Verifies that a list-based shelving job:
+    1. Creates a shelving job container record when a container is added.
+    2. Confirm-shelve assigns shelf position, scanned_for_shelving, and shelving_job_id.
+    3. Completing the job transitions items to 'In' status.
+    """
+    # 1. Setup a verified item (trayed)
+    from app.models.items import ItemStatus
+    from app.models.trays import Tray
+    from app.models.shelving_jobs import ShelvingJob
+    from app.models.shelving_job_containers import ShelvingJobContainer
+
+    item, tray, shelf, building, barcode_value = _setup_shelved_item(
+        client, session, suffix="SLS1"
+    )
+    # Revert shelf_position to simulate verified (but not shelved) state
+    tray = session.get(Tray, tray.id)
+    tray.shelf_position_id = None
+    tray.scanned_for_shelving = False
+    tray.status = "Verified"
+    for it in tray.items:
+        it.status = ItemStatus.Verified
+    session.commit()
+
+    # 2. Create Shelving Job (List origin)
+    user = _get_or_create_user(session)
+    sj = ShelvingJob(
+        origin="List",
+        building_id=building.id,
+        assigned_user_id=user.id,
+        created_by_id=user.id,
+        status="Running",
+    )
+    session.add(sj)
+    session.commit()
+
+    # 3. Add container (tray) to the shelving job
+    _override_auth()
+    sjc = ShelvingJobContainer(
+        shelving_job_id=sj.id,
+        tray_id=tray.id,
+        status="Pending"
+    )
+    session.add(sjc)
+    session.commit()
+
+    # Get an available position on the shelf
+    pos = session.query(ShelfPosition).filter(ShelfPosition.shelf_id == shelf.id).first()
+
+    # 4. Call confirm-shelve API
+    resp_confirm = client.post(
+        f"/shelving-jobs/{sj.id}/confirm-shelve",
+        json={
+            "container_id": sjc.id,
+            "shelf_position_id": pos.id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    assert resp_confirm.status_code == 200, f"Confirm shelve failed: {resp_confirm.text}"
+
+    # Verify that tray has shelving_job_id set now
+    session.expire_all()
+    db_tray = session.get(Tray, tray.id)
+    assert db_tray.shelving_job_id == sj.id
+    assert db_tray.scanned_for_shelving is True
+
+    # 5. Patch status to Completed
+    resp_patch = client.patch(
+        f"/shelving-jobs/{sj.id}",
+        json={"status": "Completed"}
+    )
+    assert resp_patch.status_code == 200
+
+    session.expire_all()
+    db_item = session.get(Item, item.id)
+    assert db_item.status == ItemStatus.In
+
+
+def test_reaccession_restores_tray_and_container_type(
+    client: TestClient, session: Session, test_database
+):
+    """
+    Test that re-accessioning a previously withdrawn item:
+    1. Reuses the existing withdrawn record.
+    2. Correctly updates tray_id and container_type_id to the new values.
+    3. Resets status to Accessioned.
+    """
+    # 1. Setup a shelved item (trayed)
+    item, tray, shelf, building, barcode_value = _setup_shelved_item(
+        client, session, suffix="REACC1"
+    )
+    assert item.status == ItemStatus.In
+    original_item_id = item.id
+    original_barcode_id = item.barcode_id
+
+    # Manually mark tray as scanned for shelving since test helper bypasses scan phase
+    tray = session.get(Tray, tray.id)
+    tray.scanned_for_shelving = True
+    session.commit()
+
+    # 2. Setup a withdraw job and complete it to withdraw the item
+    user = _get_or_create_user(session)
+    wj = WithdrawJob(
+        assigned_user_id=user.id,
+        created_by_id=user.id,
+        status="Running",
+        last_transition=datetime.now(timezone.utc),
+    )
+    session.add(wj)
+    session.commit()
+
+    _override_auth()
+    resp_add = client.post(
+        f"/withdraw-jobs/{wj.id}/add_items",
+        json={"barcode_value": barcode_value},
+    )
+    assert resp_add.status_code == 200
+
+    resp_patch = client.patch(
+        f"/withdraw-jobs/{wj.id}",
+        json={"status": "Completed"}
+    )
+    assert resp_patch.status_code == 200
+
+    # Verify item is indeed withdrawn
+    session.expire_all()
+    db_item = session.get(Item, original_item_id)
+    assert db_item.status == ItemStatus.Withdrawn
+    assert db_item.barcode_id is None
+    assert db_item.withdrawn_barcode_id == original_barcode_id
+    assert db_item.tray_id is None
+
+    # 3. Create a new AccessionJob for re-accessioning
+    new_job_data = _create_accession_job_via_api(client, session, trayed=True, suffix="REACC2")
+    new_job_id = new_job_data["id"]
+
+    # 4. Create a new Tray for re-accessioning
+    owner = session.query(Owner).first()
+    size_class = session.query(SizeClass).first()
+    new_tray_bc = _make_barcode(session, f"TRAY-REACC2", type_name="Tray")
+    new_tray = Tray(
+        barcode_id=new_tray_bc.id,
+        accession_job_id=new_job_id,
+        owner_id=owner.id,
+        size_class_id=size_class.id,
+    )
+    session.add(new_tray)
+    session.commit()
+
+    # 5. POST to create_item using the original barcode, specifying the new tray and container type
+    container_type = session.query(ContainerType).filter_by(type="Tray").first()
+    payload = {
+        "barcode_id": str(original_barcode_id),
+        "tray_id": new_tray.id,
+        "container_type_id": container_type.id if container_type else None,
+        "accession_job_id": new_job_id,
+        "owner_id": owner.id,
+        "size_class_id": size_class.id,
+        "status": "Accessioned",
+        "scanned_for_accession": True,
+    }
+
+    _override_auth()
+    resp_create = client.post("/items/", json=payload)
+    assert resp_create.status_code == 201, f"Failed to re-accession item: {resp_create.text}"
+
+    # 6. Verify that the previous item record was reused, and has the new tray_id and container_type_id
+    session.expire_all()
+    reaccessioned_item = session.get(Item, original_item_id)
+    assert reaccessioned_item is not None
+    assert reaccessioned_item.status == ItemStatus.Accessioned
+    assert reaccessioned_item.barcode_id == original_barcode_id
+    assert reaccessioned_item.withdrawn_barcode_id is None
+    assert reaccessioned_item.tray_id == new_tray.id
+    assert reaccessioned_item.container_type_id == container_type.id
+
+
+
+

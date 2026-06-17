@@ -1962,17 +1962,27 @@ def confirm_container_shelved(
     if container.tray_id:
         tray = session.get(Tray, container.tray_id)
         if tray:
+            old_pos_id = tray.shelf_position_id
             tray.shelf_position_id = shelf_position.id
             tray.scanned_for_shelving = True
+            tray.shelving_job_id = id
             tray.shelved_dt = container.shelved_dt
             session.add(tray)
+            update_shelf_space_after_tray(
+                session, tray, shelf_position.id, old_pos_id
+            )
     elif container.non_tray_item_id:
         non_tray = session.get(NonTrayItem, container.non_tray_item_id)
         if non_tray:
+            old_pos_id = non_tray.shelf_position_id
             non_tray.shelf_position_id = shelf_position.id
             non_tray.scanned_for_shelving = True
+            non_tray.shelving_job_id = id
             non_tray.shelved_dt = container.shelved_dt
             session.add(non_tray)
+            update_shelf_space_after_non_tray(
+                session, non_tray, shelf_position.id, old_pos_id
+            )
     
     session.commit()
     session.refresh(container)

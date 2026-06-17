@@ -747,8 +747,6 @@ const updateWithdrawJob = async () => {
     }
     await patchWithdrawJob(payload)
 
-    await patchWithdrawJob(payload)
-
     notify({
       type: 'positive',
       message: 'The job has been updated.'
@@ -767,8 +765,6 @@ const updateWithdrawJob = async () => {
 const cancelWithdrawJob = async () => {
   try {
     appIsLoadingData.value = true
-    await deleteWithdrawJob(withdrawJob.value.id)
-
     await deleteWithdrawJob(withdrawJob.value.id)
 
     notify({
@@ -820,8 +816,6 @@ const completeWithdrawJob = async (withdrawType) => {
     }
     await patchWithdrawJob(payload)
 
-    await patchWithdrawJob(payload)
-
     notify({
       type: 'positive',
       message: 'All items have been successfully withdrawn, the job has been completed.'
@@ -849,8 +843,6 @@ const removeWithdrawItems = async (barcode_values) => {
     }
     await deleteWithdrawJobItems(payload)
 
-    await deleteWithdrawJobItems(payload)
-
     notify({
       type: 'positive',
       message: 'The item has been removed from the job.'
@@ -872,8 +864,6 @@ const createPicklistJob = async () => {
       id: withdrawJob.value.id,
       create_pick_list: true
     }
-    await patchWithdrawJob(payload)
-
     await patchWithdrawJob(payload)
 
     notify({
@@ -905,8 +895,6 @@ const addToPicklistJob = async () => {
       id: withdrawJob.value.id,
       add_to_picklist: true
     }
-    await patchWithdrawJob(payload)
-
     await patchWithdrawJob(payload)
 
     notify({

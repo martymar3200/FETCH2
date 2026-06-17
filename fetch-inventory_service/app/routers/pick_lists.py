@@ -43,12 +43,63 @@ from app.helpers.system_setting_helpers import get_setting_value
 from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.utils.job_assignment import auto_assign_on_start, update_status_on_assignment, validate_assignment_lock
 from app.services.audit_service import log_audit_event, AuditEventType
+from app.models.shelf_positions import ShelfPosition
+from app.models.shelves import Shelf
+from app.models.ladders import Ladder
+from app.models.sides import Side
+from app.models.aisles import Aisle
 
 router = APIRouter(
     prefix="/pick-lists",
     tags=["pick lists"],
     dependencies=[Depends(RequiresPermission("can_create_picklist_job"))],
 )
+
+
+def _get_pick_list_with_relations(session: Session, pick_list_id: int):
+    """
+    Helper to fetch a pick list with all necessary nested relations eager-loaded.
+    This prevents N+1 query amplification during location traversal and serialization.
+    """
+    return session.execute(
+        select(PickList)
+        .where(PickList.id == pick_list_id)
+        .options(
+            selectinload(PickList.assigned_user),
+            selectinload(PickList.created_by),
+            selectinload(PickList.building),
+            selectinload(PickList.requests).options(
+                selectinload(Request.item).options(
+                    selectinload(Item.tray).options(
+                        selectinload(Tray.shelf_position).options(
+                            selectinload(ShelfPosition.shelf).options(
+                                selectinload(Shelf.ladder).options(
+                                    selectinload(Ladder.side).options(
+                                        selectinload(Side.aisle)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                selectinload(Request.non_tray_item).options(
+                    selectinload(NonTrayItem.shelf_position).options(
+                        selectinload(ShelfPosition.shelf).options(
+                            selectinload(Shelf.ladder).options(
+                                selectinload(Ladder.side).options(
+                                    selectinload(Side.aisle)
+                                )
+                            )
+                        )
+                    )
+                ),
+                selectinload(Request.priority),
+                selectinload(Request.delivery_location),
+                selectinload(Request.request_type),
+                selectinload(Request.building)
+            )
+        )
+    ).scalars().first()
 
 
 def sort_order_priority(session: Session, pick_list, requests):
@@ -188,7 +239,7 @@ def get_pick_list_detail(id: int, session: Session = Depends(get_session)):
     """
     Retrieve pick list details by ID.
     """
-    pick_list = session.get(PickList, id)
+    pick_list = _get_pick_list_with_relations(session, id)
 
     if not pick_list:
         raise NotFound(detail=f"Pick List ID {id} Not Found")
@@ -297,7 +348,7 @@ def update_pick_list(
     - When manager assigns a user, auto-update status to Assigned
     """
     try:
-        existing_pick_list = session.get(PickList, id)
+        existing_pick_list = _get_pick_list_with_relations(session, id)
 
         if not existing_pick_list:
             raise NotFound(detail=f"Pick List ID {id} Not Found")
@@ -526,7 +577,7 @@ def add_request_to_pick_list(
     if not pick_list_id:
         raise BadRequest(detail="Pick List ID Not Found")
 
-    pick_list = session.get(PickList, pick_list_id)
+    pick_list = _get_pick_list_with_relations(session, pick_list_id)
     
     if pick_list:
         validate_assignment_lock(pick_list, current_user.id)
@@ -612,15 +663,9 @@ def update_request_for_pick_list(
     """
     Update a request for an existing pick list.
     """
-    existing_pick_list = (
-        session.execute(
-            select(PickList)
-            .filter(PickList.id == pick_list_id)
-            .filter(PickList.requests.any(Request.id == request_id))
-        )
-        .scalars()
-        .first()
-    )
+    existing_pick_list = _get_pick_list_with_relations(session, pick_list_id)
+    if existing_pick_list and not any(r.id == request_id for r in existing_pick_list.requests):
+        existing_pick_list = None
     update_dt = datetime.now(timezone.utc)
 
     if not existing_pick_list:
@@ -696,7 +741,7 @@ def remove_request_from_pick_list(
     """
     Remove a request from an existing pick list.
     """
-    pick_list = session.get(PickList, pick_list_id)
+    pick_list = _get_pick_list_with_relations(session, pick_list_id)
     update_dt = datetime.now(timezone.utc)
 
     if not pick_list:

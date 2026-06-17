@@ -3,9 +3,10 @@
 import uuid
 import importlib
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from sqlalchemy import Integer, SmallInteger, VARCHAR, TIMESTAMP, ForeignKey, Numeric, String, CheckConstraint, text, select, func, or_
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session, aliased
+from sqlalchemy import Integer, SmallInteger, VARCHAR, TIMESTAMP, ForeignKey, Numeric, String, CheckConstraint, text, select, func, or_, cast
 from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -116,7 +117,7 @@ class Shelf(Base):
         self.available_space = total_positions - occupied_positions
         return self.available_space
 
-    @property
+    @hybrid_property
     def location(self) -> str:
         ladder = self.ladder
         if not ladder: return "Unknown"
@@ -134,7 +135,39 @@ class Shelf(Base):
             f"{side.side_orientation.name[0]}-{ladder.ladder_number}-{self.shelf_number}"
         )
 
-    @property
+    @location.expression
+    def location(cls):
+        from app.models.ladders import Ladder
+        from app.models.sides import Side
+        from app.models.side_orientations import SideOrientation
+        from app.models.aisles import Aisle
+        from app.models.modules import Module
+        from app.models.buildings import Building
+
+        s_alias = aliased(cls)
+        return (
+            select(
+                func.concat(
+                    Building.name, "-",
+                    Module.module_number, "-",
+                    Aisle.aisle_number, "-",
+                    func.substr(cast(SideOrientation.name, String), 1, 1), "-",
+                    Ladder.ladder_number, "-",
+                    s_alias.shelf_number
+                )
+            )
+            .select_from(s_alias)
+            .join(Ladder, s_alias.ladder_id == Ladder.id)
+            .join(Side, Ladder.side_id == Side.id)
+            .join(SideOrientation, Side.side_orientation_id == SideOrientation.id)
+            .join(Aisle, Side.aisle_id == Aisle.id)
+            .join(Module, Aisle.module_id == Module.id)
+            .join(Building, Module.building_id == Building.id)
+            .where(s_alias.id == cls.id)
+            .scalar_subquery()
+        )
+
+    @hybrid_property
     def internal_location(self) -> str:
         ladder = self.ladder
         if not ladder: return "Unknown"
@@ -150,4 +183,34 @@ class Shelf(Base):
         return (
             f"{building.id}-{module.id}-{aisle.id}-{side.id}"
             f"-{ladder.id}-{self.id}"
+        )
+
+    @internal_location.expression
+    def internal_location(cls):
+        from app.models.ladders import Ladder
+        from app.models.sides import Side
+        from app.models.aisles import Aisle
+        from app.models.modules import Module
+        from app.models.buildings import Building
+
+        s_alias = aliased(cls)
+        return (
+            select(
+                func.concat(
+                    cast(Building.id, String), "-",
+                    cast(Module.id, String), "-",
+                    cast(Aisle.id, String), "-",
+                    cast(Side.id, String), "-",
+                    cast(Ladder.id, String), "-",
+                    cast(s_alias.id, String)
+                )
+            )
+            .select_from(s_alias)
+            .join(Ladder, s_alias.ladder_id == Ladder.id)
+            .join(Side, Ladder.side_id == Side.id)
+            .join(Aisle, Side.aisle_id == Aisle.id)
+            .join(Module, Aisle.module_id == Module.id)
+            .join(Building, Module.building_id == Building.id)
+            .where(s_alias.id == cls.id)
+            .scalar_subquery()
         )

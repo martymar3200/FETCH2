@@ -263,7 +263,7 @@
             class="form-group q-mb-md"
           >
             <label class="form-group-label">
-              Container Size <span class="text-caption">(Optional)</span>
+              Container Size <span class="text-caption text-negative">(Required)</span>
             </label>
             <SelectInput
               v-model="accessionJob.size_class"
@@ -278,7 +278,7 @@
 
           <div class="form-group">
             <label class="form-group-label">
-              Media Type <span class="text-caption">(Optional)</span>
+              Media Type <span class="text-caption text-negative">(Required)</span>
             </label>
             <SelectInput
               v-model="accessionJob.media_type"
@@ -486,10 +486,13 @@ const accessionTableColumns = ref([
 ])
 const showAccessionModal = ref(false)
 const canSubmitAccessionJob = computed(() => {
-  if (accessionJob.value.owner !== null) {
-    return true
+  const hasOwner = accessionJob.value.owner !== null && accessionJob.value.owner !== undefined
+  const hasMediaType = accessionJob.value.media_type !== null && accessionJob.value.media_type !== undefined
+  if (accessionJob.value.trayed) {
+    return hasOwner && hasMediaType
   } else {
-    return false
+    const hasSizeClass = accessionJob.value.size_class !== null && accessionJob.value.size_class !== undefined
+    return hasOwner && hasMediaType && hasSizeClass
   }
 })
 
