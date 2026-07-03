@@ -1108,37 +1108,7 @@ const generateReportModal = () => {
         include_sub_tiers: false
       }
       break
-    case 'Refile Discrepancy':
-      reportForm.value = {
-        job_id: null,
-        from_dt: null,
-        to_dt: null,
-        assigned_user_id: null
-      }
-      reportParams.value = [
-        {
-          type: 'text',
-          query: 'job_id',
-          label: 'Job Number',
-          options: [],
-          optionType: ''
-        },
-        {
-          query: 'from_dt',
-          label: 'Date (From)'
-        },
-        {
-          query: 'to_dt',
-          label: 'Date (To)'
-        },
-        {
-          query: 'assigned_user_id',
-          label: 'Assigned User',
-          options: users,
-          optionType: 'users'
-        }
-      ]
-      break
+
     case 'Shelving Job Discrepancy':
       reportForm.value = {
         from_dt: null,

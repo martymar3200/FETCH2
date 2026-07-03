@@ -6,17 +6,30 @@ export function useItemDisplay () {
     let ladder = ''
     let shelf = ''
     let shelfPosition = ''
-    if (itemData && itemData.shelf_position && itemData.shelf_position.location) {
-      const itemLocationValues = itemData.shelf_position.location.split('-')
-      module = itemLocationValues[1]
-      aisle = itemLocationValues[2]
-      side = itemLocationValues[3]
-      ladder = itemLocationValues[4]
-      shelf = itemLocationValues[5]
-      shelfPosition = itemLocationValues[6]
+
+    let shelfPositionObj = null
+    if (itemData) {
+      if (itemData.location) {
+        shelfPositionObj = itemData
+      } else if (itemData.shelf_position) {
+        shelfPositionObj = itemData.shelf_position
+      } else if (itemData.tray && itemData.tray.shelf_position) {
+        shelfPositionObj = itemData.tray.shelf_position
+      }
     }
 
-    return `${module}-${aisle}-${side == 'Right' ? 'R' : side == 'Left' ? 'L' : side}-${ladder}-${shelf}-${shelfPosition}`.replace('undefined-', '')
+    if (shelfPositionObj && shelfPositionObj.location) {
+      const itemLocationValues = shelfPositionObj.location.split('-')
+      module = itemLocationValues[1] || ''
+      aisle = itemLocationValues[2] || ''
+      side = itemLocationValues[3] || ''
+      ladder = itemLocationValues[4] || ''
+      shelf = itemLocationValues[5] || ''
+      shelfPosition = itemLocationValues[6] || ''
+      return `${module}-${aisle}-${side == 'Right' ? 'R' : side == 'Left' ? 'L' : side}-${ladder}-${shelf}-${shelfPosition}`.replace('undefined-', '')
+    }
+
+    return ''
   }
 
   const renderItemBarcodeDisplay = (itemData) => {

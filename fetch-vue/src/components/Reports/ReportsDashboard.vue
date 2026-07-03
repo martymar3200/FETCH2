@@ -618,12 +618,7 @@ const reportItems = ref([
     description: 'Item location move discrepancies',
     category: 'audit'
   },
-  {
-    id: 'Refile Discrepancy',
-    label: 'Refile Discrepancy',
-    description: 'Refile job errors and discrepancies',
-    category: 'audit'
-  },
+
   {
     id: 'Verification Status',
     label: 'Verification Status',
@@ -1392,60 +1387,7 @@ const generateReportTableFields = (qParams) => {
         'delivery_location'
       ]
       break
-    case 'Refile Discrepancy':
-      generatedTableColumns.value = [
-        {
-          name: 'id',
-          field: 'id',
-          label: 'Refile Job #',
-          align: 'left',
-          sortable: true
-        },
-        {
-          name: 'assigned_user',
-          field: row => row.assigned_user?.name,
-          label: 'Completed By',
-          align: 'left',
-          sortable: true
-        },
-        {
-          name: 'complete_dt',
-          field: 'complete_dt',
-          label: 'Completed Date',
-          align: 'left',
-          sortable: true
-        },
-        {
-          name: 'barcode',
-          field: row => row.barcode?.value,
-          label: 'Item Barcode',
-          align: 'left',
-          sortable: true
-        },
-        {
-          name: 'tray_barcode',
-          field: row => row.tray?.barcode?.value,
-          label: 'Tray Barcode',
-          align: 'left',
-          sortable: true
-        },
-        {
-          name: 'error',
-          field: 'error',
-          label: 'Error Type',
-          align: 'left',
-          sortable: true
-        }
-      ]
-      generatedTableVisibleColumns.value = [
-        'id',
-        'assigned_user',
-        'complete_dt',
-        'barcode',
-        'tray_barcode',
-        'error'
-      ]
-      break
+
     case 'Shelving Job Discrepancy':
       generatedTableColumns.value = [
         {

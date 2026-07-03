@@ -1,4 +1,5 @@
 import os
+import sys
 
 # Inject required environment variables before app imports so pydantic-settings doesn't fail
 os.environ["SECRET_KEY"] = "test-secret"
@@ -46,7 +47,7 @@ DOCKER_DOWN_COMMAND = (
 DOCKER_CLEANUP_COMMAND = "docker system prune -fa"
 DOCKER_CLEANUP_VOLUME_COMMAND = "docker volume prune -fa"
 
-ALEMBIC_UPGRADE_COMMAND = "python -m alembic upgrade head"
+ALEMBIC_UPGRADE_COMMAND = f"{sys.executable} -m alembic upgrade head"
 TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/test_database"
 
 # Create a new database for testing

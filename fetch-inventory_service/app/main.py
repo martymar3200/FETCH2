@@ -173,14 +173,39 @@ app = FastAPI(
 app.add_middleware(JWTMiddleware)
 
 # add CORS middleware second
+settings = get_settings()
+
+# Safe parsing and compilation of ALLOWED_ORIGINS_REGEX (handles comma-separated list safely)
+allow_origin_regex = None
+if settings.ALLOWED_ORIGINS_REGEX:
+    regex_patterns = [p.strip() for p in settings.ALLOWED_ORIGINS_REGEX.split(",") if p.strip()]
+    if regex_patterns:
+        # Join multiple patterns with alternation
+        allow_origin_regex = "|".join(f"(?:{p})" for p in regex_patterns)
+
+# Enforce whitelist validation in production
+allow_origins = settings.ALLOWED_ORIGINS
+if settings.APP_ENVIRONMENT == "production":
+    if "*" in allow_origins:
+        raise ValueError(
+            "CORS security validation failed: Wildcard '*' is not allowed in ALLOWED_ORIGINS "
+            "when credentials are enabled in production."
+        )
+    if allow_origin_regex and allow_origin_regex in [".*", "^https?://.*", "^https://.*", "^http://.*"]:
+        raise ValueError(
+            f"CORS security validation failed: Overly permissive regex '{allow_origin_regex}' "
+            "is not allowed in ALLOWED_ORIGINS_REGEX in production."
+        )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=get_settings().ALLOWED_ORIGINS_REGEX,
-    allow_origins=get_settings().ALLOWED_ORIGINS,
+    allow_origin_regex=allow_origin_regex,
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 async def root():

@@ -30,6 +30,10 @@ from app.sorting import (
     ShelvingJobDiscrepancySorter,
     MoveDiscrepancySorter,
     OpenLocationsSorter,
+    AisleItemsCountSorter,
+    NonTrayItemCountSorter,
+    TrayItemCountSorter,
+    VerificationChangeSorter,
 )
 from app.schemas.reporting import (
     AccessionItemsDetailOutput,
@@ -2429,10 +2433,8 @@ def get_shipping_bins_csv(
 
 # --- FACILITY INTELLIGENCE REPORTS ---
 
-@router.get("/worker-efficiency/", response_model=Page[WorkerEfficiencyOutput])
-def get_worker_efficiency(
-    session: Session = Depends(get_session),
-    params: WorkerEfficiencyParams = Depends(),
+def get_worker_efficiency_query(
+    params: WorkerEfficiencyParams,
 ):
     """
     SLA Report: Measures worker throughput (Items/Hour) across all job types.
@@ -2578,20 +2580,84 @@ def get_worker_efficiency(
             combined.c.job_type,
             func.count().label("total_jobs"),
             func.sum(combined.c['items']).label("total_items_processed"),
-            func.to_char(func.sum(combined.c.run_time), 'HH24:MI:SS').label("total_active_time"),
+            func.coalesce(func.to_char(func.sum(combined.c.run_time), 'HH24:MI:SS'), '00:00:00').label("total_active_time"),
             func.coalesce(items_per_hour, 0).label("items_per_hour")
         )
         .join(User, User.id == combined.c.user_id)
         .group_by(combined.c.user_id, User.first_name, User.last_name, combined.c.job_type)
     )
 
+    return query
+
+
+@router.get("/worker-efficiency/", response_model=Page[WorkerEfficiencyOutput])
+def get_worker_efficiency(
+    session: Session = Depends(get_session),
+    params: WorkerEfficiencyParams = Depends(),
+):
+    """
+    SLA Report: Measures worker throughput (Items/Hour) across all job types.
+    """
+    query = get_worker_efficiency_query(params)
     return paginate(session, query)
 
 
-@router.get("/hot-zones/", response_model=Page[InventoryHotZoneOutput])
-def get_inventory_hot_zones(
+@router.get("/worker-efficiency/download", response_class=StreamingResponse)
+def get_worker_efficiency_csv(
     session: Session = Depends(get_session),
-    params: InventoryHotZoneParams = Depends(),
+    params: WorkerEfficiencyParams = Depends(),
+):
+    """
+    Translates worker efficiency query result to CSV and returns binary for download.
+    """
+    query = get_worker_efficiency_query(params)
+    result = session.execute(query).all()
+
+    def generate_csv():
+        output = StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(
+            [
+                "user_name",
+                "job_type",
+                "total_jobs",
+                "total_items_processed",
+                "total_active_time",
+                "items_per_hour",
+            ]
+        )
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        for row in result:
+            writer.writerow(
+                [
+                    row.user_name,
+                    row.job_type,
+                    row.total_jobs,
+                    row.total_items_processed,
+                    row.total_active_time,
+                    round(row.items_per_hour, 2) if row.items_per_hour is not None else 0.0,
+                ]
+            )
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    return StreamingResponse(
+        generate_csv(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=worker_efficiency.csv"
+        },
+    )
+
+
+def get_inventory_hot_zones_query(
+    session: Session,
+    params: InventoryHotZoneParams,
 ):
     """
     Heatmap: Retrieval frequency by building and aisle.
@@ -2660,7 +2726,68 @@ def get_inventory_hot_zones(
         .order_by(desc("retrieval_count"))
     )
 
+    return query
+
+
+@router.get("/hot-zones/", response_model=Page[InventoryHotZoneOutput])
+def get_inventory_hot_zones(
+    session: Session = Depends(get_session),
+    params: InventoryHotZoneParams = Depends(),
+):
+    """
+    Heatmap: Retrieval frequency by building and aisle.
+    """
+    query = get_inventory_hot_zones_query(session, params)
     return paginate(session, query)
+
+
+@router.get("/hot-zones/download", response_class=StreamingResponse)
+def get_inventory_hot_zones_csv(
+    session: Session = Depends(get_session),
+    params: InventoryHotZoneParams = Depends(),
+):
+    """
+    Translates hot zones query result to CSV and returns binary for download.
+    """
+    query = get_inventory_hot_zones_query(session, params)
+    result = session.execute(query).all()
+
+    def generate_csv():
+        output = StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(
+            [
+                "building_name",
+                "aisle_number",
+                "retrieval_count",
+                "percent_of_total",
+            ]
+        )
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        for row in result:
+            writer.writerow(
+                [
+                    row.building_name,
+                    row.aisle_number,
+                    row.retrieval_count,
+                    round(row.percent_of_total, 2) if row.percent_of_total is not None else 0.0,
+                ]
+            )
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    return StreamingResponse(
+        generate_csv(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=hot_zones.csv"
+        },
+    )
 
 
 @router.get("/capacity-forecast/", response_model=List[CapacityForecastOutput])

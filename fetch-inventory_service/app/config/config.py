@@ -25,8 +25,8 @@ class Settings(BaseSettings):
         "postgresql://user:pass@localhost:5432/inventory_service"
     )
     ENABLE_ORM_SQL_LOGGING: bool = False
-    # Allowed origins for CORS (Requires precise start/end matching)
-    ALLOWED_ORIGINS_REGEX: str = r"^https://.*\.example\.com$,^http://.*\.example\.com$"
+    # Allowed origins for CORS (Regex pattern for subdomains, or comma-separated list of patterns)
+    ALLOWED_ORIGINS_REGEX: str = r"^https://[a-zA-Z0-9-]+\.example\.com$,^http://[a-zA-Z0-9-]+\.example\.com$"
     ALLOWED_ORIGINS: str = "http://127.0.0.1:8080,https://127.0.0.1:8080,http://localhost:8000,https://localhost:8000,http://localhost:3000,https://localhost:3000,http://localhost:4000"
 
     class Config:
