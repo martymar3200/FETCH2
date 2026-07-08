@@ -147,7 +147,7 @@ def get_withdraw_job_detail(id: int, session: Session = Depends(get_session)):
     return withdraw_job
 
 
-@router.post("/", response_model=WithdrawJobWriteOutput)
+@router.post("/", response_model=WithdrawJobWriteOutput, dependencies=[Depends(RequiresPermission("create_withdraw_jobs"))])
 def create_withdraw_job(
     withdraw_job_input: WithdrawJobInput, session: Session = Depends(get_session)
 ) -> WithdrawJob:
@@ -173,7 +173,7 @@ def create_withdraw_job(
     return new_withdraw_job
 
 
-@router.patch("/{id}", response_model=WithdrawJobDetailOutput)
+@router.patch("/{id}", response_model=WithdrawJobDetailOutput, dependencies=[Depends(RequiresPermission("process_withdraw_jobs"))])
 def update_withdraw_job(
     id: int,
     withdraw_job_input: WithdrawJobUpdateInput,
@@ -578,7 +578,7 @@ def update_withdraw_job(
     return existing_withdraw_job
 
 
-@router.delete("/{job_id}")
+@router.delete("/{job_id}", dependencies=[Depends(RequiresPermission("delete_withdraw_jobs"))])
 def delete_withdraw_job(job_id: int, session: Session = Depends(get_session)):
     """
     Deletes a withdraw job from the database.
@@ -650,7 +650,7 @@ def delete_withdraw_job(job_id: int, session: Session = Depends(get_session)):
     return Response(status_code=204)
 
 
-@router.post("/{job_id}/add_items", response_model=WithdrawJobDetailOutput)
+@router.post("/{job_id}/add_items", response_model=WithdrawJobDetailOutput, dependencies=[Depends(RequiresPermission("process_withdraw_jobs"))])
 def add_items_to_withdraw_job(
     job_id: int,
     withdraw_job_input: WithdrawJobInput,
@@ -843,7 +843,7 @@ def add_items_to_withdraw_job(
     return withdraw_job
 
 
-@router.delete("/{job_id}/remove_items", response_model=WithdrawJobDetailOutput)
+@router.delete("/{job_id}/remove_items", response_model=WithdrawJobDetailOutput, dependencies=[Depends(RequiresPermission("process_withdraw_jobs"))])
 def remove_items_from_withdraw_job(
     job_id: int,
     withdraw_job_input: WithdrawJobInput,

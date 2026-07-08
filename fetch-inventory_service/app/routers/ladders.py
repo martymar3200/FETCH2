@@ -42,7 +42,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/ladders",
     tags=["ladders"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 
@@ -106,7 +106,7 @@ def get_ladder_detail(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.post("/", response_model=LadderDetailWriteOutput, status_code=201)
+@router.post("/", response_model=LadderDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_ladder(
     ladder_input: LadderInput, session: Session = Depends(get_session)
 ) -> Ladder:
@@ -125,7 +125,7 @@ def create_ladder(
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=LadderDetailWriteOutput)
+@router.patch("/{id}", response_model=LadderDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_ladder(
     id: int, ladder: LadderUpdateInput, session: Session = Depends(get_session)
 ):
@@ -156,7 +156,7 @@ def update_ladder(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_ladder(id: int, session: Session = Depends(get_session)):
     """
     Delete a ladder with the given ID.
@@ -189,7 +189,7 @@ def delete_ladder(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Ladder ID {id} Not Found")
 
 
-@router.patch("/bulk", response_model=List[LadderDetailWriteOutput])
+@router.patch("/bulk", response_model=List[LadderDetailWriteOutput], dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def bulk_update_ladders(
     updates: List[LadderBulkUpdateInput],
     session: Session = Depends(get_session),

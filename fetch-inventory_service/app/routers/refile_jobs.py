@@ -42,7 +42,7 @@ from app.services.audit_service import log_audit_event, AuditEventType
 router = APIRouter(
     prefix="/refile-jobs",
     tags=["refile-jobs"],
-    dependencies=[Depends(RequiresPermission("can_create_refile_job"))],
+    dependencies=[Depends(RequiresPermission("can_access_refile"))],
 )
 
 

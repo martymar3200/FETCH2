@@ -38,7 +38,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/aisles",
     tags=["aisles"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 
@@ -87,7 +87,7 @@ def get_aisle_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Aisle ID {id} Not Found")
 
 
-@router.post("/", response_model=AisleDetailWriteOutput, status_code=201)
+@router.post("/", response_model=AisleDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_aisle(aisle_input: AisleInput, session: Session = Depends(get_session)):
     """
     Create a new aisle.
@@ -104,7 +104,7 @@ def create_aisle(aisle_input: AisleInput, session: Session = Depends(get_session
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=AisleDetailWriteOutput)
+@router.patch("/{id}", response_model=AisleDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_aisle(
     id: int, aisle: AisleUpdateInput, session: Session = Depends(get_session)
 ):
@@ -134,7 +134,7 @@ def update_aisle(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_aisle(id: int, session: Session = Depends(get_session)):
     """
     Delete an aisle with the given id.

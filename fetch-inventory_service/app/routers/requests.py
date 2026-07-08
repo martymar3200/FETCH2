@@ -50,7 +50,7 @@ from app.services.audit_service import log_audit_event, AuditEventType
 router = APIRouter(
     prefix="/requests",
     tags=["requests"],
-    dependencies=[Depends(RequiresPermission("can_create_and_submit_manual_requests"))],
+    dependencies=[Depends(RequiresPermission("can_access_request"))],
 )
 
 

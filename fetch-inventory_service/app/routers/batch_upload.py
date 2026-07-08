@@ -61,7 +61,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/batch-upload",
     tags=["batch upload"],
-    dependencies=[Depends(RequiresPermission("can_perform_batch_uploads"))],
+    dependencies=[Depends(RequiresPermission("can_access_request"))],
 )
 
 
@@ -198,7 +198,7 @@ async def delete_batch_upload(id: int, session: Session = Depends(get_session)):
     )
 
 
-@router.patch("/location-management")
+@router.patch("/location-management", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 async def batch_upload_location_management_update(
     file: UploadFile,
     session: Session = Depends(get_session),
@@ -384,7 +384,7 @@ async def batch_upload_location_management_update(
         status_code=status.HTTP_200_OK, content="Batch Upload Update Successful"
     )
 
-@router.patch("/{id}", response_model=BatchUploadDetailOutput)
+@router.patch("/{id}", response_model=BatchUploadDetailOutput, dependencies=[Depends(RequiresPermission("can_perform_batch_uploads"))])
 async def update_batch_upload(
     id: int,
     batch_upload: BatchUploadUpdateInput,
@@ -414,7 +414,7 @@ async def update_batch_upload(
     return existing_batch_upload
 
 
-@router.post("/request")
+@router.post("/request", dependencies=[Depends(RequiresPermission("can_perform_batch_uploads"))])
 async def batch_upload_request(
     file: UploadFile, requested_by_id: int = Form(None), session: Session = Depends(get_session)
 ):
@@ -571,7 +571,7 @@ async def batch_upload_request(
         raise InternalServerError(detail=str(f"Request BatchUpload Error: {e}"))
 
 
-@router.post("/withdraw-jobs/{job_id}")
+@router.post("/withdraw-jobs/{job_id}", dependencies=[Depends(RequiresPermission("can_perform_batch_uploads"))])
 async def batch_upload_withdraw_job(
     job_id: int, file: UploadFile, session: Session = Depends(get_session)
 ):
@@ -782,7 +782,7 @@ async def batch_upload_withdraw_job(
         raise InternalServerError(detail=f"Internal Server Error: {e}")
 
 
-@router.post("/location-management")
+@router.post("/location-management", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 async def batch_upload_location_management(
     file: UploadFile,
     building_id: int = Form(),

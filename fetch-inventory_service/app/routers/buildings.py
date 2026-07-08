@@ -44,7 +44,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/buildings",
     tags=["buildings"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 
@@ -88,7 +88,7 @@ def get_building_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Building ID {id} Not Found")
 
 
-@router.post("/", response_model=BuildingDetailWriteOutput, status_code=201)
+@router.post("/", response_model=BuildingDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_building(
     building_input: BuildingInput, session: Session = Depends(get_session)
 ) -> Building:
@@ -107,7 +107,7 @@ def create_building(
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=BuildingDetailWriteOutput)
+@router.patch("/{id}", response_model=BuildingDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_building(
     id: int, building: BuildingUpdateInput, session: Session = Depends(get_session)
 ):
@@ -137,7 +137,7 @@ def update_building(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_building(id: int, session: Session = Depends(get_session)):
     """
     Delete a building by ID.

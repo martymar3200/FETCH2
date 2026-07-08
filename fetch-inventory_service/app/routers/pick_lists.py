@@ -52,7 +52,7 @@ from app.models.aisles import Aisle
 router = APIRouter(
     prefix="/pick-lists",
     tags=["pick lists"],
-    dependencies=[Depends(RequiresPermission("can_create_picklist_job"))],
+    dependencies=[Depends(RequiresPermission("can_access_picklist"))],
 )
 
 

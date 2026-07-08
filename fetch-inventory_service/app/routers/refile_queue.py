@@ -43,7 +43,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/refile-queue",
     tags=["refile-queue"],
-    dependencies=[Depends(RequiresPermission("can_add_refile_item_to_queue"))],
+    dependencies=[Depends(RequiresPermission("can_access_refile"))],
 )
 
 
@@ -66,7 +66,7 @@ def get_refile_queue_list(
     return paginate(session, query)
 
 
-@router.patch("/", response_model=RefileQueueWriteOutput)
+@router.patch("/", response_model=RefileQueueWriteOutput, dependencies=[Depends(RequiresPermission("can_add_refile_item_to_queue"))])
 def add_to_refile_queue(
     refile_input: RefileQueueInput, session: Session = Depends(get_session)
 ):
@@ -265,7 +265,7 @@ def add_to_refile_queue(
     return results
 
 
-@router.delete("/")
+@router.delete("/", dependencies=[Depends(RequiresPermission("can_add_refile_item_to_queue"))])
 def remove_from_refile_queue(
     refile_input: RefileQueueInput, session: Session = Depends(get_session)
 ):

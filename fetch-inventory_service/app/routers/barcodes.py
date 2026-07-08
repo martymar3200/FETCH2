@@ -30,12 +30,21 @@ from app.config.exceptions import (
 )
 from app.sorting import BaseSorter
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
+from app.models.users import User
+
+def require_barcode_creation_permission(user: User = Depends(get_current_user_with_permissions)):
+    user_permissions = {p.name for g in user.groups for p in g.permissions}
+    allowed_roles = {"can_access_accession", "can_access_verification", "can_manage_list_configurations"}
+    if not user_permissions.intersection(allowed_roles):
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied: Must have accessioning or verification access to register barcodes."
+        )
 
 router = APIRouter(
     prefix="/barcodes",
     tags=["barcodes"],
-    dependencies=[Depends(RequiresPermission("can_manage_list_configurations"))],
 )
 
 
@@ -95,7 +104,7 @@ def get_barcode_detail(id: str, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Barcode ID {id} Not Found")
 
 
-@router.post("/", response_model=BarcodeDetailWriteOutput, status_code=201)
+@router.post("/", response_model=BarcodeDetailWriteOutput, status_code=201, dependencies=[Depends(require_barcode_creation_permission)])
 def create_barcode(
     barcode_input: BarcodeInput, session: Session = Depends(get_session)
 ) -> Barcode:
@@ -147,7 +156,7 @@ def create_barcode(
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=BarcodeDetailWriteOutput)
+@router.patch("/{id}", response_model=BarcodeDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_list_configurations"))])
 def update_barcode(
     id: str, barcode_input: BarcodeUpdateInput, session: Session = Depends(get_session)
 ):
@@ -188,7 +197,7 @@ def update_barcode(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}", status_code=204)
+@router.delete("/{id}", status_code=204, dependencies=[Depends(RequiresPermission("can_manage_list_configurations"))])
 def delete_barcode(id: str, session: Session = Depends(get_session)):
     """
     Delete a barcode by its ID.

@@ -39,7 +39,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/sides",
     tags=["sides"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 
@@ -94,7 +94,7 @@ def get_side_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Side ID {id} Not Found")
 
 
-@router.post("/", response_model=SideDetailWriteOutput, status_code=201)
+@router.post("/", response_model=SideDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_side(side_input: SideInput, session: Session = Depends(get_session)):
     """
     Create a new side record.
@@ -112,7 +112,7 @@ def create_side(side_input: SideInput, session: Session = Depends(get_session)):
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=SideDetailWriteOutput)
+@router.patch("/{id}", response_model=SideDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_side(
     id: int, side: SideUpdateInput, session: Session = Depends(get_session)
 ):
@@ -145,7 +145,7 @@ def update_side(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_side(id: int, session: Session = Depends(get_session)):
     """
     Delete a side by its ID.

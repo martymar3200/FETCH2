@@ -488,7 +488,7 @@ const menuOptions = computed(() => {
       text: 'Cancel Job',
       optionClass: 'text-negative',
       disabled: verificationJob.value.status === 'Completed',
-      hidden: !checkUserPermission('can_cancel_verification_job')
+      hidden: !checkUserPermission('delete_verification_jobs')
     },
     { text: 'View History' }
   ]

@@ -172,6 +172,18 @@
         {
             "name": "can_view_audit_logs",
             "description": "Can view audit logs history."
+        },
+        {
+            "name": "create_withdraw_jobs",
+            "description": "Can create withdraw jobs."
+        },
+        {
+            "name": "process_withdraw_jobs",
+            "description": "Can process (scan items into) withdraw jobs."
+        },
+        {
+            "name": "delete_withdraw_jobs",
+            "description": "Can delete/cancel withdraw jobs."
         }
     ]
 }

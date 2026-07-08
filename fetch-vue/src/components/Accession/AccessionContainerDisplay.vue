@@ -731,7 +731,7 @@ const dotMenuOptions = computed(() => {
         text: 'Cancel Job',
         optionClass: 'text-negative',
         disabled: accessionJob.value.status == 'Completed',
-        hidden: !(checkUserPermission('can_cancel_accession') || checkUserPermission('can_cancel_accession_job'))
+        hidden: !checkUserPermission('delete_accession_jobs')
       },
       { text: 'Print Job' },
       { text: 'View History' }
@@ -750,7 +750,7 @@ const dotMenuOptions = computed(() => {
         text: 'Cancel Job',
         optionClass: 'text-negative',
         disabled: accessionJob.value.status == 'Completed',
-        hidden: !(checkUserPermission('can_cancel_accession') || checkUserPermission('can_cancel_accession_job'))
+        hidden: !checkUserPermission('delete_accession_jobs')
       },
       {
         text: 'Delete Tray',

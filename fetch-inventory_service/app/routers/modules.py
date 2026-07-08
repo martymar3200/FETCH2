@@ -40,7 +40,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/modules",
     tags=["modules"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 
@@ -87,7 +87,7 @@ def get_module_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Module ID {id} Not Found")
 
 
-@router.post("/", response_model=ModuleDetailWriteOutput, status_code=201)
+@router.post("/", response_model=ModuleDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_module(
     module_input: ModuleInput, session: Session = Depends(get_session)
 ) -> Module:
@@ -106,7 +106,7 @@ def create_module(
         raise ValidationException(detail=f"{e}")
 
 
-@router.patch("/{id}", response_model=ModuleDetailWriteOutput)
+@router.patch("/{id}", response_model=ModuleDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_module(
     id: int, module: ModuleUpdateInput, session: Session = Depends(get_session)
 ):
@@ -132,7 +132,7 @@ def update_module(
     return existing_module
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_module(id: int, session: Session = Depends(get_session)):
     """
     Delete a module by its ID.

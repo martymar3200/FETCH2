@@ -14,13 +14,18 @@ export const PERMISSION_BUNDLES = [
       'can_access_accession',
       'create_accession_jobs',
       'can_access_item_detail',
-      'can_access_tray_detail'
+      'can_access_tray_detail',
+      'can_edit_tray',
+      'can_edit_non_tray_item'
     ]
   },
   {
     name: 'Accessioning (Delete)',
     description: 'Delete Accession Jobs.',
-    permissions: ['can_cancel_accession']
+    permissions: [
+      'can_access_accession',
+      'delete_accession_jobs'
+    ]
   },
   {
     name: 'Verification (Viewer)',
@@ -37,13 +42,19 @@ export const PERMISSION_BUNDLES = [
       'can_access_verification',
       'create_verification_jobs',
       'process_verification_jobs',
-      'can_access_item_detail'
+      'can_access_item_detail',
+      'can_access_tray_detail',
+      'can_edit_tray',
+      'can_edit_non_tray_item'
     ]
   },
   {
     name: 'Verification (Delete)',
     description: 'Cancel/Delete Verification Jobs.',
-    permissions: ['can_cancel_verification_job']
+    permissions: [
+      'can_access_verification',
+      'delete_verification_jobs'
+    ]
   },
   {
     name: 'Shelving (Viewer)',
@@ -70,7 +81,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Shelving (Delete)',
     description: 'Delete Shelving Jobs.',
-    permissions: ['delete_shelving_jobs']
+    permissions: [
+      'can_access_shelving',
+      'delete_shelving_jobs'
+    ]
   },
   {
     name: 'Requests (Viewer)',
@@ -87,13 +101,18 @@ export const PERMISSION_BUNDLES = [
       'can_access_request',
       'can_create_and_submit_manual_requests',
       'can_create_and_submit_batch_requests',
-      'can_perform_batch_uploads'
+      'can_perform_batch_uploads',
+      'place_requests'
     ]
   },
   {
     name: 'Requests (Delete)',
     description: 'Delete requests.',
-    permissions: ['can_delete_request']
+    permissions: [
+      'can_access_request',
+      'can_delete_request',
+      'delete_requests'
+    ]
   },
   {
     name: 'Picklist (Viewer)',
@@ -118,7 +137,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Picklist (Delete)',
     description: 'Delete Picklist Jobs.',
-    permissions: ['can_delete_picklist_job']
+    permissions: [
+      'can_access_picklist',
+      'delete_pick_lists'
+    ]
   },
   {
     name: 'Refile (Viewer)',
@@ -145,7 +167,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Refile (Delete)',
     description: 'Delete Refile Jobs.',
-    permissions: ['can_delete_refile_job']
+    permissions: [
+      'can_access_refile',
+      'delete_refile_jobs'
+    ]
   },
   {
     name: 'Withdraw (Viewer)',
@@ -158,7 +183,19 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Withdraw (Core)',
     description: 'Create and process withdraw jobs.',
-    permissions: ['can_access_withdraw']
+    permissions: [
+      'can_access_withdraw',
+      'create_withdraw_jobs',
+      'process_withdraw_jobs'
+    ]
+  },
+  {
+    name: 'Withdraw (Delete)',
+    description: 'Cancel/Delete Withdraw Jobs.',
+    permissions: [
+      'can_access_withdraw',
+      'delete_withdraw_jobs'
+    ]
   },
   {
     name: 'Shipping (Viewer)',
@@ -180,7 +217,10 @@ export const PERMISSION_BUNDLES = [
   {
     name: 'Shipping (Delete)',
     description: 'Delete Shipping Jobs.',
-    permissions: ['delete_shipping_jobs']
+    permissions: [
+      'can_access_shipping',
+      'delete_shipping_jobs'
+    ]
   },
   {
     name: 'Job Assignment (Manager)',

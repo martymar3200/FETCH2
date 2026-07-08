@@ -65,7 +65,7 @@ from app.services.audit_service import log_audit_event, AuditEventType
 router = APIRouter(
     prefix="/shelving-jobs",
     tags=["shelving jobs"],
-    dependencies=[Depends(RequiresPermission("can_create_and_execute_shelving_job"))],
+    dependencies=[Depends(RequiresPermission("can_access_shelving"))],
 )
 
 

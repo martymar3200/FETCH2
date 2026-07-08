@@ -33,7 +33,7 @@ from app.auth.dependencies import RequiresPermission
 router = APIRouter(
     prefix="/shelves/positions",
     tags=["shelves"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 
@@ -91,7 +91,7 @@ def get_shelf_position_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"Shelf Position ID {id} Not Found")
 
 
-@router.post("/", response_model=ShelfPositionDetailWriteOutput, status_code=201)
+@router.post("/", response_model=ShelfPositionDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_shelf_position(
     shelf_position_input: ShelfPositionInput,
     session: Session = Depends(get_session),
@@ -126,7 +126,7 @@ def create_shelf_position(
     return new_shelf_position
 
 
-@router.patch("/{id}", response_model=ShelfPositionDetailWriteOutput)
+@router.patch("/{id}", response_model=ShelfPositionDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_shelf_position(
     id: int,
     shelf_position: ShelfPositionUpdateInput,
@@ -164,7 +164,7 @@ def update_shelf_position(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_shelf_position(id: int, session: Session = Depends(get_session)):
     """
     Delete a shelf position by its ID.

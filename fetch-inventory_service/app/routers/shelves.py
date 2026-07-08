@@ -48,7 +48,7 @@ from app.services.audit_service import log_audit_event, AuditEventType
 router = APIRouter(
     prefix="/shelves",
     tags=["shelves"],
-    dependencies=[Depends(RequiresPermission("can_manage_locations"))],
+    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
 )
 
 LOGGER = logging.getLogger("app.routers.shelves")
@@ -357,7 +357,7 @@ def get_shelved_entities_by_shelf_barcode_value(
     return paginate_list(results)
 
 
-@router.post("/", response_model=ShelfDetailWriteOutput, status_code=201)
+@router.post("/", response_model=ShelfDetailWriteOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def create_shelf(
     shelf_input: ShelfInput, session: Session = Depends(get_session)
 ) -> Shelf:
@@ -468,7 +468,7 @@ def create_shelf(
         raise InternalServerError(detail=f"{e}")
 
 
-@router.post("/insert", response_model=ShelfInsertOutput, status_code=201)
+@router.post("/insert", response_model=ShelfInsertOutput, status_code=201, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def insert_shelf(
     shelf_input: ShelfInput, session: Session = Depends(get_session)
 ):
@@ -599,7 +599,7 @@ def insert_shelf(
         raise InternalServerError(detail=f"Insert-and-shift failed: {e}")
 
 
-@router.patch("/bulk", response_model=List[ShelfDetailWriteOutput])
+@router.patch("/bulk", response_model=List[ShelfDetailWriteOutput], dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def bulk_update_shelves(
     updates: List[ShelfBulkUpdateInput],
     session: Session = Depends(get_session),
@@ -653,7 +653,7 @@ def bulk_update_shelves(
     return results
 
 
-@router.patch("/{id}", response_model=ShelfDetailWriteOutput)
+@router.patch("/{id}", response_model=ShelfDetailWriteOutput, dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def update_shelf(
     id: int, shelf_input: ShelfUpdateInput, session: Session = Depends(get_session)
 ):
@@ -740,7 +740,7 @@ def update_shelf(
     return existing_shelf
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", dependencies=[Depends(RequiresPermission("can_manage_locations"))])
 def delete_shelf(id: int, session: Session = Depends(get_session)):
     """
     Delete a shelf by its ID.
