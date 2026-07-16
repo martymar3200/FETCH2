@@ -34,8 +34,6 @@ class JWTMiddleware(BaseHTTPMiddleware):
             client_ip = request.client.host if request.client else "unknown"
             # client_ip = request.client.host
 
-        process_time = time.time() - start
-
         # Get token from cookies first (HttpOnly secure pattern), fallback to Authorization header
         token = request.cookies.get("fetch_auth_token")
         decoded_token = None
@@ -121,6 +119,7 @@ class JWTMiddleware(BaseHTTPMiddleware):
                         samesite="lax",
                         max_age=900
                     )
+        process_time = time.time() - start
         request_log_dict = {
             'url': request.url.path,
             'method': request.method,

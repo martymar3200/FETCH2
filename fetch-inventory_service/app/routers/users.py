@@ -33,17 +33,16 @@ from app.schemas.users import (
 
 import traceback
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.sorting import BaseSorter, UserSorter
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    dependencies=[Depends(RequiresPermission("can_manage_groups_and_permissions"))],
 )
 
 
-@router.get("/", response_model=Page[UserListOutput])
+@router.get("/", response_model=Page[UserListOutput], dependencies=[Depends(RequiresPermission("can_manage_groups_and_permissions"))])
 def get_user_list(
     session: Session = Depends(get_session),
     sort_params: SortParams = Depends(),
@@ -68,10 +67,19 @@ def get_user_list(
 
 
 @router.get("/{id}", response_model=UserDetailReadOutput)
-def get_user_detail(id: int, session: Session = Depends(get_session)):
+def get_user_detail(
+    id: int, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions)
+):
     """
     Retrieves the details of a user from the database using the provided ID.
     """
+    if current_user.id != id:
+        user_permissions = {p.name for g in current_user.groups for p in g.permissions}
+        if "can_manage_groups_and_permissions" not in user_permissions:
+            raise HTTPException(status_code=403, detail="Permission denied")
+
     # Retrieve the user from the database using the provided ID
     user = session.get(User, id)
 
@@ -81,7 +89,7 @@ def get_user_detail(id: int, session: Session = Depends(get_session)):
     raise NotFound(detail=f"User ID {id} Not Found")
 
 
-@router.get("/{id}/groups", response_model=UserGroupOutput)
+@router.get("/{id}/groups", response_model=UserGroupOutput, dependencies=[Depends(RequiresPermission("can_manage_groups_and_permissions"))])
 def get_user_groups(id: int, session: Session = Depends(get_session)):
     """
     Retrieve list of groups a user belongs to
@@ -116,11 +124,16 @@ def update_user(
     id: int, 
     user: UserUpdateInput, 
     session: Session = Depends(get_session),
-    _: bool = Depends(RequiresPermission("can_manage_groups_and_permissions"))
+    current_user: User = Depends(get_current_user_with_permissions)
 ):
     """
     Updates a user with the given ID using the provided user data.
     """
+    if current_user.id != id:
+        user_permissions = {p.name for g in current_user.groups for p in g.permissions}
+        if "can_manage_groups_and_permissions" not in user_permissions:
+            raise HTTPException(status_code=403, detail="Permission denied")
+
     # Get the existing user
     existing_user = session.get(User, id)
 
@@ -161,10 +174,19 @@ def delete_user(
 
 
 @router.get("/{user_id}/permissions", response_model=UserPermissionsOutput)
-def get_user_permissions(user_id: int, session: Session = Depends(get_session)):
+def get_user_permissions(
+    user_id: int, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user_with_permissions)
+):
     """
     Retrieves the details of a user from the database using the provided ID.
     """
+    if current_user.id != user_id:
+        user_permissions_set = {p.name for g in current_user.groups for p in g.permissions}
+        if "can_manage_groups_and_permissions" not in user_permissions_set:
+            raise HTTPException(status_code=403, detail="Permission denied")
+
     user = session.get(User, user_id)
 
     if not user:
@@ -188,7 +210,4 @@ def get_user_permissions(user_id: int, session: Session = Depends(get_session)):
         permission.name for group in user_groups for permission in group.permissions
     }
 
-    if user_groups:
-        return UserPermissionsOutput(id=user_id, permissions=list(permissions_set))
-
-    raise NotFound(detail=f"User ID {user_id} Not Found")
+    return UserPermissionsOutput(id=user_id, permissions=list(permissions_set))
