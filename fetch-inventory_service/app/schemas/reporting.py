@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from datetime import datetime, timezone
 
 class ScheduledExportCreate(BaseModel):
@@ -66,9 +66,10 @@ class AccessionItemsDetailOutput(BaseModel):
 
 class ShelvingJobDiscrepancyBaseOutput(BaseModel):
     id: int
-    shelving_job_id: int
+    shelving_job_id: Optional[int] = None
     tray_id: Optional[int] = None
     non_tray_item_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     user_id: Optional[int] = None
     owner_id: Optional[int] = None
     size_class_id: Optional[int] = None
@@ -77,6 +78,12 @@ class ShelvingJobDiscrepancyBaseOutput(BaseModel):
     error: Optional[str] = None
     create_dt: datetime
     update_dt: datetime
+
+    @model_validator(mode="after")
+    def populate_user_id(self) -> "ShelvingJobDiscrepancyBaseOutput":
+        if self.user_id is None and self.assigned_user_id is not None:
+            self.user_id = self.assigned_user_id
+        return self
 
 
 class NestedUserSJobDiscrepancy(BaseModel):

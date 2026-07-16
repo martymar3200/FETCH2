@@ -45,15 +45,13 @@
               General
             </h2>
             <BaseButton
-              v-if="!ilsMetadata"
               outline
               dense
               color="primary"
               label="Look Up Details"
               no-caps
               size="sm"
-              :loading="isLoadingILS"
-              @click="fetchILSDetails"
+              @click="openIlsMetadataModal"
             />
           </div>
           <div class="section-content">
@@ -106,46 +104,7 @@
               </span>
             </div>
 
-            <div
-              v-if="ilsMetadata"
-              class="q-mt-md q-pa-sm bg-grey-2 rounded-borders"
-            >
-              <div class="row justify-between items-center q-mb-sm">
-                <div class="text-subtitle2 text-bold text-primary">
-                  Live ILS Metadata
-                </div>
-                <BaseButton
-                  flat
-                  round
-                  dense
-                  icon="close"
-                  size="sm"
-                  @click="ilsMetadata = null"
-                />
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Title</span>
-                <span
-                  class="detail-value text-wrap"
-                  style="max-width: 70%; text-align: right;"
-                >{{ ilsMetadata.title || '—' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Author</span>
-                <span
-                  class="detail-value text-wrap"
-                  style="max-width: 70%; text-align: right;"
-                >{{ ilsMetadata.author || '—' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Call Number</span>
-                <span class="detail-value">{{ ilsMetadata.call_number || '—' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Material Type</span>
-                <span class="detail-value">{{ ilsMetadata.material_type || '—' }}</span>
-              </div>
-            </div>
+
 
           </div>
         </div>
@@ -323,6 +282,55 @@
       :entity-type="itemDetails.container_type?.type === 'Non-Tray' ? 'non_tray_items' : 'items'"
       :entity-id="itemDetails.id"
     />
+
+    <q-dialog v-model="showIlsMetadataModal" persistent>
+      <q-card style="min-width: 350px; border-radius: 8px;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-bold text-primary">Live ILS Metadata Lookup</div>
+          <q-space />
+          <q-btn flat round dense icon="close" v-close-popup @click="closeIlsMetadataModal" />
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <div v-if="isLoadingILS" class="row justify-center q-py-lg">
+            <q-spinner color="primary" size="3em" />
+          </div>
+          <div v-else-if="ilsMetadata" class="section-content">
+            <div class="detail-row">
+              <span class="detail-label">Title</span>
+              <span class="detail-value text-wrap" style="max-width: 70%; text-align: right;">{{ ilsMetadata.title || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Author</span>
+              <span class="detail-value text-wrap" style="max-width: 70%; text-align: right;">{{ ilsMetadata.author || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Call Number</span>
+              <span class="detail-value">{{ ilsMetadata.call_number || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Material Type</span>
+              <span class="detail-value">{{ ilsMetadata.material_type || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Enumeration</span>
+              <span class="detail-value">{{ ilsMetadata.enumeration || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Chronology</span>
+              <span class="detail-value">{{ ilsMetadata.chronology || '—' }}</span>
+            </div>
+          </div>
+          <div v-else class="row justify-center q-py-lg text-grey">
+            No live metadata found for this item barcode.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="text-primary">
+          <q-btn flat label="Close" v-close-popup @click="closeIlsMetadataModal" no-caps />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -364,6 +372,17 @@ const showAuditTrailModal = ref(false)
 // JIT ILS Metadata Logic
 const isLoadingILS = ref(false)
 const ilsMetadata = ref(null)
+const showIlsMetadataModal = ref(false)
+
+const openIlsMetadataModal = () => {
+  showIlsMetadataModal.value = true
+  fetchILSDetails()
+}
+
+const closeIlsMetadataModal = () => {
+  showIlsMetadataModal.value = false
+  ilsMetadata.value = null
+}
 
 const fetchILSDetails = async () => {
   try {

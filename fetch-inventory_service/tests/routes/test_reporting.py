@@ -4,6 +4,22 @@ from sqlalchemy.orm import Session
 from app.models.buildings import Building
 
 def test_reporting_endpoints(client: TestClient, session: Session, test_database):
+    from app.auth.dependencies import get_current_user_with_permissions
+    class MockPerm:
+        def __init__(self, name):
+            self.name = name
+    class MockSuperUser:
+        id = 999
+        first_name = "GlobalMock"
+        last_name = "User"
+        username = "mockadmin"
+        @property
+        def groups(self):
+            class MockGroup:
+                permissions = [MockPerm("can_access_reports")]
+            return [MockGroup()]
+    client.app.dependency_overrides[get_current_user_with_permissions] = lambda: MockSuperUser()
+
     # 1. Test worker-efficiency paginated endpoint
     resp = client.get("/reporting/worker-efficiency/")
     assert resp.status_code == 200

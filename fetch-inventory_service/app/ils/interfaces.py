@@ -25,6 +25,8 @@ class ILSItemMetadata(BaseModel):
     author: Optional[str]
     call_number: Optional[str]
     material_type: Optional[str]
+    enumeration: Optional[str] = None
+    chronology: Optional[str] = None
     is_valid_location: bool
 
 

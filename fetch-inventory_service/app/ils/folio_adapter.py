@@ -161,6 +161,8 @@ class FolioILSAdapter(BaseILSAdapter):
                 title = item.get("title", 'Unknown Title')
                 call_number = item.get("itemLevelCallNumber") or item.get("callNumber")
                 material_type = item.get("materialType", {}).get("name")
+                enumeration = item.get("enumeration")
+                chronology = item.get("chronology")
                 
                 # Author usually comes from instance relationship or contributors
                 author = None
@@ -172,6 +174,8 @@ class FolioILSAdapter(BaseILSAdapter):
                     author=author,
                     call_number=call_number,
                     material_type=material_type,
+                    enumeration=enumeration,
+                    chronology=chronology,
                     is_valid_location=True
                 )
             return None

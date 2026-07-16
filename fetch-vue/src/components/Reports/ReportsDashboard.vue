@@ -1016,7 +1016,7 @@ const generateReportTableFields = (qParams) => {
         },
         {
           name: 'items_per_hour',
-          field: 'items_per_hour',
+          field: row => row.items_per_hour !== undefined && row.items_per_hour !== null ? Math.round(row.items_per_hour) : 0,
           label: 'Items / Hour',
           align: 'left',
           sortable: true
