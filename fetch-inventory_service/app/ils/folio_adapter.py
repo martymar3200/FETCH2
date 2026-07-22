@@ -193,7 +193,7 @@ class FolioILSAdapter(BaseILSAdapter):
             # Poll for Requests that are open pages targeted at our service point
             query = '(status=="Open - Not yet filled" and requestType=="Page")'
             if self.ils_service_point_id:
-                query += f' and pickupServicePointId=="{self.ils_service_point_id}"'
+                query += f' and item.effectiveLocation.primaryServicePoint.id=="{self.ils_service_point_id}"'
                 
             params = {
                 "query": query,

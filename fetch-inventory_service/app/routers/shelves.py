@@ -42,13 +42,13 @@ from app.config.exceptions import NotFound, ValidationException, InternalServerE
 from app.sorting import ShelvingSorter
 from app.utilities import start_session_with_audit_info
 
-from app.auth.dependencies import RequiresPermission
+from app.auth.dependencies import RequiresPermission, get_current_user_with_permissions
 from app.services.audit_service import log_audit_event, AuditEventType
 
 router = APIRouter(
     prefix="/shelves",
     tags=["shelves"],
-    dependencies=[Depends(RequiresPermission("can_access_items_and_search"))],
+    dependencies=[Depends(get_current_user_with_permissions)],
 )
 
 LOGGER = logging.getLogger("app.routers.shelves")

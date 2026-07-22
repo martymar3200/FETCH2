@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import inventoryServiceApi from '@/http/InventoryService.js'
 import { useOfflineSync } from '@/composables/useOfflineSync.js'
 import { useIndexDbHandler } from '@/composables/useIndexDbHandler.js'
+import { useGlobalStore } from '@/stores/global-store'
 export const useShelvingStore = defineStore('shelving-store', {
   state: () => ({
     shelvingJobListTotal: 0,
@@ -91,12 +92,6 @@ export const useShelvingStore = defineStore('shelving-store', {
       }).compare).sort((a, b) => sortBoolOrder[a.scanned_for_shelving] - sortBoolOrder[b.scanned_for_shelving])
     },
     allContainersShelved: (state) => {
-      // Unified logic: if we have containers, they must all be scanned.
-      // For created/empty jobs (Direct start), it's false until populated (or true if considered 'done' when empty? Logic was: length==0 -> true in Direct)
-      // Old Direct logic: return state.shelvingJobContainers.length == 0 || state.shelvingJobContainers.some(c => !c.scanned_for_shelving) ? false : true
-      // This meant: if length 0, true (can complete). If some not scanned, false.
-      // Let's preserve that.
-
       const containers = state.shelvingJobContainers
       if (containers.length === 0) {
         return true
@@ -171,6 +166,31 @@ export const useShelvingStore = defineStore('shelving-store', {
       }
     },
     async getShelfByBarcode (barcode_value) {
+      const globalStore = useGlobalStore()
+      if (globalStore.appIsOffline) {
+        const offlineResult = {
+          data: {
+            id: null,
+            barcode: { value: barcode_value },
+            location: barcode_value,
+            owner: { name: 'Offline (Pending Sync)' },
+            shelf_type: { size_class: { name: 'Offline' } }
+          }
+        }
+        if (this.shelvingJob.id) {
+          this.shelvingJob = {
+            ...this.shelvingJob,
+            shelf_barcode: { value: barcode_value },
+            owner: { name: 'Offline (Pending Sync)' },
+            size_class: { name: 'Offline' },
+            nextAvailablePosition: null
+          }
+        }
+        const { addDataToIndexDb } = useIndexDbHandler()
+        await addDataToIndexDb('shelvingStore', 'shelvingJob', JSON.parse(JSON.stringify(this.shelvingJob)))
+        return offlineResult
+      }
+
       try {
         const res = await this.$api.get(`${inventoryServiceApi.shelvesBarcode}${barcode_value}`)
         if (this.shelvingJob.id) {

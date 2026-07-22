@@ -60,7 +60,10 @@
                   @hide="requestJobMenuState = false"
                   aria-label="requestJobMenuList"
                 >
-                  <q-list class="text-no-wrap">
+                  <q-list
+                    class="text-no-wrap"
+                    role="none"
+                  >
                     <q-item
                       v-if="checkUserPermission('can_add_to_picklist_job')"
                       clickable

@@ -5,6 +5,7 @@
     full-height
     :class="$style.overlay"
     @hide="emit('close')"
+    @keydown.esc.stop.prevent="emit('close')"
     aria-label="informationalOverlay"
   >
     <q-card class="item-content">
@@ -78,9 +79,9 @@
       </q-card-section>
 
       <q-card-section class="column q-pt-none">
-        <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
+        <h2 class="text-h4 q-mb-xs-sm q-mb-sm-md">
           Dates
-        </h1>
+        </h2>
 
         <div class="item-details">
           <label class="item-details-label">
@@ -125,9 +126,9 @@
       </q-card-section>
 
       <q-card-section class="column q-pt-none">
-        <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
+        <h2 class="text-h4 q-mb-xs-sm q-mb-sm-md">
           Location
-        </h1>
+        </h2>
 
         <div class="item-details">
           <p
@@ -146,9 +147,9 @@
         class="column q-pt-none"
         v-if="jitMetadata"
       >
-        <h1 class="text-h4 q-mb-xs-sm q-mb-sm-md">
+        <h2 class="text-h4 q-mb-xs-sm q-mb-sm-md">
           Live External Metadata
-        </h1>
+        </h2>
 
         <div
           class="item-details"

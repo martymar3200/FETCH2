@@ -18,8 +18,8 @@
       <q-icon
         :name="icon"
         :size="iconSize"
-        role="img"
-        :aria-label="`${icon}-icon`"
+        role="presentation"
+        aria-hidden="true"
       />
     </q-item-section>
 
@@ -43,8 +43,8 @@
       <q-icon
         :name="iconRight"
         :size="iconRightSize"
-        role="img"
-        :aria-label="`${iconRight}-icon`"
+        role="presentation"
+        aria-hidden="true"
       />
     </q-item-section>
   </q-item>

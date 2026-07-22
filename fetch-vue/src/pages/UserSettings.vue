@@ -23,7 +23,7 @@
           <q-separator />
 
           <q-card-section>
-            <div class="row q-col-gutter-y-md">
+            <div class="row q-col-gutter-md">
               <div class="col-12 col-sm-6">
                 <div class="text-caption text-grey-7">
                   First Name
@@ -79,6 +79,46 @@
                   />
                 </div>
               </div>
+
+              <div class="col-12 col-sm-6">
+                <div class="form-group">
+                  <label class="form-group-label q-mb-xs">
+                    Theme Preference
+                  </label>
+                  <div class="text-caption text-grey-7 q-mb-sm">
+                    Choose your preferred color scheme (Light, Dark, or Sync with System).
+                  </div>
+                  <q-select
+                    v-model="selectedTheme"
+                    :options="themeOptions"
+                    option-label="label"
+                    option-value="value"
+                    emit-value
+                    map-options
+                    outlined
+                    dense
+                    aria-label="Theme Preference"
+                    @update:model-value="onThemeChange"
+                  />
+                </div>
+              </div>
+
+              <div class="col-12 col-sm-6">
+                <div class="form-group">
+                  <label class="form-group-label q-mb-xs">
+                    Sound Effects
+                  </label>
+                  <div class="text-caption text-grey-7 q-mb-sm">
+                    Enable audio warning alerts on error notifications and validation failures.
+                  </div>
+                  <q-checkbox
+                    v-model="soundEffectsEnabled"
+                    label="Enable Sound Effects"
+                    aria-label="Enable Sound Effects"
+                    @update:model-value="onSoundEffectsChange"
+                  />
+                </div>
+              </div>
             </div>
           </q-card-section>
         </q-card>
@@ -89,11 +129,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useQuasar, LocalStorage } from 'quasar'
 import { useUserStore } from '@/stores/user-store'
 import { useOptionStore } from '@/stores/option-store'
 import { storeToRefs } from 'pinia'
 import SelectInput from '@/components/SelectInput.vue'
 import { notify } from '@/utils/notify'
+
+const $q = useQuasar()
 
 const userStore = useUserStore()
 const { userData } = storeToRefs(userStore)
@@ -104,6 +147,39 @@ const { buildings } = storeToRefs(optionStore)
 const buildingsList = ref([])
 const defaultBuildingId = ref(null)
 const saving = ref(false)
+
+const themeOptions = [
+  {
+    label: 'Light',
+    value: 'light'
+  },
+  {
+    label: 'Dark',
+    value: 'dark'
+  },
+  {
+    label: 'Sync with System',
+    value: 'auto'
+  }
+]
+
+const selectedTheme = ref(LocalStorage.getItem('themePreference') || 'auto')
+const soundEffectsEnabled = ref(LocalStorage.getItem('soundEffectsEnabled') !== false)
+
+const onSoundEffectsChange = (newVal) => {
+  LocalStorage.set('soundEffectsEnabled', newVal)
+}
+
+const onThemeChange = (newVal) => {
+  LocalStorage.set('themePreference', newVal)
+  if (newVal === 'dark') {
+    $q.dark.set(true)
+  } else if (newVal === 'light') {
+    $q.dark.set(false)
+  } else {
+    $q.dark.set('auto')
+  }
+}
 
 onMounted(async () => {
   // Load buildings for the dropdown if not already loaded

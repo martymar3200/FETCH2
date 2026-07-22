@@ -358,7 +358,7 @@
               @hide="exportReportMenuState = false"
               aria-label="exportReportMenuList"
             >
-              <q-list>
+              <q-list role="none">
                 <q-item
                   clickable
                   v-close-popup

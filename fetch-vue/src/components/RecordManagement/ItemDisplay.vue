@@ -251,9 +251,9 @@
               class="col-sm-5 col-md-12 col-lg-auto"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? '' : 'self-center'"
             >
-              <h1 class="text-h4 text-bold">
+              <h2 class="text-h4 text-bold">
                 Request History
-              </h1>
+              </h2>
             </div>
           </template>
 
@@ -283,26 +283,54 @@
       :entity-id="itemDetails.id"
     />
 
-    <q-dialog v-model="showIlsMetadataModal" persistent>
+    <q-dialog
+      v-model="showIlsMetadataModal"
+      persistent
+    >
       <q-card style="min-width: 350px; border-radius: 8px;">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 text-bold text-primary">Live ILS Metadata Lookup</div>
+          <div class="text-h6 text-bold text-primary">
+            Live ILS Metadata Lookup
+          </div>
           <q-space />
-          <q-btn flat round dense icon="close" v-close-popup @click="closeIlsMetadataModal" />
+          <q-btn
+            flat
+            round
+            dense
+            icon="close"
+            v-close-popup
+            aria-label="Close dialog"
+            @click="closeIlsMetadataModal"
+          />
         </q-card-section>
 
         <q-card-section class="q-pt-md">
-          <div v-if="isLoadingILS" class="row justify-center q-py-lg">
-            <q-spinner color="primary" size="3em" />
+          <div
+            v-if="isLoadingILS"
+            class="row justify-center q-py-lg"
+          >
+            <q-spinner
+              color="primary"
+              size="3em"
+            />
           </div>
-          <div v-else-if="ilsMetadata" class="section-content">
+          <div
+            v-else-if="ilsMetadata"
+            class="section-content"
+          >
             <div class="detail-row">
               <span class="detail-label">Title</span>
-              <span class="detail-value text-wrap" style="max-width: 70%; text-align: right;">{{ ilsMetadata.title || '—' }}</span>
+              <span
+                class="detail-value text-wrap"
+                style="max-width: 70%; text-align: right;"
+              >{{ ilsMetadata.title || '—' }}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">Author</span>
-              <span class="detail-value text-wrap" style="max-width: 70%; text-align: right;">{{ ilsMetadata.author || '—' }}</span>
+              <span
+                class="detail-value text-wrap"
+                style="max-width: 70%; text-align: right;"
+              >{{ ilsMetadata.author || '—' }}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">Call Number</span>
@@ -321,13 +349,25 @@
               <span class="detail-value">{{ ilsMetadata.chronology || '—' }}</span>
             </div>
           </div>
-          <div v-else class="row justify-center q-py-lg text-grey">
+          <div
+            v-else
+            class="row justify-center q-py-lg text-grey"
+          >
             No live metadata found for this item barcode.
           </div>
         </q-card-section>
 
-        <q-card-actions align="right" class="text-primary">
-          <q-btn flat label="Close" v-close-popup @click="closeIlsMetadataModal" no-caps />
+        <q-card-actions
+          align="right"
+          class="text-primary"
+        >
+          <q-btn
+            flat
+            label="Close"
+            v-close-popup
+            @click="closeIlsMetadataModal"
+            no-caps
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>

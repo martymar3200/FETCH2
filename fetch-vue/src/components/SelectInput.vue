@@ -2,6 +2,7 @@
   <q-select
     v-if="!initLoading"
     ref="selectInputComponent"
+    :id="id"
     :dense="currentScreenSize == 'xs'"
     outlined
     :clearable="clearable"
@@ -81,6 +82,10 @@ import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 // Props
 const mainProps = defineProps({
+  id: {
+    type: String,
+    default: undefined
+  },
   modelValue: undefined,
   options: {
     type: Array,

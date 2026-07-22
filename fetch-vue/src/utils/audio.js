@@ -1,8 +1,15 @@
+import { LocalStorage } from 'quasar'
+
 // Reuse string context to avoid garbage collection and policy issues
 let audioCtx = null
 
 export const audioAlert = () => {
   try {
+    const soundEnabled = LocalStorage.getItem('soundEffectsEnabled')
+    if (soundEnabled === false) {
+      return
+    }
+
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)()
     }

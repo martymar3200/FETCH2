@@ -15,6 +15,7 @@
         <q-btn
           v-close-popup
           icon="mdi-close"
+          aria-label="Close dialog"
           flat
           round
           dense

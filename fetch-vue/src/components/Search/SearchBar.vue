@@ -7,22 +7,24 @@
       color="secondary"
       icon-right="arrow_drop_down"
       :label="searchType"
-      aria-label="searchBarMenu"
+      aria-label="Select search type"
       aria-haspopup="menu"
       :aria-expanded="searchMenuState"
       class="search-bar-menu text-body2 text-secondary"
     >
       <q-menu
-        @show="searchMenuState = true"
+        @show="onSearchTypeMenuShow"
         @hide="searchMenuState = false"
-        aria-label="searchMenuList"
+        aria-label="Search type options"
       >
-        <q-list>
+        <q-list role="none">
           <q-item
-            v-for="obj in searchTypes"
+            v-for="(obj, index) in searchTypes"
             :key="obj.name"
             clickable
             v-close-popup
+            :tabindex="0"
+            :ref="el => { if (index === 0) firstSearchTypeItemRef = el }"
             @click="searchType = obj.name"
             role="menuitem"
           >
@@ -40,12 +42,14 @@
 
     <div class="row full-width">
       <q-input
+        ref="searchInputRef"
         class="search-bar-input"
         dense
         borderless
         v-model="searchText"
         :placeholder="renderSearchPlaceholder"
         @keyup.enter="executeExactSearch()"
+        @keydown.esc.stop.prevent="handleSearchEsc"
         aria-label="SearchBar"
         type="search"
       >
@@ -77,9 +81,11 @@
           fit
           v-model="showExactSearch"
           :class="$style['search-input-menu']"
+          @keydown.esc.stop.prevent="handleSearchEsc"
         >
           <q-list
             class="search-results-list"
+            role="none"
           >
             <q-item
               clickable
@@ -172,7 +178,7 @@
   <ItemDataOverlay
     v-if="showItemQuickView"
     :item-data="itemDetails"
-    @close="showItemQuickView = false"
+    @close="showItemQuickView = false; focusSearchInput();"
     @update="router.push({
       name: 'record-management-items',
       params: {
@@ -294,6 +300,41 @@ const showExactSearch = ref(false)
 const showAdvancedSearchModal = ref(false)
 const exactSearchResponseInfo = ref(null)
 const showItemQuickView = ref(false)
+const firstSearchTypeItemRef = ref(null)
+const searchInputRef = ref(null)
+
+const focusSearchInput = () => {
+  if (searchInputRef.value) {
+    if (typeof searchInputRef.value.focus === 'function') {
+      searchInputRef.value.focus()
+    } else if (searchInputRef.value.$el) {
+      const inputEl = searchInputRef.value.$el.querySelector('input')
+      if (inputEl) {
+        inputEl.focus()
+      }
+    }
+  }
+}
+
+const handleSearchEsc = (e) => {
+  if (e) {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+  showExactSearch.value = false
+  showItemQuickView.value = false
+  focusSearchInput()
+}
+
+const onSearchTypeMenuShow = () => {
+  searchMenuState.value = true
+  if (firstSearchTypeItemRef.value) {
+    const el = firstSearchTypeItemRef.value.$el || firstSearchTypeItemRef.value
+    if (el && typeof el.focus === 'function') {
+      el.focus()
+    }
+  }
+}
 
 // Logic
 
@@ -492,12 +533,28 @@ const handlingSearchResultRouting = () => {
       flex-wrap: nowrap;
     }
 
+    &:focus-visible {
+      outline: 2px solid $accent !important;
+      outline-offset: -2px;
+    }
+
+    @media (max-width: 768px) {
+      min-width: 44px;
+      padding: 0 4px;
+
+      :deep(.q-btn__content span) {
+        display: none;
+      }
+    }
+
     @media (max-width: $breakpoint-sm-min) {
       min-width: initial;
     }
   }
 
   &-input {
+    flex: 1 1 auto;
+    min-width: 140px;
     width: 100%;
     height: 100%;
     padding: 0 10px;
@@ -531,6 +588,11 @@ const handlingSearchResultRouting = () => {
     padding-right: 8px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+
+    @media (max-width: 768px) {
+      padding-left: 4px;
+      padding-right: 4px;
+    }
   }
 }
 </style>

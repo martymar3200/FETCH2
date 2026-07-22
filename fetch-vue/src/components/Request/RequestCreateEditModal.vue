@@ -29,10 +29,14 @@
       >
         <div class="col-12 q-mb-md">
           <div class="form-group">
-            <label class="form-group-label">
+            <label
+              class="form-group-label"
+              for="req-barcode"
+            >
               Item Barcode <span class="text-caption text-negative">(Required)</span>
             </label>
             <TextInput
+              id="req-barcode"
               v-model="manualRequestForm.barcode"
               placeholder="Enter or Scan Item Barcode"
               @focus="allowItemBarcodeScan = true"
@@ -43,10 +47,14 @@
         </div>
         <div class="col-12 q-mb-md">
           <div class="form-group">
-            <label class="form-group-label">
+            <label
+              class="form-group-label"
+              for="req-ext-id"
+            >
               External Request Id <span class="text-caption text-negative">(Required)</span>
             </label>
             <TextInput
+              id="req-ext-id"
               v-model="manualRequestForm.external_request_id"
               placeholder="Enter External Request Id"
             />
@@ -54,13 +62,17 @@
         </div>
         <div class="col-12 q-mb-md">
           <div class="form-group">
-            <label class="form-group-label">
+            <label
+              class="form-group-label"
+              for="req-requestor-name"
+            >
               Requestor Name <span
                 v-if="systemSettingsRequiredFields.includes('requestor_name')"
                 class="text-caption text-negative"
               >(Required)</span>
             </label>
             <TextInput
+              id="req-requestor-name"
               v-model="manualRequestForm.requestor_name"
               placeholder="Enter Requestor Name"
             />
@@ -69,13 +81,17 @@
         <!-- TODO set this to user admin privelages -->
         <div class="col-12 q-mb-md">
           <div class="form-group">
-            <label class="form-group-label">
+            <label
+              class="form-group-label"
+              for="req-priority"
+            >
               Priority <span
                 v-if="systemSettingsRequiredFields.includes('priority_id')"
                 class="text-caption text-negative"
               >(Required)</span>
             </label>
             <SelectInput
+              id="req-priority"
               v-model="manualRequestForm.priority_id"
               :options="requestsPriorities"
               option-type="requestsPriorities"
@@ -88,13 +104,17 @@
         </div>
         <div class="col-12 q-mb-md">
           <div class="form-group">
-            <label class="form-group-label">
+            <label
+              class="form-group-label"
+              for="req-type"
+            >
               Select Request Type <span
                 v-if="systemSettingsRequiredFields.includes('request_type_id')"
                 class="text-caption text-negative"
               >(Required)</span>
             </label>
             <SelectInput
+              id="req-type"
               v-model="manualRequestForm.request_type_id"
               :options="requestsTypes"
               option-type="requestsTypes"
@@ -107,13 +127,17 @@
         </div>
         <div class="col-12">
           <div class="form-group">
-            <label class="form-group-label">
+            <label
+              class="form-group-label"
+              for="req-delivery"
+            >
               Delivery Location <span
                 v-if="systemSettingsRequiredFields.includes('delivery_location_id')"
                 class="text-caption text-negative"
               >(Required)</span>
             </label>
             <SelectInput
+              id="req-delivery"
               v-model="manualRequestForm.delivery_location_id"
               :options="requestsLocations"
               option-type="requestsLocations"

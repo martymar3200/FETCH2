@@ -12,7 +12,10 @@
       @hide="optionMenuState = false"
       aria-label="optionsMenuList"
     >
-      <q-list class="more-menu-list">
+      <q-list
+        class="more-menu-list"
+        role="none"
+      >
         <q-item
           v-for="(opt, i) in options.filter(opt => !opt.hidden)"
           :key="i"

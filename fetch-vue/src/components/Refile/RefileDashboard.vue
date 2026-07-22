@@ -92,7 +92,7 @@
                   @hide="refileJobMenuState = false"
                   aria-label="refileJobMenuList"
                 >
-                  <q-list>
+                  <q-list role="none">
                     <q-item
                       v-if="checkUserPermission('can_add_refile_item_to_queue')"
                       clickable

@@ -9,6 +9,8 @@ $color-map: (
   negative: $negative, 
   info: $info,     
   warning: $warning,
+  warning-dark: $warning-dark,
+  positive-dark: $positive-dark,
   color-white: $color-white,
   color-black: $color-black,
   color-gray: $color-gray,
@@ -40,14 +42,14 @@ $color-map: (
 
 .text-highlight {
   padding: 1px 5px;
-  color: $positive;
+  color: $positive-dark;
   background-color: rgba($positive, .08);
   border-color: $positive !important;
   border-radius: 2px;
 }
 .text-highlight-warning {
   padding: 1px 5px;
-  color: $positive;
+  color: $warning-dark;
   background-color: rgba($warning, .08);
   border-color: $warning !important;
   border-radius: 2px;
@@ -103,6 +105,9 @@ $color-map: (
 }
 
 .link {
+  color: $accent;
+  text-decoration: underline;
+
   &:hover {
     cursor: pointer;
     text-decoration: underline;
@@ -219,4 +224,314 @@ $color-map: (
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+// Global Dark Mode Theme Overrides
+body.body--dark {
+  /* Headings & Page Titles */
+  h1, h2, h3, h4, h5, h6 {
+    color: #f8fafc !important;
+  }
+
+  /* Form Group Labels & Secondary Text */
+  .form-group-label {
+    color: #cbd5e1 !important;
+  }
+  .text-color-gray-dark,
+  .text-grey-7 {
+    color: #94a3b8 !important;
+  }
+  .text-secondary {
+    color: #cbd5e1 !important;
+  }
+
+  /* Navigation Header & Hamburger Menu Button */
+  .nav-top {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+
+    .q-btn,
+    .q-btn .q-icon,
+    button,
+    i {
+      color: #f8fafc !important;
+    }
+  }
+
+  /* Breadcrumbs Component */
+  .breadcrumb {
+    background-color: #0f172a !important;
+    border-bottom: 1px solid #334155 !important;
+
+    .breadcrumb-items {
+      :deep(.essential-link),
+      .essential-link,
+      span {
+        color: #f8fafc !important;
+      }
+
+      .q-icon {
+        color: #94a3b8 !important;
+      }
+    }
+  }
+
+  /* Search Bar Component */
+  .search-bar {
+    background-color: #1e293b !important;
+    border-color: #64748b !important;
+
+    .search-bar-input {
+      :deep(input),
+      :deep(.q-field__input),
+      :deep(.q-placeholder),
+      input {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+
+        &::placeholder,
+        &::-webkit-input-placeholder,
+        &::-moz-placeholder {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+          opacity: 0.9 !important;
+        }
+      }
+
+      :deep(i),
+      i {
+        color: #ffffff !important;
+      }
+    }
+
+    .search-bar-menu,
+    .search-bar-action,
+    .search-bar-advanced,
+    .text-secondary {
+      color: #93c5fd !important;
+    }
+  }
+
+  /* Custom Status Badges & Highlights */
+  .text-highlight {
+    color: #86efac !important;
+    background-color: rgba(34, 197, 94, 0.15) !important;
+    border-color: #22c55e !important;
+  }
+  .text-highlight-negative {
+    color: #fca5a5 !important;
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    border-color: #ef4444 !important;
+  }
+  .text-highlight-warning {
+    color: #fde047 !important;
+    background-color: rgba(234, 179, 8, 0.15) !important;
+    border-color: #eab308 !important;
+  }
+  .user-assign-card {
+    background-color: #1e293b !important;
+  }
+
+  /* Quasar Cards, Tables & Containers */
+  .q-card,
+  .table-card,
+  .header-card-mobile,
+  .q-table__container,
+  .q-table,
+  .q-tab-panels,
+  .q-tab-panel {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+  }
+
+  /* Table Header & Filter Row Dark Overrides */
+  .q-table {
+    th {
+      background: #0f172a !important;
+      color: #f8fafc !important;
+      border-bottom-color: #475569 !important;
+    }
+
+    tbody {
+      tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.03) !important;
+      }
+
+      tr:hover {
+        background: rgba(147, 197, 253, 0.08) !important;
+      }
+
+      td {
+        color: #f8fafc !important;
+        border-bottom-color: #334155 !important;
+      }
+    }
+  }
+
+  .filter-row {
+    background: #1e293b !important;
+  }
+
+  .column-filter-input {
+    .q-field__control {
+      background: #0f172a !important;
+      border-color: #475569 !important;
+
+      input,
+      .q-field__native {
+        color: #f8fafc !important;
+
+        &::placeholder {
+          color: #94a3b8 !important;
+        }
+      }
+    }
+  }
+
+  /* Reports Dashboard Sections, Cards & Results View */
+  .reports-section,
+  .report-results {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .section-header {
+    border-bottom-color: #3b82f6 !important;
+
+    .q-icon,
+    span {
+      color: #f8fafc !important;
+    }
+  }
+
+  .report-card {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+
+    &:hover {
+      background-color: #334155 !important;
+      color: #ffffff !important;
+      border-left-color: #3b82f6 !important;
+    }
+
+    .report-card__title {
+      color: #f8fafc !important;
+    }
+
+    .report-card__description {
+      color: #94a3b8 !important;
+    }
+
+    .report-card__arrow {
+      color: #94a3b8 !important;
+    }
+  }
+
+  .managed-table {
+    border-top-color: #334155 !important;
+  }
+
+  .reports-dashboard {
+    .text-grey {
+      color: #cbd5e1 !important;
+    }
+  }
+
+  /* Record Management Detail Cards (ItemDisplay, ShelfDisplay, TrayDisplay) */
+  .section-card {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+
+    .section-title,
+    h2.text-h6 {
+      color: #f8fafc !important;
+      border-bottom-color: #334155 !important;
+    }
+  }
+
+  .detail-label,
+  .history-label {
+    color: #94a3b8 !important;
+  }
+
+  .detail-value,
+  .history-date,
+  .location-text {
+    color: #f8fafc !important;
+  }
+
+  .barcode-header {
+    border-bottom-color: #475569 !important;
+
+    span {
+      color: #f8fafc !important;
+    }
+  }
+
+  .history-row {
+    border-bottom-color: #334155 !important;
+  }
+
+  /* Buttons & Action Controls in Dark Mode */
+  .q-btn {
+    &.text-primary,
+    &.text-secondary,
+    &.text-grey-7 {
+      color: #93c5fd !important;
+    }
+
+    &.q-btn--outline,
+    &.btn-outline {
+      border-color: #475569 !important;
+      color: #93c5fd !important;
+    }
+  }
+
+  .q-btn--flat.text-primary,
+  .q-btn--flat.text-secondary,
+  .q-btn--flat.text-grey-7,
+  .q-btn--outline.text-primary,
+  .q-btn--outline.text-secondary,
+  .q-btn--outline.text-grey-7 {
+    color: #93c5fd !important;
+  }
+
+  /* Toggle Buttons in Dark Mode (q-btn-toggle, ToggleButtonInput, RefileDashboard toggles) */
+  .q-btn-toggle,
+  .custom-toggle,
+  .toggle-modern-rounded {
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+
+    .q-btn {
+      background-color: #0f172a !important;
+      color: #94a3b8 !important;
+      border-color: #334155 !important;
+
+      .q-btn__content {
+        color: #94a3b8 !important;
+      }
+
+      &[aria-pressed="true"],
+      &.bg-accent,
+      &.bg-primary {
+        background-color: #3b82f6 !important;
+        color: #ffffff !important;
+
+        .q-btn__content {
+          color: #ffffff !important;
+        }
+      }
+
+      &:hover:not([aria-pressed="true"]) {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+      }
+    }
+  }
 }

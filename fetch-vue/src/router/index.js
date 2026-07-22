@@ -49,5 +49,11 @@ export default route(function () {
     }
   })
 
+  // route guard for dynamic document title updates
+  router.afterEach((to) => {
+    const pageTitle = to.meta?.title
+    document.title = pageTitle ? `${pageTitle} | FETCH` : 'FETCH'
+  })
+
   return router
 })

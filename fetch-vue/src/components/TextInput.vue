@@ -1,5 +1,6 @@
 <template>
   <q-input
+    :id="id"
     ref="inputRef"
     :dense="currentScreenSize == 'xs'"
     outlined
@@ -24,6 +25,10 @@ import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 
 // Props
 defineProps({
+  id: {
+    type: String,
+    default: undefined
+  },
   modelValue: undefined,
   placeholder: {
     type: String,

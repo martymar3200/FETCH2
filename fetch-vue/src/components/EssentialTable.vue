@@ -18,7 +18,7 @@
           :label="currentScreenSize == 'xs' ? 'Filter' : ''"
           class="table-component-filter"
           :class="currentScreenSize == 'xs' ? 'text-accent' : ''"
-          aria-label="tableFilterOptions"
+          aria-label="Filter options"
           aria-haspopup="menu"
           :aria-expanded="tableFilterMenuState"
         >
@@ -28,7 +28,7 @@
             :class="currentScreenSize == 'xs' ? $style['mobile-menu'] : ''"
             @show="tableFilterMenuState = true"
             @hide="tableFilterMenuState = false"
-            aria-label="tableFilterOptionsMenu"
+            aria-label="Filter options menu"
           >
             <q-item-label class="text-h6 q-pa-md">
               Filter Options
@@ -63,7 +63,7 @@
                         <q-checkbox
                           v-model="opt.value"
                           @update:model-value="filterTableData(opt)"
-                          aria-label="tableFilterOptionCheckbox"
+                          aria-label="Toggle filter"
                           role="menuitemcheckbox"
                         />
                       </q-item-section>
@@ -100,7 +100,7 @@
           outlined
           multiple
           :dense="currentScreenSize == 'xs'"
-          aria-label="tableRearrangeMenu"
+          aria-label="Rearrange columns menu"
           :display-value="'Rearrange'"
           v-model="localTableVisibleColumns"
           :options="localTableColumns.filter(opt => !opt.required)"
@@ -199,7 +199,7 @@
           <template #header-selection="scope">
             <q-checkbox
               v-model="scope.selected"
-              aria-label="tableSelectAll"
+              aria-label="Select all rows"
             />
           </template>
 
@@ -213,7 +213,7 @@
               >
                 <q-checkbox
                   v-model="props.selected"
-                  aria-label="tableSelectAll"
+                  aria-label="Select all rows"
                 />
               </q-th>
               <q-th
@@ -223,13 +223,15 @@
                 :class="col.__thClass"
                 :style="col.headerStyle"
                 :auto-width="col.name === 'actions'"
+                :aria-sort="col.sortable ? (paginationConfig.sortBy === col.name ? (paginationConfig.descending ? 'descending' : 'ascending') : 'none') : undefined"
                 class="custom-header-cell"
               >
                 <span
                   v-if="col.name !== 'actions'"
-                  :tabindex="col.label ? 0 : -1"
+                  :tabindex="col.sortable ? 0 : -1"
+                  :role="col.sortable ? 'button' : undefined"
                   class="flex no-wrap items-center cursor-pointer"
-                  :aria-label="`${col.label.replaceAll('#', 'Number')}TableColumnSortAscendDescend`"
+                  :aria-label="col.sortable ? (paginationConfig.sortBy === col.name ? `${col.label.replaceAll('#', 'Number')}, sorted ${paginationConfig.descending ? 'descending' : 'ascending'}` : `Sort by ${col.label.replaceAll('#', 'Number')}`) : undefined"
                   @keydown.enter="col.sortable ? props.sort(col.name) : null"
                   @click="col.sortable ? props.sort(col.name) : null"
                 >
@@ -257,13 +259,13 @@
           <template #body-selection="scope">
             <q-checkbox
               v-model="scope.selected"
-              aria-label="tableRowSelect"
+              aria-label="Select row"
             />
           </template>
 
           <template #body-cell="props">
             <q-td
-              :tabindex="props.value ? 0 : -1"
+              :tabindex="(isRowClickable && props.col.name === props.cols[0].name) ? 0 : -1"
               :props="props"
               :style="[ props.col.name == 'actions' ? 'padding-left:8px;' : null ]"
               :class="(props.row[highlightRowKey] && props.row[highlightRowKey] == highlightRowValue) ? highlightRowClass : null"
@@ -290,7 +292,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, toRaw } from 'vue'
+import { ref, onMounted, watch, toRaw, computed, getCurrentInstance } from 'vue'
 import { useCurrentScreenSize } from '@/composables/useCurrentScreenSize.js'
 import BaseButton from '@/components/Base/BaseButton.vue'
 
@@ -445,6 +447,16 @@ const mainProps = defineProps({
     default: null
   },
   highlightRowValue: undefined
+})
+
+const instance = getCurrentInstance()
+const isRowClickable = computed(() => {
+  const vnodeProps = instance?.vnode?.props
+  if (!vnodeProps) {
+    return false
+  }
+  const handler = vnodeProps.onSelectedTableRow || vnodeProps['onSelected-table-row']
+  return typeof handler === 'function'
 })
 
 // Emits

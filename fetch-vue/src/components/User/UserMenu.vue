@@ -1,5 +1,6 @@
 <template>
   <BaseButton
+    ref="userAvatarBtnRef"
     no-caps
     flat
     dense
@@ -7,7 +8,7 @@
     icon="person"
     color="primary"
     class="user-avatar"
-    aria-label="UserMenu"
+    aria-label="User profile menu"
     aria-haspopup="menu"
     :aria-expanded="userMenuState"
   >
@@ -15,33 +16,36 @@
       class="user-menu"
       :offset="[11, 9]"
       @show="userMenuState = true"
-      @hide="userMenuState = false"
+      @hide="onUserMenuHide"
       aria-label="userMenuList"
     >
-      <q-list style="min-width: 200px">
+      <q-list
+        style="min-width: 200px"
+        role="none"
+      >
         <q-item
-          class="q-pa-none"
-          role="menuitem"
+          tag="label"
+          v-ripple
+          class="full-width cursor-pointer"
+          role="menuitemcheckbox"
+          :aria-checked="barcodeScanAllowed"
+          aria-label="Toggle barcode scanning"
+          tabindex="0"
+          @keydown.space.prevent="barcodeScanAllowed = !barcodeScanAllowed"
+          @keydown.enter.prevent="barcodeScanAllowed = !barcodeScanAllowed"
         >
-          <q-item
-            tag="label"
-            v-ripple
-            class="full-width"
-            role=""
-          >
-            <q-item-section>
-              <q-item-label class="text-body1 text-nowrap">
-                Toggle Barcode Scan
-              </q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-toggle
-                name="barcode_scan_active"
-                v-model="barcodeScanAllowed"
-                aria-label="barcodeToggle"
-              />
-            </q-item-section>
-          </q-item>
+          <q-item-section>
+            <q-item-label class="text-body1 text-nowrap">
+              Toggle Barcode Scan
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle
+              name="barcode_scan_active"
+              v-model="barcodeScanAllowed"
+              tabindex="-1"
+            />
+          </q-item-section>
         </q-item>
         <q-item
           dense
@@ -119,6 +123,7 @@ const { patchLogout } = useUserStore()
 const { barcodeScanAllowed, barcodeInputDelay } = storeToRefs(useBarcodeStore())
 
 // Local Data
+const userAvatarBtnRef = ref(null)
 const userMenuState = ref(false)
 const userOptions = ref([
   {
@@ -130,6 +135,16 @@ const userOptions = ref([
     icon: 'logout'
   }
 ])
+
+const onUserMenuHide = () => {
+  userMenuState.value = false
+  if (userAvatarBtnRef.value) {
+    const el = userAvatarBtnRef.value.$el || userAvatarBtnRef.value
+    if (el && typeof el.focus === 'function') {
+      el.focus()
+    }
+  }
+}
 
 // Logic
 

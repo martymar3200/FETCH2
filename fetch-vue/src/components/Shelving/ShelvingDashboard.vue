@@ -70,7 +70,7 @@
                   @hide="shelvingJobMenuState = false"
                   aria-label="requestJobMenuList"
                 >
-                  <q-list>
+                  <q-list role="none">
                     <q-item
                       v-if="checkUserPermission('can_create_and_execute_direct_shelving_job')"
                       clickable

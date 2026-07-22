@@ -90,7 +90,7 @@
                   @hide="requestJobMenuState = false"
                   aria-label="requestJobMenuList"
                 >
-                  <q-list>
+                  <q-list role="none">
                     <q-item
                       v-if="checkUserPermission('can_create_and_submit_manual_requests')"
                       clickable

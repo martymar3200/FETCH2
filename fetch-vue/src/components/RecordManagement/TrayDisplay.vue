@@ -168,9 +168,9 @@
               class="col-sm-5 col-md-12 col-lg-auto"
               :class="currentScreenSize == 'sm' || currentScreenSize == 'xs' ? '' : 'self-center'"
             >
-              <h1 class="text-h4 text-bold">
+              <h2 class="text-h4 text-bold">
                 Items in Tray
-              </h1>
+              </h2>
             </div>
           </template>
           <template #table-td="{ colName, value }">

@@ -13,6 +13,7 @@
             dense
             icon="arrow_back"
             color="primary"
+            aria-label="Back"
             @click="mobileSearchOpen = false"
           />
           <div class="col q-pl-xs">
@@ -24,12 +25,13 @@
         <template v-else>
           <!-- MODIFIED: This button now calls the global store action -->
           <BaseButton
+            ref="drawerToggleBtnRef"
             v-if="userData.user_id"
             color="primary"
             flat
             dense
             icon="menu"
-            aria-label="Menu Button"
+            aria-label="Toggle Navigation Drawer"
             @click="setMainNavDrawerOpen(!mainNavDrawerOpen)"
           />
 
@@ -41,6 +43,7 @@
             dense
             icon="search"
             color="primary"
+            aria-label="Search"
             @click="mobileSearchOpen = true"
           />
 
@@ -77,7 +80,7 @@
             variant="danger"
             label="Enable Scan"
             class="text-body2"
-            @click="barcodeScanAllowed = true"
+            @click="handleEnableScanClick"
           />
         </template>
       </q-banner>
@@ -250,6 +253,30 @@ const { barcodeScanAllowed } = storeToRefs(useBarcodeStore())
 const { userData } = storeToRefs(useUserStore())
 
 // Local Data
+const drawerToggleBtnRef = ref(null)
+
+const handleEnableScanClick = () => {
+  barcodeScanAllowed.value = true
+  setTimeout(() => {
+    const searchInput = document.querySelector('.search-bar-input input')
+    if (searchInput) {
+      searchInput.focus()
+    }
+  }, 50)
+}
+
+watch(mainNavDrawerOpen, (newVal) => {
+  if (!newVal) {
+    setTimeout(() => {
+      if (drawerToggleBtnRef.value) {
+        const el = drawerToggleBtnRef.value.$el || drawerToggleBtnRef.value
+        if (el && typeof el.focus === 'function') {
+          el.focus()
+        }
+      }
+    }, 50)
+  }
+})
 const essentialLinks = computed(() => {
   let navLinks = [
     {

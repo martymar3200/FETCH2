@@ -24,7 +24,7 @@
             round
             dense
             @click="showPopupModal = false"
-            aria-label="closeModal"
+            aria-label="Close modal"
           />
         </q-card-section>
       </slot>
@@ -54,7 +54,6 @@
             class="text-body1 full-width"
             :loading="appActionIsLoadingData"
             @click="emit('confirm'); showPopupModal = false;"
-            aria-label="confirmButton"
           />
 
           <q-space class="q-mx-xs" />
@@ -64,7 +63,6 @@
             label="Cancel"
             class="text-body1 full-width"
             @click="showPopupModal = false"
-            aria-label="cancelButton"
           />
         </q-card-section>
       </slot>

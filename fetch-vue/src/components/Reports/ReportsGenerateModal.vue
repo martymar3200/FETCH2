@@ -42,10 +42,14 @@
         >
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-building"
+              >
                 Building
               </label>
               <SelectInput
+                id="rep-building"
                 v-model="reportForm.building_id"
                 :options="buildings"
                 option-type="buildings"
@@ -59,10 +63,14 @@
           </div>
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-module"
+              >
                 Module
               </label>
               <SelectInput
+                id="rep-module"
                 v-model="reportForm.module_id"
                 :options="modules"
                 option-type="modules"
@@ -83,10 +91,14 @@
             class="col-xs-12 col-sm-6 q-pr-sm-xs"
           >
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-aisle"
+              >
                 Aisle
               </label>
               <SelectInput
+                id="rep-aisle"
                 v-model="reportForm.aisle_id"
                 :options="aisles"
                 option-type="aisles"
@@ -126,10 +138,14 @@
             class="col-12 q-my-md"
           >
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-ladder"
+              >
                 Ladder
               </label>
               <SelectInput
+                id="rep-ladder"
                 v-model="reportForm.ladder_id"
                 :options="ladders"
                 option-type="ladders"
@@ -152,10 +168,14 @@
 
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-size-class"
+              >
                 Size Class
               </label>
               <SelectInput
+                id="rep-size-class"
                 v-model="reportForm.size_class_id"
                 :multiple="true"
                 :hide-selected="false"
@@ -171,10 +191,14 @@
 
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-owner"
+              >
                 Owner
               </label>
               <SelectInput
+                id="rep-owner"
                 v-model="reportForm.owner_id"
                 :multiple="true"
                 :hide-selected="false"
@@ -190,10 +214,14 @@
 
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-height"
+              >
                 Height
               </label>
               <TextInput
+                id="rep-height"
                 v-model="reportForm.height"
                 :placeholder="`Enter Height`"
                 :disabled="!reportForm.building_id"
@@ -205,10 +233,14 @@
 
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-width"
+              >
                 Width
               </label>
               <TextInput
+                id="rep-width"
                 v-model="reportForm.width"
                 :placeholder="`Enter Width`"
                 :disabled="!reportForm.building_id"
@@ -220,10 +252,14 @@
 
           <div class="col-12 q-mb-md">
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="rep-depth"
+              >
                 Depth
               </label>
               <TextInput
+                id="rep-depth"
                 v-model="reportForm.depth"
                 :placeholder="`Enter Depth`"
                 :disabled="!reportForm.building_id"
@@ -422,7 +458,10 @@
                 class="col-12 q-mb-md"
               >
                 <div class="form-group">
-                  <label class="form-group-label">
+                  <label
+                    class="form-group-label"
+                    :for="`rep-dynamic-${param.query}`"
+                  >
                     {{ param.label }}
                     <span
                       v-if="param.required"
@@ -432,6 +471,7 @@
                     </span>
                   </label>
                   <TextInput
+                    :id="`rep-dynamic-${param.query}`"
                     v-model="reportForm[param.query]"
                     :placeholder="`Enter ${param.label}`"
                     :aria-label="`${param.query}_input`"
@@ -444,7 +484,10 @@
                 class="col-12 q-mb-md"
               >
                 <div class="form-group">
-                  <label class="form-group-label">
+                  <label
+                    class="form-group-label"
+                    :for="`rep-dynamic-${param.query}`"
+                  >
                     {{ param.label }}
                     <span
                       v-if="param.required"
@@ -454,6 +497,7 @@
                     </span>
                   </label>
                   <TextInput
+                    :id="`rep-dynamic-${param.query}`"
                     v-model="reportForm[param.query]"
                     :placeholder="`Enter ${param.label}`"
                     :aria-label="`${param.query}_input`"
@@ -482,7 +526,10 @@
                 class="col-12 q-mb-lg"
               >
                 <div class="form-group">
-                  <label class="form-group-label">
+                  <label
+                    class="form-group-label"
+                    :for="`rep-dynamic-${param.query}`"
+                  >
                     {{ param.label }}
                     <q-icon
                       name="info"
@@ -501,6 +548,7 @@
                     </span>
                   </label>
                   <SelectInput
+                    :id="`rep-dynamic-${param.query}`"
                     v-model="reportForm[param.query]"
                     :multiple="param.multiple"
                     :hide-selected="!param.multiple"

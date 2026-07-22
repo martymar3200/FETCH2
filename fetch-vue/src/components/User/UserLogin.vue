@@ -15,14 +15,18 @@
       :offset="[12, 9]"
       :class="$style['authentication-menu']"
     >
-      <q-list>
+      <q-list role="none">
         <q-item role="menuitem">
           <q-item-section>
             <div class="form-group">
-              <label class="form-group-label">
+              <label
+                class="form-group-label"
+                for="login-user-email"
+              >
                 User Email
               </label>
               <TextInput
+                id="login-user-email"
                 v-model="loginForm.user"
                 placeholder="Enter User Email"
                 @keyup.enter="isLoginValid ? internalLogin() : null"
